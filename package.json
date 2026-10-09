@@ -1,0 +1,50 @@
+{
+  "name": "180",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:database": "node scripts/test-database.mjs",
+    "setup:account": "node scripts/setup-account.mjs",
+    "setup:https": "node scripts/setup-https.mjs",
+    "dev:https": "node scripts/start-https.mjs dev",
+    "preview:https": "node scripts/start-https.mjs preview",
+    "cert:serve": "node scripts/serve-certificate.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.3",
+    "dexie": "4.4.6",
+    "dexie-react-hooks": "4.4.0",
+    "heic2any": "0.0.4",
+    "lucide-react": "1.54.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@tailwindcss/vite": "4.3.3",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.7",
+    "@types/node": "26.6.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "fake-indexeddb": "6.2.5",
+    "jsdom": "29.1.1",
+    "prettier": "3.9.9",
+    "sharp": "0.35.5",
+    "supabase": "2.120.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vite-plugin-pwa": "2.0.0",
+    "vitest": "4.1.11"
+  }
+}
