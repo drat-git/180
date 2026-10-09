@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Activity, Compass, LockKeyhole, Sun, Utensils } from "lucide-react";
+import {
+  Activity,
+  BriefcaseBusiness,
+  Compass,
+  GraduationCap,
+  LockKeyhole,
+  Sun,
+  Utensils,
+} from "lucide-react";
 import { db } from "../lib/db";
 import { repository } from "../lib/repository";
 import {
@@ -310,20 +318,25 @@ export function DailyCheckIn({
             <h2>Daily check-in</h2>
             <span className="small">Leave anything unanswered.</span>
           </div>
+          <ChecklistBlock title="General" icon={<Compass size={18} />}>
+            {wakeField}
+            {screenField}
+            {renderFields(["cannabis"])}
+          </ChecklistBlock>
+          {weekdayOnly && (
+            <ChecklistBlock title="School" icon={<GraduationCap size={18} />}>
+              {renderFields(["classAttendance"])}
+            </ChecklistBlock>
+          )}
+          <ChecklistBlock title="Career" icon={<BriefcaseBusiness size={18} />}>
+            {renderFields(["applications"])}
+          </ChecklistBlock>
           <ChecklistBlock title="Food" icon={<Utensils size={18} />}>
             {renderFields(["meal1", "meal2", "snack1", "snack2", "shake"])}
           </ChecklistBlock>
           <ChecklistBlock title="Body" icon={<Activity size={18} />}>
             {renderFields(["amPosture", "pmPosture", "lifted"])}
           </ChecklistBlock>
-          <ChecklistBlock title="General" icon={<Compass size={18} />}>
-            {wakeField}
-            {screenField}
-            {renderFields(["cannabis"])}
-          </ChecklistBlock>
-          <div className="remaining-fields">
-            {renderFields(["classAttendance", "applications"])}
-          </div>
         </section>
         <Journal
           userId={userId}

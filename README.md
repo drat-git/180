@@ -2,7 +2,7 @@
 
 A private, offline-first daily check-in. React + TypeScript + Vite + Tailwind, with Dexie/IndexedDB and Supabase.
 
-Private source repository: [drat-git/180](https://github.com/drat-git/180). The version before the card/typography refinement is preserved in commit `abb26fe`.
+Public source repository: [drat-git/180](https://github.com/drat-git/180). The app's account and cloud data remain private. The version before the card/typography refinement is preserved in commit `abb26fe`.
 
 ## Try it
 
@@ -70,7 +70,7 @@ Local-only delivery means the Mac must serve the app for a new install, updates,
 - Day 1 is `2026-10-09`; the day changes at 2 AM in each device's timezone. Date arithmetic uses calendar ordinals rather than elapsed 24-hour intervals.
 - Launch opens the current logical day. Rollover retains the open entry. Traveling recalculates today, without moving stored entries to other dates.
 - Today and yesterday are freely editable. Older days unlock once per visit. Future days and dates before Day 1 are inaccessible.
-- Answers are `boolean | null`. Reasons, descriptions, and counts survive changes of answer. Food, Body, and General organize the checklist. Block and text minimization is stored separately as account-specific display preferences on this browser, persists across days and app restarts, and changes only when manually toggled.
+- Answers are `boolean | null`. Reasons, descriptions, and counts survive changes of answer. The checklist cards are ordered General, School, Career, Food, and Body. School contains class attendance and is hidden entirely on weekends; Career contains job/internship applications. Block and text minimization is stored separately as account-specific display preferences on this browser, persists across days and app restarts, and changes only when manually toggled.
 - Wake explanations appear after 10:00; screen-time explanations after 210 minutes. Reasons, food descriptions, and cannabis use descriptions open automatically when applicable and retain their Minimize/reopen controls. Cannabis has optional descriptions for each recorded use, with one shared Minimize control; there is no cannabis Why prompt. Reducing the use count hides additional descriptions without deleting them.
 - Components write through `EntryRepository`. A local transaction updates a record and queues a field patch. Text is saved locally on every change; only network work is debounced.
 - Local-write failures retain the latest unsaved patch in memory and expose a retry action. Navigation is blocked while a failed entry remains unsaved. Clearing browser storage or closing after a failed disk write can lose unsynced/unsaved data; the app does not claim those changes are synced.

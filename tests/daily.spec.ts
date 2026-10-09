@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+const blockOrder = ["General", "School", "Career", "Food", "Body"];
 async function preview(
   page: import("@playwright/test").Page,
   time = "2026-10-12T12:00:00-04:00",
@@ -77,7 +78,14 @@ test("weekends omit class and older edits ask once per visit", async ({
   await expect(
     page.getByRole("group", { name: "Attended class" }),
   ).toBeVisible();
+  await expect(page.locator(".block-heading h3")).toHaveText(blockOrder);
   await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(
+    page.getByRole("region", { name: "School", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator(".block-heading h3")).toHaveText(
+    blockOrder.filter((title) => title !== "School"),
+  );
   await expect(page.getByRole("group", { name: "Attended class" })).toHaveCount(
     0,
   );
@@ -85,6 +93,9 @@ test("weekends omit class and older edits ask once per visit", async ({
     page.getByText("Yesterday’s entry is still freely editable."),
   ).toBeVisible();
   await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(
+    page.getByRole("region", { name: "School", exact: true }),
+  ).toHaveCount(0);
   await answer(page, "Lifted", "Yes").click();
   await expect(
     page.getByRole("dialog", { name: "Edit past entry?" }),
@@ -316,9 +327,30 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
   context,
 }) => {
   await preview(page);
+  await expect(page.locator(".block-heading h3")).toHaveText(blockOrder);
   const food = page.getByRole("region", { name: "Food", exact: true });
   const body = page.getByRole("region", { name: "Body", exact: true });
   const general = page.getByRole("region", { name: "General", exact: true });
+  const school = page.getByRole("region", { name: "School", exact: true });
+  const career = page.getByRole("region", { name: "Career", exact: true });
+  await expect(
+    school.getByRole("group", { name: "Attended class", exact: true }),
+  ).toBeVisible();
+  await expect(
+    career.getByRole("group", {
+      name: "Applied to jobs or internships?",
+      exact: true,
+    }),
+  ).toBeVisible();
+  for (const title of blockOrder)
+    await expect(
+      page.getByRole("button", { name: `Minimize ${title}`, exact: true }),
+    ).toHaveAttribute("aria-expanded", "true");
+  await answer(page, "Attended class", "Yes").click();
+  await answer(page, "Applied to jobs or internships?", "Yes").click();
+  await career
+    .getByRole("button", { name: "Increase how many applications?" })
+    .click();
   for (const label of [
     "Meal 1",
     "Meal 2",
@@ -365,7 +397,7 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
     .getByRole("textbox", { name: "Cannabis use 1 description" })
     .fill("Example use");
   await general.getByRole("button", { name: "Minimize", exact: true }).click();
-  for (const title of ["Food", "Body", "General"])
+  for (const title of blockOrder)
     await page
       .getByRole("button", { name: `Minimize ${title}`, exact: true })
       .click();
@@ -373,27 +405,40 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
     "Saved on this device",
   );
   await page.reload();
-  for (const title of ["Food", "Body", "General"])
+  for (const title of blockOrder)
     await expect(
       page.getByRole("button", { name: `Maximize ${title}`, exact: true }),
     ).toHaveAttribute("aria-expanded", "false");
   await page.close();
   const reopened = await context.newPage();
   await preview(reopened);
-  for (const title of ["Food", "Body", "General"])
+  for (const title of blockOrder)
     await expect(
       reopened.getByRole("button", { name: `Maximize ${title}`, exact: true }),
     ).toBeVisible();
   await reopened.getByRole("button", { name: "Previous day" }).click();
-  for (const title of ["Food", "Body", "General"])
+  for (const title of blockOrder.filter((title) => title !== "School"))
     await expect(
       reopened.getByRole("button", { name: `Maximize ${title}`, exact: true }),
     ).toBeVisible();
   await reopened.getByRole("button", { name: "Today", exact: true }).click();
-  for (const title of ["Food", "Body", "General"])
+  await expect(
+    reopened.getByRole("button", { name: "Maximize School", exact: true }),
+  ).toHaveAttribute("aria-expanded", "false");
+  for (const title of blockOrder)
     await reopened
       .getByRole("button", { name: `Maximize ${title}`, exact: true })
       .click();
+  await expect(answer(reopened, "Attended class", "Yes")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(
+    answer(reopened, "Applied to jobs or internships?", "Yes"),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    reopened.getByLabel("How many applications?", { exact: true }),
+  ).toHaveText("2");
   await expect(
     reopened.getByRole("textbox", {
       name: /Meal [12] (reason|food description)/,

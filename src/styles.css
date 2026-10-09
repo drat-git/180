@@ -320,6 +320,14 @@ main {
   --block-tone: #5d7771;
   --block-tint: #eaf1ed;
 }
+.checklist-block[data-block="School"] {
+  --block-tone: #647588;
+  --block-tint: #edf0f5;
+}
+.checklist-block[data-block="Career"] {
+  --block-tone: #80705e;
+  --block-tint: #f4efe7;
+}
 .block-heading {
   display: flex;
   align-items: center;
@@ -368,15 +376,6 @@ main {
   border-bottom: 0;
 }
 .checklist-block .field:first-child {
-  border-top: 0;
-}
-.remaining-fields {
-  padding: 2px 22px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: #f1f2e9;
-}
-.remaining-fields .field:first-child {
   border-top: 0;
 }
 .eyebrow {
@@ -940,8 +939,7 @@ dialog::backdrop {
   .checkin-card {
     padding: 0;
   }
-  .checklist-block,
-  .remaining-fields {
+  .checklist-block {
     padding-left: 18px;
     padding-right: 18px;
   }
@@ -1045,8 +1043,7 @@ dialog::backdrop {
   .checklist-block {
     margin-bottom: 16px;
   }
-  .checklist-block,
-  .remaining-fields {
+  .checklist-block {
     padding-left: 16px;
     padding-right: 16px;
   }
