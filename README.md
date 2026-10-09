@@ -2,6 +2,8 @@
 
 A private, offline-first daily check-in. React + TypeScript + Vite + Tailwind, with Dexie/IndexedDB and Supabase.
 
+Private source repository: [drat-git/180](https://github.com/drat-git/180). The version before the card/typography refinement is preserved in commit `abb26fe`.
+
 ## Try it
 
 ```sh

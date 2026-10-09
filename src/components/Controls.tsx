@@ -1,28 +1,51 @@
 import { useEffect, useRef, useId, type ReactNode } from "react";
-import { ArrowDownRight, Minus, Plus, X } from "lucide-react";
+import {
+  ArrowDownRight,
+  ChevronDown,
+  ChevronUp,
+  Minus,
+  Plus,
+  X,
+} from "lucide-react";
 import type { Answer } from "../lib/model";
 import { useMinimized } from "../lib/displayPreferences";
 export function ChecklistBlock({
   title,
+  icon,
   children,
 }: {
   title: string;
+  icon?: ReactNode;
   children: ReactNode;
 }) {
   const [minimized, setMinimized] = useMinimized(`block:${title}`);
   const contentId = useId();
   return (
-    <section className="checklist-block" aria-label={title}>
+    <section
+      className="checklist-block"
+      aria-label={title}
+      data-block={title}
+      data-minimized={minimized}
+    >
       <div className="block-heading">
-        <h2>{title}</h2>
+        <div className="block-title">
+          {icon && (
+            <span className="block-icon" aria-hidden="true">
+              {icon}
+            </span>
+          )}
+          <h3>{title}</h3>
+        </div>
         <button
           type="button"
           className="text-button"
           aria-expanded={!minimized}
           aria-controls={contentId}
+          aria-label={minimized ? `Maximize ${title}` : `Minimize ${title}`}
           onClick={() => setMinimized(!minimized)}
         >
-          {minimized ? `Maximize ${title}` : `Minimize ${title}`}
+          {minimized ? "Maximize" : "Minimize"}
+          {minimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
         </button>
       </div>
       <div id={contentId} hidden={minimized}>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { LockKeyhole, Sun } from "lucide-react";
+import { Activity, Compass, LockKeyhole, Sun, Utensils } from "lucide-react";
 import { db } from "../lib/db";
 import { repository } from "../lib/repository";
 import {
@@ -307,21 +307,23 @@ export function DailyCheckIn({
       <div className="checkin-layout">
         <section className="checkin-card">
           <div className="section-heading">
-            <span className="eyebrow">THE DAILY CHECK-IN</span>
+            <h2>Daily check-in</h2>
             <span className="small">Leave anything unanswered.</span>
           </div>
-          <ChecklistBlock title="Food">
+          <ChecklistBlock title="Food" icon={<Utensils size={18} />}>
             {renderFields(["meal1", "meal2", "snack1", "snack2", "shake"])}
           </ChecklistBlock>
-          <ChecklistBlock title="Body">
+          <ChecklistBlock title="Body" icon={<Activity size={18} />}>
             {renderFields(["amPosture", "pmPosture", "lifted"])}
           </ChecklistBlock>
-          <ChecklistBlock title="General">
+          <ChecklistBlock title="General" icon={<Compass size={18} />}>
             {wakeField}
             {screenField}
             {renderFields(["cannabis"])}
           </ChecklistBlock>
-          {renderFields(["classAttendance", "applications"])}
+          <div className="remaining-fields">
+            {renderFields(["classAttendance", "applications"])}
+          </div>
         </section>
         <Journal
           userId={userId}
