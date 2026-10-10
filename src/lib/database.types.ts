@@ -14,6 +14,91 @@ export type Database = {
   };
   public: {
     Tables: {
+      anti_rotting_events: {
+        Row: {
+          data: Json;
+          id: string;
+          item_id: string;
+          logical_date: string;
+          operation_id: string;
+          user_id: string;
+        };
+        Insert: {
+          data: Json;
+          id: string;
+          item_id: string;
+          logical_date: string;
+          operation_id: string;
+          user_id: string;
+        };
+        Update: {
+          data?: Json;
+          id?: string;
+          item_id?: string;
+          logical_date?: string;
+          operation_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "anti_rotting_events_user_id_item_id_fkey";
+            columns: ["user_id", "item_id"];
+            isOneToOne: false;
+            referencedRelation: "anti_rotting_items";
+            referencedColumns: ["user_id", "id"];
+          },
+        ];
+      };
+      anti_rotting_items: {
+        Row: {
+          data: Json;
+          id: string;
+          user_id: string;
+        };
+        Insert: {
+          data: Json;
+          id: string;
+          user_id: string;
+        };
+        Update: {
+          data?: Json;
+          id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      anti_rotting_logs: {
+        Row: {
+          data: Json;
+          id: string;
+          item_id: string;
+          logical_date: string;
+          user_id: string;
+        };
+        Insert: {
+          data: Json;
+          id: string;
+          item_id: string;
+          logical_date: string;
+          user_id: string;
+        };
+        Update: {
+          data?: Json;
+          id?: string;
+          item_id?: string;
+          logical_date?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "anti_rotting_logs_user_id_item_id_fkey";
+            columns: ["user_id", "item_id"];
+            isOneToOne: false;
+            referencedRelation: "anti_rotting_items";
+            referencedColumns: ["user_id", "id"];
+          },
+        ];
+      };
       app_owner: {
         Row: {
           singleton: boolean;
@@ -223,6 +308,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      apply_anti_operation: {
+        Args: { p_command: Json; p_operation: string };
+        Returns: Json;
+      };
       apply_entry_patch: {
         Args: {
           p_date: string;

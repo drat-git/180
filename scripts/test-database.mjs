@@ -7,7 +7,7 @@ if (!token) {
   process.exit(1);
 }
 const ref = process.env.SUPABASE_PROJECT_REF || "xlkmnczbuzmdfchoqqbr";
-for (const suite of ["daily_record", "tasks"]) {
+for (const suite of ["daily_record", "tasks", "anti_rotting"]) {
   const response = await fetch(
     `https://api.supabase.com/v1/projects/${ref}/database/query`,
     {

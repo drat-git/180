@@ -1,5 +1,6 @@
 import { db, type AppDatabase } from "./db";
 import {
+  type AntiCommand,
   emptyData,
   createId,
   type DailyEntry,
@@ -9,6 +10,7 @@ import {
   type TaskTopic,
   type PendingOperation,
 } from "./model";
+import { applyAntiCommand } from "./antiRotting";
 import { applyTaskCommand } from "./tasks";
 import { logicalDate } from "./dates";
 import { normalizePhoto } from "./photos";
@@ -33,13 +35,16 @@ export interface EntryRepository {
 }
 export class LocalRepository implements EntryRepository {
   onChange: () => void = () => {};
+  private unsavedAnti = new Map<string, PendingOperation>();
+  private antiWrites: Promise<unknown> = Promise.resolve();
   private unsavedTasks = new Map<string, PendingOperation>();
   private taskWrites: Promise<unknown> = Promise.resolve();
   private unsaved = new Map<string, EntryPatch>();
   hasUnsaved(userId: string) {
     return (
       [...this.unsaved.keys()].some((key) => key.startsWith(userId + "|")) ||
-      [...this.unsavedTasks.values()].some((op) => op.userId === userId)
+      [...this.unsavedTasks.values()].some((op) => op.userId === userId) ||
+      [...this.unsavedAnti.values()].some((op) => op.userId === userId)
     );
   }
   unsavedFor(userId: string, date: string) {
@@ -47,6 +52,7 @@ export class LocalRepository implements EntryRepository {
   }
   async retryUnsaved(userId: string) {
     await this.flushTaskWrites(userId);
+    await this.flushAntiWrites(userId);
     for (const key of [...this.unsaved.keys()])
       if (key.startsWith(userId + "|"))
         await this.patchDay(userId, key.slice(userId.length + 1), {});
@@ -179,6 +185,75 @@ export class LocalRepository implements EntryRepository {
   }
   deleteTask(userId: string, taskId: string) {
     return this.mutateTask(userId, { taskId, action: "delete" });
+  }
+  private flushAntiWrites(userId: string) {
+    const run = this.antiWrites
+      .catch(() => {})
+      .then(async () => {
+        for (const op of this.unsavedAnti.values()) {
+          if (op.userId !== userId) continue;
+          await this.database.transaction(
+            "rw",
+            [
+              this.database.antiItems,
+              this.database.antiLogs,
+              this.database.antiEvents,
+              this.database.outbox,
+            ],
+            async () => {
+              const source = {
+                items: await this.database.antiItems
+                  .where("userId")
+                  .equals(userId)
+                  .toArray(),
+                logs: await this.database.antiLogs
+                  .where("userId")
+                  .equals(userId)
+                  .toArray(),
+                events: await this.database.antiEvents
+                  .where("userId")
+                  .equals(userId)
+                  .toArray(),
+              };
+              const next = applyAntiCommand(
+                source,
+                userId,
+                op.operationId,
+                op.antiCommand!,
+              );
+              await this.database.antiItems.bulkPut(next.items);
+              await this.database.antiLogs.bulkPut(next.logs);
+              await this.database.antiEvents.bulkPut(next.events);
+              await this.database.outbox.add(op);
+            },
+          );
+          this.unsavedAnti.delete(op.operationId);
+          this.onChange();
+        }
+      });
+    this.antiWrites = run;
+    return run;
+  }
+  antiOperation(
+    userId: string,
+    input: Omit<AntiCommand, "at" | "logicalDate" | "timezone">,
+  ) {
+    const now = new Date(),
+      operationId = createId();
+    this.unsavedAnti.set(operationId, {
+      operationId,
+      userId,
+      logicalDate: logicalDate(now),
+      kind: "anti-rotting",
+      createdAt: now.toISOString(),
+      antiCommand: {
+        ...input,
+        at: now.toISOString(),
+        logicalDate: logicalDate(now),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+    });
+    return this.flushAntiWrites(userId);
   }
   async addPhoto(userId: string, date: string, file: File) {
     if (!(

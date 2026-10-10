@@ -1448,3 +1448,104 @@ dialog::backdrop {
     gap: 7px;
   }
 }
+
+/* Anti Rotting activity ideas and read-only past-day recaps. */
+.anti-intro {
+  margin: 0 0 14px;
+}
+.anti-list,
+.anti-today ul,
+.anti-recap {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.anti-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.anti-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.anti-row .task-copy {
+  min-width: 0;
+  flex: 1;
+}
+.anti-item.is-complete {
+  background: var(--paper);
+  opacity: 0.7;
+}
+.anti-item.is-complete .task-title {
+  text-decoration: line-through;
+}
+.anti-log-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 7px 9px;
+  white-space: nowrap;
+}
+.anti-log-button.selected {
+  color: var(--accent);
+  background: #eaf1e8;
+}
+.anti-notes {
+  margin: 7px 0 0 26px;
+}
+.anti-notes p,
+.anti-recap p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 6px 0 0;
+}
+.anti-add {
+  margin-top: 12px;
+}
+.anti-today {
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+  padding-top: 15px;
+}
+.anti-today-heading,
+.anti-today li,
+.anti-recap li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.anti-today-heading h4 {
+  margin: 0 0 4px;
+}
+.anti-today li,
+.anti-recap li {
+  padding: 10px 0;
+}
+.anti-today li span,
+.anti-recap li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.anti-status {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 8px;
+}
+.anti-status.completed {
+  color: var(--accent);
+}
+@media (max-width: 480px) {
+  .anti-row {
+    gap: 6px;
+  }
+  .anti-log-button {
+    font-size: 11px;
+    padding: 6px;
+  }
+}

@@ -84,6 +84,17 @@ Local-only delivery means the Mac must serve the app for a new install, updates,
 - Photos use stable unique paths. Deletions are tombstoned before object removal, preventing resurrection. Downloaded photos are cached as local blobs. Uncached remote photos require a connection.
 - PWA updates wait for the user's update action; the update control is disabled during local saving or a local-write error.
 
+## Anti Rotting
+
+Do Stuff also includes a collapsible **Anti Rotting** list of your own ideas. Add a title, optional notes, and choose Reusable or One-time. There are no categories, suggestions, subtasks, deadlines, streaks, or progress scores.
+
+- **Did this / Did today** records or removes one activity log per logical day. Reusable ideas stay available. **Did today** contains a separate minimizable list, including activities that were deleted or archived after being logged.
+- One-time activities have a completion checkbox. Completing automatically logs the day; reopening on that same logical day removes only the automatic contribution, preserving a manual log. Reopening on a later day preserves previous logs. Completed items remain crossed out for 12 elapsed hours; reopening/rechecking resets expiry. Changing a completed item to Reusable reopens it with the same rules.
+- Hold an activity or use its options menu to edit or delete it. Title/notes/type snapshots and completion/reopening events remain stored after deletion or archive.
+- Past daily screens show a small, read-only **Anti Rotting** recap after the next 2 AM logical-day boundary. Each activity appears once as Worked on or Completed; the last completion/reopening event within that recorded day determines completion. Today's recap and empty recaps are hidden. Unlocking a past daily entry does not make this recap editable, and it does not affect checklist totals.
+- History uses saved records independently of current activity definitions. Late offline sync can populate an already-ended day. No midnight process or app-open requirement exists. Logs store manual/automatic provenance; events record logical date, timezone, occurrence timestamp, and per-item sequence. These support future calendar views; editing old logs and an Archive browser are deferred.
+- Dexie version 3 adds account-partitioned Anti Rotting tables without replacing existing entries, tasks, or pending writes. The idempotent `apply_anti_operation` RPC saves completion, automatic logging, and receipts atomically. Deletion tombstones dominate stale edits; rejected speculative logs are removed on acknowledgement. Writes remain locally retryable, and cloud pulls are paginated.
+
 ## Do Stuff
 
 Use **Today / Do Stuff** to switch between the daily record and persistent **School, Career, and Life** task lists. Launch always opens today; returning from Do Stuff retains the daily date you were viewing.
@@ -97,7 +108,7 @@ Use **Today / Do Stuff** to switch between the daily record and persistent **Sch
 - `tasks` stores persistent account-owned records. `task_events` retains every server-applied completion/reopening transition, including automatic parent transitions, with occurrence timestamp, recorded logical date, timezone, title, topic, and relationship snapshot. Rechecking never erases earlier events. Completion history uses the device's 2 AM logical day at the time of the action and is not moved during travel.
 - Dexie schema version 2 adds tasks and events without replacing existing records or queues. Local task writes and operations are transactional and retryable; server commands are idempotent and serialized per account, with automatic parent completion in the same transaction. Task operations are independent of daily navigation dates and keep syncing during travel. Foreground expiry/resume updates archive visibility offline without requiring a background job. Task history pulls are paginated to avoid the Data API's row limit.
 
-Anti-Rotting, calendar/analytics screens, weight, notifications, OCR, nutrition metrics, workout details, and social features are deferred.
+Calendar/analytics screens, weight, notifications, OCR, nutrition metrics, workout details, and social features are deferred.
 
 ## Tests
 
@@ -112,6 +123,6 @@ The unit suite covers dates, thresholds, controls, durable local writes, account
 
 Playwright runs production-PWA browser workflows in desktop and iPhone-sized Chromium contexts. It verifies offline reloads, preserved reasons/descriptions, weekend attendance, historical protections, rollover, threshold boundaries, photo persistence/removal, and layout. This emulation does not replace physical iPhone Safari/Home Screen testing. Trace files are retained only for failures; screenshots are in `test-results/`.
 
-`supabase/tests/daily_record.sql` tests live daily/photo RPCs and access restrictions; `supabase/tests/tasks.sql` tests hierarchy, completion history, dates, preserved activity snapshots, retry idempotency, tombstones, and task/history isolation. `npm run test:database` runs both suites. It runs in a transaction and rolls back all fixtures. It was executed successfully against the connected project. To rerun, use the Supabase SQL editor/connector, or set a server-side `SUPABASE_ACCESS_TOKEN` and run `npm run test:database`. Never put that token in a `VITE_` variable.
+`supabase/tests/daily_record.sql` tests live daily/photo RPCs and access restrictions; `supabase/tests/anti_rotting.sql` tests daily logging, completion undo, snapshots, retry idempotency, validation, deletion, and access isolation. `supabase/tests/tasks.sql` tests hierarchy, completion history, dates, preserved activity snapshots, retry idempotency, tombstones, and task/history isolation. `npm run test:database` runs all three suites. It runs in a transaction and rolls back all fixtures. It was executed successfully against the connected project. To rerun, use the Supabase SQL editor/connector, or set a server-side `SUPABASE_ACCESS_TOKEN` and run `npm run test:database`. Never put that token in a `VITE_` variable.
 
 Migrations in `supabase/migrations/` have been applied to the dedicated project. Generated TypeScript definitions are in `src/lib/database.types.ts`. Use the project's Supabase CLI to generate future migration files, and review RLS/security advisors after schema changes.

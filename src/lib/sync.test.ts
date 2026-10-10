@@ -1,5 +1,7 @@
 import { beforeEach, afterEach, it, expect, vi } from "vitest";
 import { db } from "./db";
+import { applyAntiCommand, antiRecap } from "./antiRotting";
+import type { AntiCommand, AntiItem, AntiLog, AntiEvent } from "./model";
 import { applyTaskCommand } from "./tasks";
 import type { Task, TaskCommand, TaskEvent } from "./model";
 import { repository } from "./repository";
@@ -36,6 +38,7 @@ type Remote = {
   created_at: string;
   updated_at: string;
 };
+let remoteAnti: { items: AntiItem[]; logs: AntiLog[]; events: AntiEvent[] };
 let remoteTasks: Task[];
 let remoteEvents: TaskEvent[];
 const taskWire = (t: Task) => ({
@@ -75,6 +78,9 @@ beforeEach(async () => {
     db.outbox.clear(),
     db.tasks.clear(),
     db.taskEvents.clear(),
+    db.antiItems.clear(),
+    db.antiLogs.clear(),
+    db.antiEvents.clear(),
   ]);
   vi.clearAllMocks();
   mock.today = "2026-10-09";
@@ -86,6 +92,7 @@ beforeEach(async () => {
     created_at: "2026-10-09T12:00:00Z",
     updated_at: "2026-10-09T12:00:00Z",
   };
+  remoteAnti = { items: [], logs: [], events: [] };
   remoteTasks = [];
   remoteEvents = [];
   receipts = new Set();
@@ -103,6 +110,22 @@ beforeEach(async () => {
         p_command?: TaskCommand;
       },
     ) => {
+      if (_name === "apply_anti_operation") {
+        if (!receipts.has(args.p_operation)) {
+          remoteAnti = applyAntiCommand(
+            remoteAnti,
+            "owner",
+            args.p_operation,
+            args.p_command as unknown as AntiCommand,
+          );
+          receipts.add(args.p_operation);
+        }
+        if (failAfterCommit) {
+          failAfterCommit = false;
+          throw new Error("Connection interrupted after commit");
+        }
+        return { data: structuredClone(remoteAnti), error: null };
+      }
       if (_name === "apply_task_operation") {
         if (!receipts.has(args.p_operation)) {
           const result = applyTaskCommand(
@@ -159,16 +182,22 @@ beforeEach(async () => {
               ? remoteTasks.map(taskWire)
               : table === "task_events"
                 ? remoteEvents.map(eventWire)
-                : table !== "daily_entries"
-                  ? []
-                  : columns === "*"
-                    ? [structuredClone(remote)]
-                    : [
-                        {
-                          logical_date: remote.logical_date,
-                          revision: remote.revision,
-                        },
-                      ],
+                : table === "anti_rotting_items"
+                  ? remoteAnti.items.map((data) => ({ data }))
+                  : table === "anti_rotting_logs"
+                    ? remoteAnti.logs.map((data) => ({ data }))
+                    : table === "anti_rotting_events"
+                      ? remoteAnti.events.map((data) => ({ data }))
+                      : table !== "daily_entries"
+                        ? []
+                        : columns === "*"
+                          ? [structuredClone(remote)]
+                          : [
+                              {
+                                logical_date: remote.logical_date,
+                                revision: remote.revision,
+                              },
+                            ],
           error: null,
         }).then(resolve),
     };
@@ -412,4 +441,65 @@ it("acknowledges a stale child creation without resurrecting a remotely deleted 
   expect(await db.tasks.get(child)).toBeUndefined();
   expect((await db.tasks.get(parent))!.deletedAt).not.toBeNull();
   expect(await db.outbox.count()).toBe(0);
+});
+
+it("Anti Rotting operations sync during travel and populate old-day recaps after a lost acknowledgement", async () => {
+  mock.today = "2026-10-10";
+  await repository.antiOperation("owner", {
+    itemId: "idea",
+    action: "create",
+    title: "Read",
+    notes: "Original",
+    itemType: "one-time",
+  });
+  const worker = engine();
+  await worker.run();
+  await repository.antiOperation("owner", {
+    itemId: "idea",
+    action: "complete",
+    completed: true,
+  });
+  mock.today = "2026-10-09";
+  failAfterCommit = true;
+  await worker.run();
+  expect(worker.state).toBe("error");
+  await worker.run();
+  expect(worker.state).toBe("synced");
+  expect(await db.outbox.count()).toBe(0);
+  expect(await db.antiEvents.count()).toBe(1);
+  const rows = antiRecap(
+    await db.antiLogs.toArray(),
+    await db.antiEvents.toArray(),
+    "2026-10-10",
+  );
+  expect(rows[0]).toMatchObject({ title: "Read", completed: true });
+});
+it("a delayed cloud activity record populates an already closed day's recap", async () => {
+  remoteAnti = applyAntiCommand(remoteAnti, "owner", "create-remote", {
+    itemId: "idea",
+    action: "create",
+    title: "Basketball",
+    notes: "Park",
+    itemType: "reusable",
+    at: "2026-10-09T16:00:00Z",
+    logicalDate: "2026-10-09",
+    timezone: "America/New_York",
+  });
+  remoteAnti = applyAntiCommand(remoteAnti, "owner", "log-remote", {
+    itemId: "idea",
+    action: "log",
+    logged: true,
+    at: "2026-10-09T16:00:00Z",
+    logicalDate: "2026-10-09",
+    timezone: "America/New_York",
+  });
+  mock.today = "2026-10-10";
+  await engine().run();
+  expect(
+    antiRecap(
+      await db.antiLogs.toArray(),
+      await db.antiEvents.toArray(),
+      "2026-10-09",
+    )[0],
+  ).toMatchObject({ title: "Basketball", notes: "Park", completed: false });
 });

@@ -11,6 +11,7 @@ import { repository } from "../lib/repository";
 import { childrenOf, sortTasks, topicLabels } from "../lib/tasks";
 import { useTasks } from "../lib/useTasks";
 import { ChecklistBlock, Modal } from "./Controls";
+import { AntiRotting } from "./AntiRotting";
 import { DisplayPreferencesProvider } from "../lib/displayPreferences";
 
 function AddTask({
@@ -181,11 +182,13 @@ function TaskRow({
 
 export function DoStuff({
   userId,
+  today,
   onSaving,
   onError,
   blocked,
 }: {
   userId: string;
+  today: string;
   onSaving: (delta: number) => void;
   onError: (message: string) => void;
   blocked: boolean;
@@ -324,6 +327,13 @@ export function DoStuff({
         Hold a task for options. Completed tasks stay for 12 hours; subtasks
         stay with their parent.
       </p>
+      <AntiRotting
+        userId={userId}
+        today={today}
+        onSaving={onSaving}
+        onError={onError}
+        blocked={blocked}
+      />
       {menu && (
         <Modal title="Task options" onClose={() => setMenu(null)}>
           <p>{menu.title}</p>

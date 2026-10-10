@@ -33,6 +33,7 @@ import {
 } from "./Controls";
 import { TaskActivity } from "./TaskActivity";
 import { useTasks } from "../lib/useTasks";
+import { AntiRottingRecap } from "./AntiRotting";
 import { Journal } from "./Journal";
 import { DisplayPreferencesProvider } from "../lib/displayPreferences";
 import {
@@ -412,6 +413,7 @@ export function DailyCheckIn({
             >
               {renderFields(["amPosture", "pmPosture", "lifted"])}
             </ChecklistBlock>
+            <AntiRottingRecap userId={userId} date={date} today={today} />
           </section>
           <Journal
             userId={userId}

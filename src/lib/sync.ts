@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { repository } from "./repository";
 import { supabase } from "./supabase";
+import { pushAnti, pullAnti } from "./antiSync";
 import { pushTask, pullTasks } from "./taskSync";
 import { logicalDate } from "./dates";
 import {
@@ -141,7 +142,12 @@ export class SyncEngine {
           if (this.stopped) return;
           // Travel can temporarily put a recorded date ahead of local today.
           // Keep that operation queued without blocking accessible-day edits.
-          if (op.kind !== "task" && op.logicalDate > logicalDate()) continue;
+          if (
+            op.kind !== "task" &&
+            op.kind !== "anti-rotting" &&
+            op.logicalDate > logicalDate()
+          )
+            continue;
           await this.push(op);
         }
         await this.pull();
@@ -153,7 +159,10 @@ export class SyncEngine {
         this.set(queue.length ? "local" : "synced");
         if (
           queue.some(
-            (op) => op.kind === "task" || op.logicalDate <= logicalDate(),
+            (op) =>
+              op.kind === "task" ||
+              op.kind === "anti-rotting" ||
+              op.logicalDate <= logicalDate(),
           )
         )
           this.schedule(600);
@@ -179,6 +188,10 @@ export class SyncEngine {
     }
   }
   private async push(op: PendingOperation) {
+    if (op.kind === "anti-rotting") {
+      await pushAnti(this.userId, op);
+      return;
+    }
     if (op.kind === "task") {
       await pushTask(this.userId, op);
       return;
@@ -266,6 +279,7 @@ export class SyncEngine {
   }
   private async pull() {
     await pullTasks(this.userId);
+    await pullAnti(this.userId);
     const [
       { data: entries, error: entryError },
       { data: images, error: imageError },

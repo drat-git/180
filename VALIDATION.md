@@ -46,11 +46,18 @@
 - The **40 desktop/phone browser tests** passed, including exact thresholds, midnight/zero values, clearing, focus, and saved-border behavior after reload. After restoring the latest pushed baseline and rebuilding the change, source/test checksums matched that browser-verified version. All **38 unit tests** and the production build passed again.
 - An additional isolated visual preview check was not executed because automatic approval review hit an account usage limit; this did not prevent the already-running browser suite from completing.
 
+## Anti Rotting and past-day recap — October 10, 2026
+
+- Added your own reusable and one-time ideas, optional expandable notes, edit/hold/delete options, one daily log per activity, and a minimizable Did today list. Completion automatically logs work; same-day reopening removes automatic logging while preserving manual work. One-time completion expires from the active list after 12 elapsed hours and resets on rechecking.
+- Past daily screens show read-only Worked on / Completed snapshots after the next 2 AM logical-day boundary. Today's and empty recaps stay hidden. Later editing, deletion, archive, and reopening do not rewrite an ended day's snapshots; late offline sync can fill in historical activity. Recaps do not affect checklist progress or become editable when a past entry is unlocked.
+- All **56 unit/sync tests**, **54 desktop/phone browser tests**, the production build, and all **three rollback-only live database suites** passed. Coverage includes logical-day rollover, same/later-day undo, archive timer reset, type conversion, deleted-item log removal, hold cancellation, offline reload, lost acknowledgements, stale edits/logs after remote deletion, two-device logging convergence, pagination, additive Dexie upgrade, failed local write recovery, travel, and delayed cloud history.
+- Desktop and phone activity/recap screenshots were inspected. The additive Anti Rotting migration is applied to the existing Supabase project; generated types match it. RLS/permission tests pass. Database advisors report no new security warnings or missing indexes; the previously documented Auth leaked-password warning remains. Real authenticated multi-device browser and physical iPhone testing remain unverified.
+
 ## Remaining device/account checks
 
 - The owner created the real private account with their own password. After confirmation emails did not arrive, the owner explicitly approved activating only this account. Activation succeeded; the existing password was preserved.
 - Full authenticated browser-to-cloud sync will be verified after the owner can sign in. Sync logic is covered by the unit suite and its server RPCs by the live database suite.
 - Installing/trusting the development certificate on the Mac and iPhone, and physical Safari/Home Screen testing, require user/device participation. Certificates and instructions are prepared; trust settings have not been changed automatically.
-- Reliable recovery-email delivery and final callback origins need SMTP/URL configuration before live hosting. Hosting is deferred by request.
+- Production hosting is connected to GitHub through the existing Vercel projects. Reliable recovery-email delivery and callback configuration still require a real recovery-flow check.
 
 There is no privileged bootstrap endpoint, and no service-role key in the frontend. The rejected endpoint deployment did not take place.

@@ -272,6 +272,7 @@ function CheckInApp({
         {screen === "tasks" && (
           <DoStuff
             userId={userId}
+            today={today}
             blocked={!!saveError}
             onSaving={(delta) =>
               setSaveCount((count) => Math.max(0, count + delta))

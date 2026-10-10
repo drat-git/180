@@ -85,6 +85,60 @@ export interface TaskEvent {
   logicalDate: string;
   timezone: string;
 }
+export type AntiItemType = "reusable" | "one-time";
+export interface AntiItem {
+  id: string;
+  userId: string;
+  title: string;
+  notes: string;
+  itemType: AntiItemType;
+  completedAt: string | null;
+  completionOperationId: string | null;
+  deletedAt: string | null;
+  revision: number;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface AntiLog {
+  id: string;
+  userId: string;
+  itemId: string;
+  logicalDate: string;
+  title: string;
+  notes: string;
+  itemType: AntiItemType;
+  manual: boolean;
+  completionOperationId: string | null;
+  at: string;
+  timezone: string;
+  revision: number;
+}
+export interface AntiEvent {
+  id: string;
+  operationId: string;
+  userId: string;
+  itemId: string;
+  title: string;
+  notes: string;
+  itemType: AntiItemType;
+  type: "completed" | "reopened";
+  at: string;
+  logicalDate: string;
+  timezone: string;
+  sequence: number;
+}
+export interface AntiCommand {
+  itemId: string;
+  action: "create" | "edit" | "log" | "complete" | "delete";
+  title?: string;
+  notes?: string;
+  itemType?: AntiItemType;
+  logged?: boolean;
+  completed?: boolean;
+  at: string;
+  logicalDate: string;
+  timezone: string;
+}
 export type EntryPatch = Partial<DailyData>;
 export interface DailyEntry {
   userId: string;
@@ -117,8 +171,9 @@ export interface PendingOperation {
   operationId: string;
   userId: string;
   logicalDate: string;
-  kind: "entry" | "photo-add" | "photo-delete" | "task";
+  kind: "entry" | "photo-add" | "photo-delete" | "task" | "anti-rotting";
   taskCommand?: TaskCommand;
+  antiCommand?: AntiCommand;
   patch?: EntryPatch;
   imageId?: string;
   createdAt: string;
