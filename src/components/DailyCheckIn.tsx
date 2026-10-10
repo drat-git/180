@@ -35,7 +35,11 @@ import { TaskActivity } from "./TaskActivity";
 import { useTasks } from "../lib/useTasks";
 import { Journal } from "./Journal";
 import { DisplayPreferencesProvider } from "../lib/displayPreferences";
-import { checklistProgress, type ChecklistProgress } from "../lib/checklist";
+import {
+  cannabisComplete,
+  checklistProgress,
+  type ChecklistProgress,
+} from "../lib/checklist";
 export function DailyCheckIn({
   userId,
   date,
@@ -153,6 +157,9 @@ export function DailyCheckIn({
               <BinaryAnswer
                 label={field.label}
                 value={data[`${key}Status`]}
+                completed={
+                  key === "cannabis" ? cannabisComplete(data) : undefined
+                }
                 onChange={(answer) =>
                   patch(
                     answerPatch(

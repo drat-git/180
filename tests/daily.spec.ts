@@ -20,6 +20,66 @@ const answer = (
   page
     .getByRole("group", { name: label, exact: true })
     .getByRole("button", { name: value, exact: true });
+test("answer icons use cyan and magenta, with cannabis colors following completion", async ({
+  page,
+}) => {
+  await preview(page);
+  const cyan = "rgb(24, 125, 149)";
+  const magenta = "rgb(154, 90, 130)";
+  const cannabisYes = answer(page, "Used cannabis?", "Yes");
+  const cannabisNo = answer(page, "Used cannabis?", "No");
+  await answer(page, "Meal 1", "Yes").click();
+  await expect(answer(page, "Meal 1", "Yes")).toHaveCSS(
+    "background-color",
+    cyan,
+  );
+  await expect(answer(page, "Meal 1", "Yes").locator("svg")).toBeVisible();
+  await expect(answer(page, "Meal 1", "Yes")).toHaveText("");
+  await answer(page, "Meal 1", "No").click();
+  await expect(answer(page, "Meal 1", "No")).toHaveCSS(
+    "background-color",
+    magenta,
+  );
+  await expect(answer(page, "Meal 1", "No").locator("svg")).toBeVisible();
+  await expect(answer(page, "Meal 1", "No")).toHaveText("");
+  await cannabisNo.click();
+  await expect(cannabisNo).toHaveCSS("background-color", cyan);
+  await cannabisYes.click();
+  await expect(cannabisYes).toHaveCSS("background-color", cyan);
+  const increase = page.getByRole("button", {
+    name: "Increase how many times?",
+    exact: true,
+  });
+  await increase.click();
+  await expect(cannabisYes).toHaveCSS("background-color", cyan);
+  await increase.click();
+  await expect(cannabisYes).toHaveCSS("background-color", magenta);
+  await page
+    .getByRole("button", { name: "Decrease how many times?", exact: true })
+    .click();
+  await expect(cannabisYes).toHaveCSS("background-color", cyan);
+  await increase.click();
+  await cannabisNo.click();
+  await expect(cannabisNo).toHaveCSS("background-color", cyan);
+  await expect(
+    page.getByLabel("General checklist progress", { exact: true }),
+  ).toHaveText("1/3 complete");
+  await cannabisYes.click();
+  await expect(cannabisYes).toHaveCSS("background-color", magenta);
+  await expect(
+    page.getByLabel("General checklist progress", { exact: true }),
+  ).toHaveText("0/3 complete");
+  await expect(page.locator(".save-state")).toContainText(
+    "Saved on this device",
+  );
+  await page.reload();
+  await expect(cannabisYes).toHaveCSS("background-color", magenta);
+  await cannabisYes.click();
+  await expect(cannabisYes).toHaveAttribute("aria-pressed", "false");
+  await expect(cannabisNo).toHaveAttribute("aria-pressed", "false");
+  await page.mouse.move(0, 0);
+  await expect(cannabisYes).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+});
 test("checklist progress respects thresholds and survives collapsed blocks and offline reload", async ({
   page,
   context,

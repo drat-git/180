@@ -17,6 +17,15 @@ export interface ChecklistProgress extends ChecklistCount {
   blocks: Record<ChecklistBlockTitle, ChecklistCount>;
 }
 
+export function cannabisComplete(
+  data: Pick<DailyData, "cannabisStatus" | "cannabisCount">,
+) {
+  return (
+    data.cannabisStatus === false ||
+    (data.cannabisStatus === true && (data.cannabisCount ?? 1) <= 2)
+  );
+}
+
 export function activityVisible(
   topic: ActivityTopic,
   roots: readonly Task[],
@@ -67,8 +76,7 @@ export function checklistProgress(
         timeMinutes(data.wakeTime) <= THRESHOLDS.wakeMinutes,
       data.screenTimeMinutes !== null &&
         data.screenTimeMinutes <= THRESHOLDS.screenMinutes,
-      data.cannabisStatus === false ||
-        (data.cannabisStatus === true && (data.cannabisCount ?? 1) <= 2),
+      cannabisComplete(data),
     ]),
     School: count(school),
     Career: count(career),

@@ -34,6 +34,12 @@
 - Added unit coverage for exact thresholds, zero/missing values, all block totals, weekend exclusions, and task question visibility. All **38 unit tests** and **36 browser tests** passed; browser tests cover live totals, clearing answers, collapsed blocks, task activity totals, navigation, and offline reload.
 - Removed "Leave anything unanswered." Production build passed. Progress layouts checked on desktop, iPhone-sized, and 320-pixel-wide screens.
 
+## Answer icons and completion colors — October 10, 2026
+
+- Replaced visible Yes/No text with check/X icons while preserving accessible names, keyboard access, answer clearing, and saved data. Shared controls use dark cyan (`#187d95`) and muted magenta (`#9a5a82`), with white-icon contrast of 4.77:1 and 5.05:1 respectively.
+- Cannabis uses the same completion helper for both its selected color and checklist count. No counts as zero uses even when an earlier hidden count is preserved. Yes is cyan at one/two uses and magenta at three or more; reducing the count updates both color and progress immediately.
+- All **38 unit tests** and **38 desktop/phone browser tests** passed, along with the production build. New browser coverage verifies icons, exact colors, cannabis thresholds, preserved counts after switching answers, clearing, and reload persistence. Updated desktop and phone screenshots inspected.
+
 ## Remaining device/account checks
 
 - The owner created the real private account with their own password. After confirmation emails did not arrive, the owner explicitly approved activating only this account. Activation succeeded; the existing password was preserved.

@@ -3,6 +3,7 @@ import {
   ArrowDownRight,
   ChevronDown,
   ChevronUp,
+  Check,
   Minus,
   Plus,
   X,
@@ -75,10 +76,12 @@ export function BinaryAnswer({
   label,
   value,
   onChange,
+  completed,
 }: {
   label: string;
   value: Answer;
   onChange: (v: boolean) => void;
+  completed?: boolean;
 }) {
   return (
     <div className="answers" role="group" aria-label={label}>
@@ -87,11 +90,18 @@ export function BinaryAnswer({
           key={String(answer)}
           type="button"
           data-answer={answer ? "yes" : "no"}
+          data-complete={completed ?? answer}
+          aria-label={answer ? "Yes" : "No"}
+          title={answer ? "Yes" : "No"}
           aria-pressed={value === answer}
           className={value === answer ? "selected" : ""}
           onClick={() => onChange(answer)}
         >
-          {answer ? "Yes" : "No"}
+          {answer ? (
+            <Check size={16} strokeWidth={2.5} aria-hidden="true" />
+          ) : (
+            <X size={16} strokeWidth={2.5} aria-hidden="true" />
+          )}
         </button>
       ))}
     </div>

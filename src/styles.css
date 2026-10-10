@@ -473,6 +473,8 @@ main {
   background: #f6f7f1;
 }
 .answers button {
+  display: grid;
+  place-items: center;
   background: transparent;
   border: 0;
   width: 43px;
@@ -485,13 +487,13 @@ main {
   font-weight: 650;
   box-shadow: 0 1px 3px #293c3426;
 }
-.answers button.selected[data-answer="yes"] {
-  background: #315fc4;
+.answers button.selected[data-complete="true"] {
+  background: #187d95;
   color: #ffffff;
 }
-.answers button.selected[data-answer="no"] {
-  background: #e7ad3b;
-  color: #32230b;
+.answers button.selected[data-complete="false"] {
+  background: #9a5a82;
+  color: #ffffff;
 }
 .answers button:hover:not(.selected) {
   background: #e9ece0;
