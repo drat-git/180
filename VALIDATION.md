@@ -22,6 +22,18 @@
 - Desktop and phone screenshots inspected: `artifacts/180-do-stuff-desktop.png`, `artifacts/180-do-stuff-phone.png`, and matching `180-task-activity` screenshots. Their example tasks exist only in isolated test-browser preview databases.
 - No public hosting, archive browser, Anti-Rotting, or calendar screen was added. Physical iPhone Safari/Home Screen installation and full real-account two-device sync remain unverified as described below.
 
+## Answer color refinement — October 10, 2026
+
+- Selected Yes answers use blue with white text; selected No answers use amber with dark text. Shared controls apply the colors to daily check-in and task questions. Unanswered controls retain their neutral styling and selection/clearing behavior.
+- Removed the "Just a record. Not a score." footer text. The 2 AM reminder remains aligned to the right.
+- Production build, all **33 unit tests**, and all **32 browser tests** passed. Mixed-answer desktop and phone screenshots inspected in isolated local preview contexts. Selected-text contrast is 5.89:1 for Yes and 7.56:1 for No.
+
+## Checklist progress — October 10, 2026
+
+- Added completed/total counts to every applicable block header and the Day header. Counts remain visible when minimized, recalculate with edits/navigation, exclude weekend attendance, and include task activity questions only when present. Unanswered and preserved hidden cannabis counts do not earn completion; cannabis No counts as zero uses.
+- Added unit coverage for exact thresholds, zero/missing values, all block totals, weekend exclusions, and task question visibility. All **38 unit tests** and **36 browser tests** passed; browser tests cover live totals, clearing answers, collapsed blocks, task activity totals, navigation, and offline reload.
+- Removed "Leave anything unanswered." Production build passed. Progress layouts checked on desktop, iPhone-sized, and 320-pixel-wide screens.
+
 ## Remaining device/account checks
 
 - The owner created the real private account with their own password. After confirmation emails did not arrive, the owner explicitly approved activating only this account. Activation succeeded; the existing password was preserved.

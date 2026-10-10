@@ -20,6 +20,78 @@ const answer = (
   page
     .getByRole("group", { name: label, exact: true })
     .getByRole("button", { name: value, exact: true });
+test("checklist progress respects thresholds and survives collapsed blocks and offline reload", async ({
+  page,
+  context,
+}) => {
+  await preview(page);
+  const total = page.getByLabel("Daily checklist progress", { exact: true });
+  const block = (title: string) =>
+    page.getByLabel(`${title} checklist progress`, { exact: true });
+  await expect(total).toHaveText("0/13 checks complete");
+  await expect(block("General")).toHaveText("0/3 complete");
+  await page.getByLabel("Wake-up time", { exact: true }).fill("10:00");
+  await page.getByLabel("Screen time hours").fill("3");
+  await page.getByLabel("Screen time minutes").fill("30");
+  await answer(page, "Used cannabis?", "Yes").click();
+  await page
+    .getByRole("button", { name: "Increase how many times?", exact: true })
+    .click();
+  await expect(block("General")).toHaveText("3/3 complete");
+  await page
+    .getByRole("button", { name: "Increase how many times?", exact: true })
+    .click();
+  await expect(block("General")).toHaveText("2/3 complete");
+  await answer(page, "Used cannabis?", "No").click();
+  await expect(block("General")).toHaveText("3/3 complete");
+  await answer(page, "Used cannabis?", "No").click();
+  await expect(block("General")).toHaveText("2/3 complete");
+  await answer(page, "Used cannabis?", "No").click();
+  await page.getByLabel("Wake-up time", { exact: true }).fill("10:01");
+  await page.getByLabel("Screen time minutes").fill("31");
+  await expect(block("General")).toHaveText("1/3 complete");
+  await page.getByLabel("Wake-up time", { exact: true }).fill("10:00");
+  await page.getByLabel("Screen time minutes").fill("30");
+  for (const label of [
+    "Attended class",
+    "Applied to jobs or internships?",
+    "Meal 1",
+    "Lifted",
+  ])
+    await answer(page, label, "Yes").click();
+  await expect(total).toHaveText("7/13 checks complete");
+  for (const [title, expected] of [
+    ["General", "3/3"],
+    ["School", "1/1"],
+    ["Career", "1/1"],
+    ["Food", "1/5"],
+    ["Body", "1/3"],
+  ]) {
+    await page
+      .getByRole("button", { name: `Minimize ${title}`, exact: true })
+      .click();
+    await expect(block(title)).toBeVisible();
+    await expect(block(title)).toHaveText(`${expected} complete`);
+  }
+  await expect(page.locator(".save-state")).toContainText(
+    "Saved on this device",
+  );
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(total).toHaveText("0/12 checks complete");
+  await expect(block("School")).toHaveCount(0);
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(total).toHaveText("7/13 checks complete");
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await context.setOffline(true);
+  await page.reload();
+  await expect(total).toHaveText("7/13 checks complete");
+  await expect(block("General")).toHaveText("3/3 complete");
+  await expect(
+    page.getByRole("button", { name: "Maximize General", exact: true }),
+  ).toBeVisible();
+});
 test("answers, reasons, food descriptions and text survive an offline reload", async ({
   page,
   context,

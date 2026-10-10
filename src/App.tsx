@@ -288,61 +288,79 @@ function CheckInApp({
             </section>
           ) : (
             <>
-              <section className={`day-header ${current ? "is-today" : ""}`}>
-                <div className="day-title">
-                  <div className="day-badge">
-                    {current ? (
-                      <>
-                        <span className="today-dot" />
-                        TODAY
-                      </>
-                    ) : (
-                      "PAST ENTRY"
-                    )}
-                  </div>
-                  <h1>
-                    Day {dayNumber(date)}
-                    <span className="day-title-dot">.</span>
-                  </h1>
-                  <p>{dateLabel(date)}</p>
-                </div>
-                <div className="day-nav">
-                  <button
-                    className="icon-button"
-                    aria-label="Previous day"
-                    disabled={!canNavigate(addDays(date, -1), today)}
-                    onClick={() => navigate(addDays(date, -1))}
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  <button
-                    className="today-button"
-                    onClick={() => navigate(today)}
-                    disabled={current}
-                  >
-                    Today
-                  </button>
-                  <button
-                    className="icon-button"
-                    aria-label="Next day"
-                    disabled={current}
-                    onClick={() => navigate(addDays(date, 1))}
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-                </div>
-                <div className="day-decoration" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              </section>
-              {!current && date === addDays(today, -1) && (
-                <div className="yesterday-note">
-                  Yesterday’s entry is still freely editable.
-                </div>
-              )}
               <DailyCheckIn
+                renderHeader={(progress) => (
+                  <>
+                    <section
+                      className={`day-header ${current ? "is-today" : ""}`}
+                    >
+                      <div className="day-title">
+                        <div className="day-badge">
+                          {current ? (
+                            <>
+                              <span className="today-dot" />
+                              TODAY
+                            </>
+                          ) : (
+                            "PAST ENTRY"
+                          )}
+                        </div>
+                        <h1>
+                          Day {dayNumber(date)}
+                          <span className="day-title-dot">.</span>
+                        </h1>
+                        <p>{dateLabel(date)}</p>
+                        <div
+                          className="day-progress"
+                          aria-label="Daily checklist progress"
+                        >
+                          <Check size={14} aria-hidden="true" />
+                          <span>
+                            <strong>
+                              {progress.completed}/{progress.total}
+                            </strong>{" "}
+                            checks complete
+                          </span>
+                        </div>
+                      </div>
+                      <div className="day-nav">
+                        <button
+                          className="icon-button"
+                          aria-label="Previous day"
+                          disabled={!canNavigate(addDays(date, -1), today)}
+                          onClick={() => navigate(addDays(date, -1))}
+                        >
+                          <ChevronLeft size={20} />
+                        </button>
+                        <button
+                          className="today-button"
+                          onClick={() => navigate(today)}
+                          disabled={current}
+                        >
+                          Today
+                        </button>
+                        <button
+                          className="icon-button"
+                          aria-label="Next day"
+                          disabled={current}
+                          onClick={() => navigate(addDays(date, 1))}
+                        >
+                          <ChevronRight size={20} />
+                        </button>
+                      </div>
+                      <div className="day-decoration" aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    </section>
+                    {!current && date === addDays(today, -1) && (
+                      <div className="yesterday-note">
+                        Yesterday’s entry is still freely editable.
+                      </div>
+                    )}
+                  </>
+                )}
                 key={`${userId}-${date}`}
                 userId={userId}
                 date={date}
@@ -357,7 +375,6 @@ function CheckInApp({
           )}
         </div>
         <footer className="page-footer">
-          <span>Just a record. Not a score.</span>
           <span>A new day starts at 2 AM.</span>
         </footer>
       </main>

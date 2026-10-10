@@ -38,6 +38,37 @@ function answer(page: Page, topic: string, choice: string) {
     .getByRole("button", { name: choice, exact: true });
 }
 
+test("visible task activity questions contribute to block and daily totals", async ({
+  page,
+}) => {
+  await preview(page);
+  await tasks(page);
+  await add(page, "school", "Study physics");
+  await add(page, "career", "Update resume");
+  await today(page);
+  await expect(
+    page.getByLabel("Daily checklist progress", { exact: true }),
+  ).toHaveText("0/15 checks complete");
+  await answer(page, "school", "Yes").click();
+  await answer(page, "career", "Yes").click();
+  await expect(
+    page.getByLabel("School checklist progress", { exact: true }),
+  ).toHaveText("1/2 complete");
+  await expect(
+    page.getByLabel("Career checklist progress", { exact: true }),
+  ).toHaveText("1/2 complete");
+  await expect(
+    page.getByLabel("Daily checklist progress", { exact: true }),
+  ).toHaveText("2/15 checks complete");
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(
+    page.getByLabel("Daily checklist progress", { exact: true }),
+  ).toHaveText("0/14 checks complete");
+  await expect(
+    page.getByLabel("School checklist progress", { exact: true }),
+  ).toHaveText("0/1 complete");
+});
+
 test("task groups complete automatically, sort below active tasks, and reset their archive timer", async ({
   page,
 }) => {
@@ -127,14 +158,12 @@ test("daily parent/child selections remain readable after archive, offline reloa
   await expect(recorded).toContainText("Physics");
   await expect(recorded).toContainText("Read notes");
   await page.getByRole("button", { name: "Choose school tasks" }).click();
-  const field = page
-    .locator(".task-activity")
-    .filter({
-      has: page.getByRole("group", {
-        name: "Worked on school tasks?",
-        exact: true,
-      }),
-    });
+  const field = page.locator(".task-activity").filter({
+    has: page.getByRole("group", {
+      name: "Worked on school tasks?",
+      exact: true,
+    }),
+  });
   await field.getByRole("button", { name: "Minimize", exact: true }).click();
   await answer(page, "school", "No").click();
   await page

@@ -4,6 +4,7 @@ import type { ActivityTopic, Answer, Task, TaskSelection } from "../lib/model";
 import { childrenOf, sortTasks, topicLabels } from "../lib/tasks";
 import { BinaryAnswer, Reason } from "./Controls";
 import { useMinimized } from "../lib/displayPreferences";
+import { activityVisible } from "../lib/checklist";
 
 export function TaskActivity({
   topic,
@@ -34,13 +35,7 @@ export function TaskActivity({
   const [minimized, setMinimized] = useMinimized(`activity:${topic}`);
   const available = roots.filter((t) => t.topic === topic);
   const label = `Worked on ${topic} tasks?`;
-  if (
-    !available.length &&
-    status === null &&
-    !reason.trim() &&
-    !selections.length
-  )
-    return null;
+  if (!activityVisible(topic, roots, status, reason, selections)) return null;
   const change = (next: TaskSelection[]) => {
     if (locked) onAttempt();
     else onSelections(next);

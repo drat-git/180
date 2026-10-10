@@ -8,16 +8,19 @@ import {
   X,
 } from "lucide-react";
 import type { Answer } from "../lib/model";
+import type { ChecklistCount } from "../lib/checklist";
 import { useMinimized } from "../lib/displayPreferences";
 export function ChecklistBlock({
   title,
   icon,
   preferenceKey,
+  progress,
   children,
 }: {
   title: string;
   icon?: ReactNode;
   preferenceKey?: string;
+  progress?: ChecklistCount;
   children: ReactNode;
 }) {
   const [minimized, setMinimized] = useMinimized(
@@ -38,7 +41,17 @@ export function ChecklistBlock({
               {icon}
             </span>
           )}
-          <h3>{title}</h3>
+          <div className="block-title-text">
+            <h3>{title}</h3>
+            {progress && (
+              <span
+                className="block-progress"
+                aria-label={`${title} checklist progress`}
+              >
+                {progress.completed}/{progress.total} complete
+              </span>
+            )}
+          </div>
         </div>
         <button
           type="button"
@@ -73,6 +86,7 @@ export function BinaryAnswer({
         <button
           key={String(answer)}
           type="button"
+          data-answer={answer ? "yes" : "no"}
           aria-pressed={value === answer}
           className={value === answer ? "selected" : ""}
           onClick={() => onChange(answer)}

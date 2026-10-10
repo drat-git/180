@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
   Activity,
@@ -35,6 +35,7 @@ import { TaskActivity } from "./TaskActivity";
 import { useTasks } from "../lib/useTasks";
 import { Journal } from "./Journal";
 import { DisplayPreferencesProvider } from "../lib/displayPreferences";
+import { checklistProgress, type ChecklistProgress } from "../lib/checklist";
 export function DailyCheckIn({
   userId,
   date,
@@ -42,6 +43,7 @@ export function DailyCheckIn({
   preview,
   onSaving,
   onError,
+  renderHeader,
 }: {
   userId: string;
   date: string;
@@ -49,6 +51,7 @@ export function DailyCheckIn({
   preview: boolean;
   onSaving: (delta: number) => void;
   onError: (v: string) => void;
+  renderHeader?: (progress: ChecklistProgress) => ReactNode;
 }) {
   const entry = useLiveQuery(
     () => db.entries.get([userId, date]),
@@ -108,11 +111,7 @@ export function DailyCheckIn({
     ) : null;
   }
   const { tasks, roots } = useTasks(userId);
-  const hasSchoolActivity =
-    roots.some((t) => t.topic === "school") ||
-    data.schoolTasksStatus !== null ||
-    !!data.schoolTasksReason.trim() ||
-    data.schoolTasksWorkedOn.length > 0;
+  const progress = checklistProgress(data, date, roots);
   function activity(topic: ActivityTopic) {
     const statusKey = `${topic}TasksStatus` as const;
     const reasonKey = `${topic}TasksReason` as const;
@@ -328,97 +327,119 @@ export function DailyCheckIn({
     </div>
   );
   return (
-    <DisplayPreferencesProvider userId={userId}>
-      {locked ? (
-        <div className="past-note">
-          <LockKeyhole size={15} />
-          <span>This past entry is protected.</span>
-          <button className="text-button" onClick={() => requestUnlock()}>
-            Edit entry
-          </button>
-        </div>
-      ) : (
-        unlocked && (
+    <>
+      {renderHeader?.(progress)}
+      <DisplayPreferencesProvider userId={userId}>
+        {locked ? (
           <div className="past-note">
             <LockKeyhole size={15} />
-            <span>Editing past day</span>
+            <span>This past entry is protected.</span>
+            <button className="text-button" onClick={() => requestUnlock()}>
+              Edit entry
+            </button>
           </div>
-        )
-      )}
-      <div className="checkin-layout">
-        <section className="checkin-card">
-          <div className="section-heading">
-            <h2>Daily check-in</h2>
-            <span className="small">Leave anything unanswered.</span>
-          </div>
-          <ChecklistBlock title="General" icon={<Compass size={18} />}>
-            {wakeField}
-            {screenField}
-            {renderFields(["cannabis"])}
-          </ChecklistBlock>
-          {(weekdayOnly || hasSchoolActivity) && (
-            <ChecklistBlock title="School" icon={<GraduationCap size={18} />}>
-              {renderFields(["classAttendance"])}
-              {activity("school")}
+        ) : (
+          unlocked && (
+            <div className="past-note">
+              <LockKeyhole size={15} />
+              <span>Editing past day</span>
+            </div>
+          )
+        )}
+        <div className="checkin-layout">
+          <section className="checkin-card">
+            <div className="section-heading">
+              <h2>Daily check-in</h2>
+            </div>
+            <ChecklistBlock
+              title="General"
+              icon={<Compass size={18} />}
+              progress={progress.blocks.General}
+            >
+              {wakeField}
+              {screenField}
+              {renderFields(["cannabis"])}
             </ChecklistBlock>
-          )}
-          <ChecklistBlock title="Career" icon={<BriefcaseBusiness size={18} />}>
-            {renderFields(["applications"])}
-            {activity("career")}
-          </ChecklistBlock>
-          <ChecklistBlock title="Food" icon={<Utensils size={18} />}>
-            {renderFields(["meal1", "meal2", "snack1", "snack2", "shake"])}
-          </ChecklistBlock>
-          <ChecklistBlock title="Body" icon={<Activity size={18} />}>
-            {renderFields(["amPosture", "pmPosture", "lifted"])}
-          </ChecklistBlock>
-        </section>
-        <Journal
-          userId={userId}
-          date={date}
-          text={data.journalText}
-          onText={(value) => patch({ journalText: value })}
-          locked={locked}
-          onAttempt={() => requestUnlock()}
-          mutate={mutate}
-          preview={preview}
-        />
-      </div>
-      {confirm && (
-        <Modal
-          title="Edit past entry?"
-          onClose={() => {
-            setConfirm(false);
-            deferred.current = null;
-          }}
-        >
-          <p>
-            You’re editing Day {dayNumber(date)} from {dateLabel(date)}. Changes
-            will modify your historical record.
-          </p>
-          <div className="dialog-actions">
-            <button
-              onClick={() => {
-                setConfirm(false);
-                deferred.current = null;
-              }}
+            {progress.blocks.School.total > 0 && (
+              <ChecklistBlock
+                title="School"
+                icon={<GraduationCap size={18} />}
+                progress={progress.blocks.School}
+              >
+                {renderFields(["classAttendance"])}
+                {activity("school")}
+              </ChecklistBlock>
+            )}
+            <ChecklistBlock
+              title="Career"
+              icon={<BriefcaseBusiness size={18} />}
+              progress={progress.blocks.Career}
             >
-              Cancel
-            </button>
-            <button
-              className="primary"
-              onClick={() => {
-                setUnlocked(true);
-                setConfirm(false);
-                deferred.current?.();
-                deferred.current = null;
-              }}
+              {renderFields(["applications"])}
+              {activity("career")}
+            </ChecklistBlock>
+            <ChecklistBlock
+              title="Food"
+              icon={<Utensils size={18} />}
+              progress={progress.blocks.Food}
             >
-              Edit Anyway
-            </button>
-          </div>
-        </Modal>
-      )}
-    </DisplayPreferencesProvider>
+              {renderFields(["meal1", "meal2", "snack1", "snack2", "shake"])}
+            </ChecklistBlock>
+            <ChecklistBlock
+              title="Body"
+              icon={<Activity size={18} />}
+              progress={progress.blocks.Body}
+            >
+              {renderFields(["amPosture", "pmPosture", "lifted"])}
+            </ChecklistBlock>
+          </section>
+          <Journal
+            userId={userId}
+            date={date}
+            text={data.journalText}
+            onText={(value) => patch({ journalText: value })}
+            locked={locked}
+            onAttempt={() => requestUnlock()}
+            mutate={mutate}
+            preview={preview}
+          />
+        </div>
+        {confirm && (
+          <Modal
+            title="Edit past entry?"
+            onClose={() => {
+              setConfirm(false);
+              deferred.current = null;
+            }}
+          >
+            <p>
+              You’re editing Day {dayNumber(date)} from {dateLabel(date)}.
+              Changes will modify your historical record.
+            </p>
+            <div className="dialog-actions">
+              <button
+                onClick={() => {
+                  setConfirm(false);
+                  deferred.current = null;
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="primary"
+                onClick={() => {
+                  setUnlocked(true);
+                  setConfirm(false);
+                  deferred.current?.();
+                  deferred.current = null;
+                }}
+              >
+                Edit Anyway
+              </button>
+            </div>
+          </Modal>
+        )}
+      </DisplayPreferencesProvider>
+    </>
   );
 }
