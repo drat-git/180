@@ -38,6 +38,8 @@ import { DisplayPreferencesProvider } from "../lib/displayPreferences";
 import {
   cannabisComplete,
   checklistProgress,
+  screenTimeComplete,
+  wakeComplete,
   type ChecklistProgress,
 } from "../lib/checklist";
 export function DailyCheckIn({
@@ -228,6 +230,7 @@ export function DailyCheckIn({
         <input
           id="wake"
           type="time"
+          data-complete={data.wakeTime ? wakeComplete(data) : undefined}
           value={data.wakeTime ?? ""}
           readOnly={locked}
           onFocus={() => {
@@ -247,6 +250,11 @@ export function DailyCheckIn({
           <input
             id="screen-hours"
             type="number"
+            data-complete={
+              data.screenTimeMinutes !== null
+                ? screenTimeComplete(data)
+                : undefined
+            }
             inputMode="numeric"
             min={0}
             max={24}
@@ -285,6 +293,11 @@ export function DailyCheckIn({
           <span>hrs</span>
           <input
             type="number"
+            data-complete={
+              data.screenTimeMinutes !== null
+                ? screenTimeComplete(data)
+                : undefined
+            }
             inputMode="numeric"
             min={0}
             max={59}

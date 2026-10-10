@@ -17,6 +17,8 @@
   --muted: #7b8276;
   --border: #e3e4d9;
   --paper: #fffefa;
+  --complete: #187d95;
+  --incomplete: #9a5a82;
 }
 * {
   box-sizing: border-box;
@@ -488,12 +490,21 @@ main {
   box-shadow: 0 1px 3px #293c3426;
 }
 .answers button.selected[data-complete="true"] {
-  background: #187d95;
+  background: var(--complete);
   color: #ffffff;
 }
 .answers button.selected[data-complete="false"] {
-  background: #9a5a82;
+  background: var(--incomplete);
   color: #ffffff;
+}
+input[data-complete] {
+  border-width: 2px;
+}
+input[data-complete="true"] {
+  border-color: var(--complete);
+}
+input[data-complete="false"] {
+  border-color: var(--incomplete);
 }
 .answers button:hover:not(.selected) {
   background: #e9ece0;

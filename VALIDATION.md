@@ -40,6 +40,12 @@
 - Cannabis uses the same completion helper for both its selected color and checklist count. No counts as zero uses even when an earlier hidden count is preserved. Yes is cyan at one/two uses and magenta at three or more; reducing the count updates both color and progress immediately.
 - All **38 unit tests** and **38 desktop/phone browser tests** passed, along with the production build. New browser coverage verifies icons, exact colors, cannabis thresholds, preserved counts after switching answers, clearing, and reload persistence. Updated desktop and phone screenshots inspected.
 
+## Time input completion borders — October 10, 2026
+
+- Wake time and both screen-time boxes show cyan borders at or below their completion thresholds and muted magenta borders above them. Unanswered/cleared inputs remain neutral. Colors remain visible while inputs are focused, and both screen boxes reflect their combined duration.
+- The **40 desktop/phone browser tests** passed, including exact thresholds, midnight/zero values, clearing, focus, and saved-border behavior after reload. After restoring the latest pushed baseline and rebuilding the change, source/test checksums matched that browser-verified version. All **38 unit tests** and the production build passed again.
+- An additional isolated visual preview check was not executed because automatic approval review hit an account usage limit; this did not prevent the already-running browser suite from completing.
+
 ## Remaining device/account checks
 
 - The owner created the real private account with their own password. After confirmation emails did not arrive, the owner explicitly approved activating only this account. Activation succeeded; the existing password was preserved.

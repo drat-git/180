@@ -80,6 +80,46 @@ test("answer icons use cyan and magenta, with cannabis colors following completi
   await page.mouse.move(0, 0);
   await expect(cannabisYes).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 });
+test("wake and screen time borders follow completion, clearing, and saved values", async ({
+  page,
+}) => {
+  await preview(page);
+  const wake = page.getByLabel("Wake-up time", { exact: true });
+  const hours = page.getByLabel("Screen time hours");
+  const minutes = page.getByLabel("Screen time minutes");
+  const cyan = "rgb(24, 125, 149)";
+  const magenta = "rgb(154, 90, 130)";
+  const neutral = "rgb(227, 228, 217)";
+  const borders = async (color: string) => {
+    for (const input of [wake, hours, minutes])
+      await expect(input).toHaveCSS("border-top-color", color);
+  };
+  await borders(neutral);
+  await wake.fill("10:00");
+  await hours.fill("3");
+  await minutes.fill("30");
+  await borders(cyan);
+  await wake.fill("10:01");
+  await minutes.fill("31");
+  await borders(magenta);
+  await expect(page.locator(".save-state")).toContainText(
+    "Saved on this device",
+  );
+  await page.reload();
+  await borders(magenta);
+  await wake.fill("00:00");
+  await hours.fill("0");
+  await minutes.fill("0");
+  await borders(cyan);
+  await wake.fill("");
+  await page
+    .getByRole("button", { name: "Clear screen time", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "Daily check-in", exact: true })
+    .click();
+  await borders(neutral);
+});
 test("checklist progress respects thresholds and survives collapsed blocks and offline reload", async ({
   page,
   context,
