@@ -26,6 +26,7 @@ import { repository } from "./lib/repository";
 import { SyncEngine, type SyncState } from "./lib/sync";
 import { useAuth } from "./lib/auth";
 import { DailyCheckIn } from "./components/DailyCheckIn";
+import { DoStuff } from "./components/DoStuff";
 import { Login } from "./components/Login";
 import { Modal } from "./components/Controls";
 function CheckInApp({
@@ -48,6 +49,7 @@ function CheckInApp({
     [saveError, setSaveError] = useState(""),
     [saveCount, setSaveCount] = useState(0),
     [settings, setSettings] = useState(false);
+  const [screen, setScreen] = useState<"today" | "tasks">("today");
   const saving = saveCount > 0;
   const engine = useRef<SyncEngine | null>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
@@ -89,6 +91,16 @@ function CheckInApp({
       document.removeEventListener("visibilitychange", check);
     };
   }, []);
+  const switchScreen = (next: "today" | "tasks") => {
+    if (repository.hasUnsaved(userId)) {
+      setSaveError(
+        "An edit is still unsaved. Retry saving before changing screens.",
+      );
+      return;
+    }
+    setScreen(next);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
   const navigate = (target: string) => {
     if (repository.hasUnsaved(userId)) {
       setSaveError(
@@ -102,6 +114,7 @@ function CheckInApp({
     }
   };
   const startTouch = (e: TouchEvent) => {
+    if (screen !== "today") return;
     if (
       (e.target as Element).closest(
         'input,textarea,button,label,[role="button"],dialog',
@@ -163,7 +176,10 @@ function CheckInApp({
           aria-label="180 home"
           onClick={(e) => {
             e.preventDefault();
-            navigate(today);
+            if (!repository.hasUnsaved(userId)) {
+              setScreen("today");
+              navigate(today);
+            }
           }}
         >
           180<span>ONE DAY AT A TIME</span>
@@ -238,81 +254,108 @@ function CheckInApp({
             </button>
           </div>
         )}
-        {today < START_DATE ? (
-          <section className="before-start">
-            <span className="eyebrow">A NEW CHAPTER</span>
-            <h1>Your Day 1 begins October 9.</h1>
-            <p>The first check-in opens at 2 AM in your local timezone.</p>
-          </section>
-        ) : (
-          <>
-            <section className={`day-header ${current ? "is-today" : ""}`}>
-              <div className="day-title">
-                <div className="day-badge">
-                  {current ? (
-                    <>
-                      <span className="today-dot" />
-                      TODAY
-                    </>
-                  ) : (
-                    "PAST ENTRY"
-                  )}
-                </div>
-                <h1>
-                  Day {dayNumber(date)}
-                  <span className="day-title-dot">.</span>
-                </h1>
-                <p>{dateLabel(date)}</p>
-              </div>
-              <div className="day-nav">
-                <button
-                  className="icon-button"
-                  aria-label="Previous day"
-                  disabled={!canNavigate(addDays(date, -1), today)}
-                  onClick={() => navigate(addDays(date, -1))}
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <button
-                  className="today-button"
-                  onClick={() => navigate(today)}
-                  disabled={current}
-                >
-                  Today
-                </button>
-                <button
-                  className="icon-button"
-                  aria-label="Next day"
-                  disabled={current}
-                  onClick={() => navigate(addDays(date, 1))}
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </div>
-              <div className="day-decoration" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </div>
-            </section>
-            {!current && date === addDays(today, -1) && (
-              <div className="yesterday-note">
-                Yesterday’s entry is still freely editable.
-              </div>
-            )}
-            <DailyCheckIn
-              key={`${userId}-${date}`}
-              userId={userId}
-              date={date}
-              today={today}
-              preview={preview}
-              onSaving={(delta) =>
-                setSaveCount((count) => Math.max(0, count + delta))
-              }
-              onError={setSaveError}
-            />
-          </>
+        <nav className="screen-nav" aria-label="Main navigation">
+          <button
+            aria-label="Show daily check-in"
+            aria-pressed={screen === "today"}
+            onClick={() => switchScreen("today")}
+          >
+            Today
+          </button>
+          <button
+            aria-pressed={screen === "tasks"}
+            onClick={() => switchScreen("tasks")}
+          >
+            Do Stuff
+          </button>
+        </nav>
+        {screen === "tasks" && (
+          <DoStuff
+            userId={userId}
+            blocked={!!saveError}
+            onSaving={(delta) =>
+              setSaveCount((count) => Math.max(0, count + delta))
+            }
+            onError={setSaveError}
+          />
         )}
+        <div hidden={screen !== "today"}>
+          {today < START_DATE ? (
+            <section className="before-start">
+              <span className="eyebrow">A NEW CHAPTER</span>
+              <h1>Your Day 1 begins October 9.</h1>
+              <p>The first check-in opens at 2 AM in your local timezone.</p>
+            </section>
+          ) : (
+            <>
+              <section className={`day-header ${current ? "is-today" : ""}`}>
+                <div className="day-title">
+                  <div className="day-badge">
+                    {current ? (
+                      <>
+                        <span className="today-dot" />
+                        TODAY
+                      </>
+                    ) : (
+                      "PAST ENTRY"
+                    )}
+                  </div>
+                  <h1>
+                    Day {dayNumber(date)}
+                    <span className="day-title-dot">.</span>
+                  </h1>
+                  <p>{dateLabel(date)}</p>
+                </div>
+                <div className="day-nav">
+                  <button
+                    className="icon-button"
+                    aria-label="Previous day"
+                    disabled={!canNavigate(addDays(date, -1), today)}
+                    onClick={() => navigate(addDays(date, -1))}
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    className="today-button"
+                    onClick={() => navigate(today)}
+                    disabled={current}
+                  >
+                    Today
+                  </button>
+                  <button
+                    className="icon-button"
+                    aria-label="Next day"
+                    disabled={current}
+                    onClick={() => navigate(addDays(date, 1))}
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+                <div className="day-decoration" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </section>
+              {!current && date === addDays(today, -1) && (
+                <div className="yesterday-note">
+                  Yesterday’s entry is still freely editable.
+                </div>
+              )}
+              <DailyCheckIn
+                key={`${userId}-${date}`}
+                userId={userId}
+                date={date}
+                today={today}
+                preview={preview}
+                onSaving={(delta) =>
+                  setSaveCount((count) => Math.max(0, count + delta))
+                }
+                onError={setSaveError}
+              />
+            </>
+          )}
+        </div>
         <footer className="page-footer">
           <span>Just a record. Not a score.</span>
           <span>A new day starts at 2 AM.</span>

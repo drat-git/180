@@ -1,6 +1,6 @@
 # 180
 
-A private, offline-first daily check-in. React + TypeScript + Vite + Tailwind, with Dexie/IndexedDB and Supabase.
+A private, offline-first daily check-in and task list. React + TypeScript + Vite + Tailwind, with Dexie/IndexedDB and Supabase.
 
 Public source repository: [drat-git/180](https://github.com/drat-git/180). The app's account and cloud data remain private. The version before the card/typography refinement is preserved in commit `abb26fe`.
 
@@ -38,7 +38,7 @@ The Auth provider's signup setting can also be disabled after account creation; 
 
 ## iPhone: trusted HTTPS and Home Screen installation
 
-Certificates have been prepared in `.cert/`, including the current Mac LAN address **192.168.4.132**. Certificate keys and the local certificate authority are ignored by Git and are never served.
+Certificates have been prepared in `.cert/` using a previous Mac LAN address, **192.168.4.132**. The addresses below are examples; run setup again and substitute the current address before using the phone instructions. Certificate keys and the local certificate authority are ignored by Git and are never served.
 
 Regenerate them if your Mac's network address changes:
 
@@ -70,7 +70,7 @@ Local-only delivery means the Mac must serve the app for a new install, updates,
 - Day 1 is `2026-10-09`; the day changes at 2 AM in each device's timezone. Date arithmetic uses calendar ordinals rather than elapsed 24-hour intervals.
 - Launch opens the current logical day. Rollover retains the open entry. Traveling recalculates today, without moving stored entries to other dates.
 - Today and yesterday are freely editable. Older days unlock once per visit. Future days and dates before Day 1 are inaccessible.
-- Answers are `boolean | null`. Reasons, descriptions, and counts survive changes of answer. The checklist cards are ordered General, School, Career, Food, and Body. School contains class attendance and is hidden entirely on weekends; Career contains job/internship applications. Block and text minimization is stored separately as account-specific display preferences on this browser, persists across days and app restarts, and changes only when manually toggled.
+- Answers are `boolean | null`. Reasons, descriptions, and counts survive changes of answer. The checklist cards are ordered General, School, Career, Food, and Body. School contains weekday class attendance and the School task-activity prompt; it remains visible on weekends when tasks or recorded activity exist. Career contains job/internship applications and the Career task-activity prompt. Block and text minimization is stored separately as account-specific display preferences on this browser, persists across days and app restarts, and changes only when manually toggled.
 - Wake explanations appear after 10:00; screen-time explanations after 210 minutes. Reasons, food descriptions, and cannabis use descriptions open automatically when applicable and retain their Minimize/reopen controls. Cannabis has optional descriptions for each recorded use, with one shared Minimize control; there is no cannabis Why prompt. Reducing the use count hides additional descriptions without deleting them.
 - Components write through `EntryRepository`. A local transaction updates a record and queues a field patch. Text is saved locally on every change; only network work is debounced.
 - Local-write failures retain the latest unsaved patch in memory and expose a retry action. Navigation is blocked while a failed entry remains unsaved. Clearing browser storage or closing after a failed disk write can lose unsynced/unsaved data; the app does not claim those changes are synced.
@@ -81,7 +81,20 @@ Local-only delivery means the Mac must serve the app for a new install, updates,
 - Photos use stable unique paths. Deletions are tombstoned before object removal, preventing resurrection. Downloaded photos are cached as local blobs. Uncached remote photos require a connection.
 - PWA updates wait for the user's update action; the update control is disabled during local saving or a local-write error.
 
-No to-do lists, analytics, weight, notifications, OCR, nutrition metrics, workout details, or social features are included in V1.
+## Do Stuff
+
+Use **Today / Do Stuff** to switch between the daily record and persistent **School, Career, and Life** task lists. Launch always opens today; returning from Do Stuff retains the daily date you were viewing.
+
+- Add tasks with a title, then use the small Subtask control to add one level of children. Parent completion is automatic: all remaining children must be complete. Parent checkboxes cannot toggle children. Adding an incomplete child reopens a completed parent; deleting its last child returns it to an incomplete standalone task.
+- Completed tasks move below incomplete tasks and remain visible with muted shading and strikethrough for 12 elapsed hours. Unchecking/rechecking resets that timer. Completed children stay under an unfinished parent; the group archives 12 hours after the parent completes. Archived tasks remain stored, with no Archive screen in this phase.
+- Hold a task for Edit/Delete, or use its accessible action button. Deleting a parent requires confirmation and removes its children from the list. Titles and completion history remain stored in tombstoned records.
+- Daily School and Career prompts allow multiple parent and child selections; child selections are optional. Completed items still visible in Do Stuff remain selectable. The selected list minimizes persistently, separately from its topic card. No opens an optional Why box; changing answers preserves hidden selections and reasons. Logging work does not complete a task.
+- Empty topics hide unanswered daily prompts. Days with recorded answers, reasons, or selected tasks retain the prompt even after the current list becomes empty. Class attendance remains hidden on weekends; School task activity is available every day. Life has no daily activity prompt yet.
+- A day's selections retain task UUIDs, parent/child relationships, and title snapshots. Renaming, completing, archiving, or deleting tasks does not rewrite earlier daily records. For future calendar queries, a daily entry's logical date is the work date; its affirmative activity selections identify the parent tasks and the explicitly selected children worked on that day. Selecting a parent alone does not imply work on every child. Editing the day's answer or selections remains an intentional historical correction.
+- `tasks` stores persistent account-owned records. `task_events` retains every server-applied completion/reopening transition, including automatic parent transitions, with occurrence timestamp, recorded logical date, timezone, title, topic, and relationship snapshot. Rechecking never erases earlier events. Completion history uses the device's 2 AM logical day at the time of the action and is not moved during travel.
+- Dexie schema version 2 adds tasks and events without replacing existing records or queues. Local task writes and operations are transactional and retryable; server commands are idempotent and serialized per account, with automatic parent completion in the same transaction. Task operations are independent of daily navigation dates and keep syncing during travel. Foreground expiry/resume updates archive visibility offline without requiring a background job. Task history pulls are paginated to avoid the Data API's row limit.
+
+Anti-Rotting, calendar/analytics screens, weight, notifications, OCR, nutrition metrics, workout details, and social features are deferred.
 
 ## Tests
 
@@ -96,6 +109,6 @@ The unit suite covers dates, thresholds, controls, durable local writes, account
 
 Playwright runs production-PWA browser workflows in desktop and iPhone-sized Chromium contexts. It verifies offline reloads, preserved reasons/descriptions, weekend attendance, historical protections, rollover, threshold boundaries, photo persistence/removal, and layout. This emulation does not replace physical iPhone Safari/Home Screen testing. Trace files are retained only for failures; screenshots are in `test-results/`.
 
-`supabase/tests/daily_record.sql` tests live RPCs, receipt deduplication, validation, image tombstones, row/storage isolation, and registration restrictions. It runs in a transaction and rolls back all fixtures. It was executed successfully against the connected project. To rerun, use the Supabase SQL editor/connector, or set a server-side `SUPABASE_ACCESS_TOKEN` and run `npm run test:database`. Never put that token in a `VITE_` variable.
+`supabase/tests/daily_record.sql` tests live daily/photo RPCs and access restrictions; `supabase/tests/tasks.sql` tests hierarchy, completion history, dates, preserved activity snapshots, retry idempotency, tombstones, and task/history isolation. `npm run test:database` runs both suites. It runs in a transaction and rolls back all fixtures. It was executed successfully against the connected project. To rerun, use the Supabase SQL editor/connector, or set a server-side `SUPABASE_ACCESS_TOKEN` and run `npm run test:database`. Never put that token in a `VITE_` variable.
 
 Migrations in `supabase/migrations/` have been applied to the dedicated project. Generated TypeScript definitions are in `src/lib/database.types.ts`. Use the project's Supabase CLI to generate future migration files, and review RLS/security advisors after schema changes.

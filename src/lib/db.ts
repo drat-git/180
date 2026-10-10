@@ -1,11 +1,15 @@
 import Dexie, { type EntityTable } from "dexie";
 import type {
+  Task,
+  TaskEvent,
   DailyEntry,
   JournalImage,
   ImageBlob,
   PendingOperation,
 } from "./model";
 export class AppDatabase extends Dexie {
+  tasks!: EntityTable<Task, "id">;
+  taskEvents!: EntityTable<TaskEvent, "id">;
   entries!: EntityTable<DailyEntry, "logicalDate">;
   images!: EntityTable<JournalImage, "id">;
   blobs!: EntityTable<ImageBlob, "id">;
@@ -19,6 +23,10 @@ export class AppDatabase extends Dexie {
       blobs: "id,userId",
       outbox: "++id,userId,[userId+logicalDate]",
       meta: "key",
+    });
+    this.version(2).stores({
+      tasks: "id,userId,[userId+topic],parentId",
+      taskEvents: "id,userId,[userId+taskId],[userId+logicalDate],operationId",
     });
   }
 }

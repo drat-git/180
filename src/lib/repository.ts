@@ -5,24 +5,48 @@ import {
   type DailyEntry,
   type EntryPatch,
   type JournalImage,
+  type TaskCommand,
+  type TaskTopic,
+  type PendingOperation,
 } from "./model";
+import { applyTaskCommand } from "./tasks";
+import { logicalDate } from "./dates";
 import { normalizePhoto } from "./photos";
 export interface EntryRepository {
   getDay(userId: string, date: string): Promise<DailyEntry | undefined>;
   patchDay(userId: string, date: string, patch: EntryPatch): Promise<void>;
   addPhoto(userId: string, date: string, file: File): Promise<string>;
   removePhoto(userId: string, id: string): Promise<void>;
+  createTask(
+    userId: string,
+    topic: TaskTopic,
+    title: string,
+    parentId?: string,
+  ): Promise<string>;
+  renameTask(userId: string, taskId: string, title: string): Promise<void>;
+  completeTask(
+    userId: string,
+    taskId: string,
+    complete: boolean,
+  ): Promise<void>;
+  deleteTask(userId: string, taskId: string): Promise<void>;
 }
 export class LocalRepository implements EntryRepository {
   onChange: () => void = () => {};
+  private unsavedTasks = new Map<string, PendingOperation>();
+  private taskWrites: Promise<unknown> = Promise.resolve();
   private unsaved = new Map<string, EntryPatch>();
   hasUnsaved(userId: string) {
-    return [...this.unsaved.keys()].some((key) => key.startsWith(userId + "|"));
+    return (
+      [...this.unsaved.keys()].some((key) => key.startsWith(userId + "|")) ||
+      [...this.unsavedTasks.values()].some((op) => op.userId === userId)
+    );
   }
   unsavedFor(userId: string, date: string) {
     return this.unsaved.get(userId + "|" + date) ?? {};
   }
   async retryUnsaved(userId: string) {
+    await this.flushTaskWrites(userId);
     for (const key of [...this.unsaved.keys()])
       if (key.startsWith(userId + "|"))
         await this.patchDay(userId, key.slice(userId.length + 1), {});
@@ -67,6 +91,94 @@ export class LocalRepository implements EntryRepository {
     if (Object.keys(remaining).length) this.unsaved.set(key, remaining);
     else this.unsaved.delete(key);
     this.onChange();
+  }
+  private flushTaskWrites(userId: string) {
+    const run = this.taskWrites
+      .catch(() => {})
+      .then(async () => {
+        for (const op of this.unsavedTasks.values()) {
+          if (op.userId !== userId) continue;
+          await this.database.transaction(
+            "rw",
+            this.database.tasks,
+            this.database.taskEvents,
+            this.database.outbox,
+            async () => {
+              const before = await this.database.tasks
+                .where("userId")
+                .equals(userId)
+                .toArray();
+              const { tasks, events } = applyTaskCommand(
+                before,
+                userId,
+                op.operationId,
+                op.taskCommand!,
+              );
+              await this.database.tasks.bulkPut(tasks);
+              await this.database.taskEvents.bulkPut(events);
+              await this.database.outbox.add(op);
+            },
+          );
+          this.unsavedTasks.delete(op.operationId);
+          this.onChange();
+        }
+      });
+    this.taskWrites = run;
+    return run;
+  }
+  private mutateTask(
+    userId: string,
+    input: Omit<TaskCommand, "at" | "logicalDate" | "timezone">,
+  ) {
+    const now = new Date();
+    const operationId = createId();
+    this.unsavedTasks.set(operationId, {
+      operationId,
+      userId,
+      logicalDate: logicalDate(now),
+      kind: "task",
+      createdAt: now.toISOString(),
+      taskCommand: {
+        ...input,
+        at: now.toISOString(),
+        logicalDate: logicalDate(now),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+    });
+    return this.flushTaskWrites(userId);
+  }
+  async createTask(
+    userId: string,
+    topic: TaskTopic,
+    title: string,
+    parentId?: string,
+  ) {
+    const taskId = createId();
+    await this.mutateTask(userId, {
+      taskId,
+      action: "create",
+      topic,
+      title: title.trim(),
+      parentId: parentId ?? null,
+    });
+    return taskId;
+  }
+  renameTask(userId: string, taskId: string, title: string) {
+    return this.mutateTask(userId, {
+      taskId,
+      action: "rename",
+      title: title.trim(),
+    });
+  }
+  completeTask(userId: string, taskId: string, complete: boolean) {
+    return this.mutateTask(userId, {
+      taskId,
+      action: "complete",
+      completed: complete,
+    });
+  }
+  deleteTask(userId: string, taskId: string) {
+    return this.mutateTask(userId, { taskId, action: "delete" });
   }
   async addPhoto(userId: string, date: string, file: File) {
     if (!(

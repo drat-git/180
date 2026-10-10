@@ -12,13 +12,17 @@ import { useMinimized } from "../lib/displayPreferences";
 export function ChecklistBlock({
   title,
   icon,
+  preferenceKey,
   children,
 }: {
   title: string;
   icon?: ReactNode;
+  preferenceKey?: string;
   children: ReactNode;
 }) {
-  const [minimized, setMinimized] = useMinimized(`block:${title}`);
+  const [minimized, setMinimized] = useMinimized(
+    `block:${preferenceKey ?? title}`,
+  );
   const contentId = useId();
   return (
     <section

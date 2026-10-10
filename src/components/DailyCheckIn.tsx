@@ -19,6 +19,7 @@ import {
   type EntryPatch,
   type ReasonKey,
   type BinaryKey,
+  type ActivityTopic,
 } from "../lib/model";
 import { weekday, needsUnlock, dayNumber, dateLabel } from "../lib/dates";
 import {
@@ -30,6 +31,8 @@ import {
   CannabisDescriptions,
   ChecklistBlock,
 } from "./Controls";
+import { TaskActivity } from "./TaskActivity";
+import { useTasks } from "../lib/useTasks";
 import { Journal } from "./Journal";
 import { DisplayPreferencesProvider } from "../lib/displayPreferences";
 export function DailyCheckIn({
@@ -103,6 +106,36 @@ export function DailyCheckIn({
         onChange={(value) => patch({ [`${key}Reason`]: value })}
       />
     ) : null;
+  }
+  const { tasks, roots } = useTasks(userId);
+  const hasSchoolActivity =
+    roots.some((t) => t.topic === "school") ||
+    data.schoolTasksStatus !== null ||
+    !!data.schoolTasksReason.trim() ||
+    data.schoolTasksWorkedOn.length > 0;
+  function activity(topic: ActivityTopic) {
+    const statusKey = `${topic}TasksStatus` as const;
+    const reasonKey = `${topic}TasksReason` as const;
+    const selectionKey = `${topic}TasksWorkedOn` as const;
+    return (
+      <TaskActivity
+        topic={topic}
+        roots={roots}
+        tasks={tasks}
+        status={data[statusKey]}
+        reason={data[reasonKey]}
+        selections={data[selectionKey]}
+        locked={locked}
+        onAttempt={() => requestUnlock()}
+        onAnswer={(answer) =>
+          patch({
+            [statusKey]: dataRef.current[statusKey] === answer ? null : answer,
+          })
+        }
+        onReason={(value) => patch({ [reasonKey]: value })}
+        onSelections={(values) => patch({ [selectionKey]: values })}
+      />
+    );
   }
   const weekdayOnly = weekday(date) !== 0 && weekday(date) !== 6;
   function renderFields(keys: BinaryKey[]) {
@@ -323,13 +356,15 @@ export function DailyCheckIn({
             {screenField}
             {renderFields(["cannabis"])}
           </ChecklistBlock>
-          {weekdayOnly && (
+          {(weekdayOnly || hasSchoolActivity) && (
             <ChecklistBlock title="School" icon={<GraduationCap size={18} />}>
               {renderFields(["classAttendance"])}
+              {activity("school")}
             </ChecklistBlock>
           )}
           <ChecklistBlock title="Career" icon={<BriefcaseBusiness size={18} />}>
             {renderFields(["applications"])}
+            {activity("career")}
           </ChecklistBlock>
           <ChecklistBlock title="Food" icon={<Utensils size={18} />}>
             {renderFields(["meal1", "meal2", "snack1", "snack2", "shake"])}

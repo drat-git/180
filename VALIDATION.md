@@ -10,6 +10,18 @@
 - Supabase security advisor: no database findings after the description migration. Auth has a warning for disabled leaked-password protection; see [Supabase password-security settings](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). This migration changes only JSON field validation and leaves ownership policies and permissions intact.
 - HTTPS certificate chain: **verified** with OpenSSL. Leaf certificate includes localhost and the Mac's current LAN IP.
 
+## Do Stuff implementation — October 9, 2026
+
+- Production build passed. **33 unit/component/sync tests** and **32 desktop/phone Chromium browser tests** passed.
+- Tasks support School/Career/Life, one-level subtasks, derived parent completion, rename, hold/keyboard actions, confirmed group deletion, completion sorting, and 12-hour expiry with recheck resets. Completed children remain under unfinished parents. Task-card minimization is independent of daily School/Career minimization.
+- Browser checks verify exact expiry, timer resets, hold cancellation during movement, weekend activity visibility, daily historical protections, multiple parent/child selections, retained reasons, persistent selected-list minimization, offline reload, and historical records remaining visible after archive or deletion.
+- Sync tests verify remote-title/local-completion merge, pending edits over in-flight acknowledgements, completion history deduplication after lost acknowledgements, stale child creation after remote parent deletion, and task synchronization while future daily travel edits remain queued. Local-write failure tests verify atomic rollback and retry without losing task history.
+- Live `daily_record.sql` and `tasks.sql` integration suites passed; all fixtures were rolled back. Both suites run through `npm run test:database` with server-side access credentials. No real-account entries or tasks were created by these tests.
+- Additive task/history migrations were applied to the existing Supabase project; new local migration filenames match the versions assigned by the connector. Existing earlier migration history was preserved. Generated database types were refreshed.
+- Security advisor: no database findings. The previously documented [disabled leaked-password protection warning](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) remains. Performance advisor no longer reports missing foreign-key indexes; newly created indexes have informational unused-index notices until meaningful workload uses them.
+- Desktop and phone screenshots inspected: `artifacts/180-do-stuff-desktop.png`, `artifacts/180-do-stuff-phone.png`, and matching `180-task-activity` screenshots. Their example tasks exist only in isolated test-browser preview databases.
+- No public hosting, archive browser, Anti-Rotting, or calendar screen was added. Physical iPhone Safari/Home Screen installation and full real-account two-device sync remain unverified as described below.
+
 ## Remaining device/account checks
 
 - The owner created the real private account with their own password. After confirmation emails did not arrive, the owner explicitly approved activating only this account. Activation succeeded; the existing password was preserved.

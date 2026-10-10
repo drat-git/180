@@ -25,6 +25,12 @@ export type BinaryKey = (typeof binaryFields)[number]["key"];
 export type ReasonKey = BinaryKey | "wake" | "screenTime";
 export type DailyData = Record<`${BinaryKey}Status`, Answer> &
   Record<`${ReasonKey}Reason`, string> & {
+    schoolTasksStatus: Answer;
+    careerTasksStatus: Answer;
+    schoolTasksReason: string;
+    careerTasksReason: string;
+    schoolTasksWorkedOn: TaskSelection[];
+    careerTasksWorkedOn: TaskSelection[];
     wakeTime: string | null;
     screenTimeMinutes: number | null;
     journalText: string;
@@ -36,6 +42,49 @@ export type DailyData = Record<`${BinaryKey}Status`, Answer> &
     cannabisUseDescriptions: string[];
     applicationsCount: number | null;
   };
+export type TaskTopic = "school" | "career" | "life";
+export type ActivityTopic = "school" | "career";
+export interface TaskSelection {
+  taskId: string;
+  title: string;
+  children: { taskId: string; title: string }[];
+}
+export interface Task {
+  id: string;
+  userId: string;
+  topic: TaskTopic;
+  parentId: string | null;
+  title: string;
+  completedAt: string | null;
+  deletedAt: string | null;
+  revision: number;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface TaskCommand {
+  taskId: string;
+  action: "create" | "rename" | "complete" | "delete";
+  title?: string;
+  topic?: TaskTopic;
+  parentId?: string | null;
+  completed?: boolean;
+  at: string;
+  logicalDate: string;
+  timezone: string;
+}
+export interface TaskEvent {
+  id: string;
+  operationId: string;
+  userId: string;
+  taskId: string;
+  parentId: string | null;
+  topic: TaskTopic;
+  title: string;
+  type: "completed" | "reopened";
+  at: string;
+  logicalDate: string;
+  timezone: string;
+}
 export type EntryPatch = Partial<DailyData>;
 export interface DailyEntry {
   userId: string;
@@ -68,13 +117,20 @@ export interface PendingOperation {
   operationId: string;
   userId: string;
   logicalDate: string;
-  kind: "entry" | "photo-add" | "photo-delete";
+  kind: "entry" | "photo-add" | "photo-delete" | "task";
+  taskCommand?: TaskCommand;
   patch?: EntryPatch;
   imageId?: string;
   createdAt: string;
 }
 export const emptyData = (): DailyData =>
   ({
+    schoolTasksStatus: null,
+    careerTasksStatus: null,
+    schoolTasksReason: "",
+    careerTasksReason: "",
+    schoolTasksWorkedOn: [],
+    careerTasksWorkedOn: [],
     wakeTime: null,
     wakeReason: "",
     screenTimeMinutes: null,

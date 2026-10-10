@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { repository } from "./repository";
 import { supabase } from "./supabase";
+import { pushTask, pullTasks } from "./taskSync";
 import { logicalDate } from "./dates";
 import {
   emptyData,
@@ -140,7 +141,7 @@ export class SyncEngine {
           if (this.stopped) return;
           // Travel can temporarily put a recorded date ahead of local today.
           // Keep that operation queued without blocking accessible-day edits.
-          if (op.logicalDate > logicalDate()) continue;
+          if (op.kind !== "task" && op.logicalDate > logicalDate()) continue;
           await this.push(op);
         }
         await this.pull();
@@ -150,7 +151,11 @@ export class SyncEngine {
           .sortBy("id");
         this.backoff = 1500;
         this.set(queue.length ? "local" : "synced");
-        if (queue.some((op) => op.logicalDate <= logicalDate()))
+        if (
+          queue.some(
+            (op) => op.kind === "task" || op.logicalDate <= logicalDate(),
+          )
+        )
           this.schedule(600);
       };
       // Web Locks serializes workers across tabs. Without it, operation receipts still protect retries.
@@ -174,6 +179,10 @@ export class SyncEngine {
     }
   }
   private async push(op: PendingOperation) {
+    if (op.kind === "task") {
+      await pushTask(this.userId, op);
+      return;
+    }
     if (op.kind === "entry") {
       const { data, error } = await supabase.rpc("apply_entry_patch", {
         p_date: op.logicalDate,
@@ -256,6 +265,7 @@ export class SyncEngine {
     }
   }
   private async pull() {
+    await pullTasks(this.userId);
     const [
       { data: entries, error: entryError },
       { data: images, error: imageError },

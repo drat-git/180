@@ -121,6 +121,103 @@ export type Database = {
         };
         Relationships: [];
       };
+      task_events: {
+        Row: {
+          event_type: string;
+          id: string;
+          logical_date: string;
+          occurred_at: string;
+          operation_id: string;
+          parent_id: string | null;
+          task_id: string;
+          timezone: string;
+          title: string;
+          topic: string;
+          user_id: string;
+        };
+        Insert: {
+          event_type: string;
+          id: string;
+          logical_date: string;
+          occurred_at: string;
+          operation_id: string;
+          parent_id?: string | null;
+          task_id: string;
+          timezone: string;
+          title: string;
+          topic: string;
+          user_id: string;
+        };
+        Update: {
+          event_type?: string;
+          id?: string;
+          logical_date?: string;
+          occurred_at?: string;
+          operation_id?: string;
+          parent_id?: string | null;
+          task_id?: string;
+          timezone?: string;
+          title?: string;
+          topic?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "task_events_user_id_task_id_topic_fkey";
+            columns: ["user_id", "task_id", "topic"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["user_id", "id", "topic"];
+          },
+        ];
+      };
+      tasks: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          parent_id: string | null;
+          revision: number;
+          title: string;
+          topic: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at: string;
+          deleted_at?: string | null;
+          id: string;
+          parent_id?: string | null;
+          revision?: number;
+          title: string;
+          topic: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          parent_id?: string | null;
+          revision?: number;
+          title?: string;
+          topic?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tasks_user_id_parent_id_topic_fkey";
+            columns: ["user_id", "parent_id", "topic"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["user_id", "id", "topic"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -146,11 +243,16 @@ export type Database = {
         };
         Returns: Json;
       };
+      apply_task_operation: {
+        Args: { p_command: Json; p_operation: string };
+        Returns: Json;
+      };
       check_entry_access: {
         Args: { p_date: string; p_timezone: string };
         Returns: undefined;
       };
       valid_daily_data: { Args: { value: Json }; Returns: boolean };
+      valid_daily_data_v1: { Args: { value: Json }; Returns: boolean };
     };
     Enums: {
       [_ in never]: never;
