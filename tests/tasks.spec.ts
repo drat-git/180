@@ -218,16 +218,16 @@ test("rename and deletion preserve the recorded task title and delete parents wi
     .check();
   await tasks(page);
   await page
-    .getByRole("button", { name: "Actions for Resume", exact: true })
-    .click();
+    .getByRole("group", { name: "Task Resume", exact: true })
+    .press("Shift+F10");
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Task title", exact: true })
     .fill("New resume");
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await page
-    .getByRole("button", { name: "Actions for New resume", exact: true })
-    .click();
+    .getByRole("group", { name: "Task New resume", exact: true })
+    .press("Shift+F10");
   await page.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(
     page.getByRole("dialog", { name: "Delete task?" }),

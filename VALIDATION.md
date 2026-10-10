@@ -53,6 +53,12 @@
 - All **56 unit/sync tests**, **54 desktop/phone browser tests**, the production build, and all **three rollback-only live database suites** passed. Coverage includes logical-day rollover, same/later-day undo, archive timer reset, type conversion, deleted-item log removal, hold cancellation, offline reload, lost acknowledgements, stale edits/logs after remote deletion, two-device logging convergence, pagination, additive Dexie upgrade, failed local write recovery, travel, and delayed cloud history.
 - Desktop and phone activity/recap screenshots were inspected. The additive Anti Rotting migration is applied to the existing Supabase project; generated types match it. RLS/permission tests pass. Database advisors report no new security warnings or missing indexes; the previously documented Auth leaked-password warning remains. Real authenticated multi-device browser and physical iPhone testing remain unverified.
 
+## Input, task hierarchy, and Anti Rotting refinements — October 10, 2026
+
+- Compact underlined inputs and auto-growing note/journal textareas keep questions prominent. Daily labels are darker, semibold, and larger. Parent tasks use a stronger title, subtle background, progress count, and connected indented subtasks; completed tasks remain muted and struck through.
+- Removed task and activity ellipsis buttons. Long press, context menu, and keyboard options (Shift+F10 or Enter on a focused row) remain available. Anti Rotting has a lavender background, no type captions or extra empty-state prompt, and no separate Did today section. Its per-activity log buttons and historical recaps remain; one-time activities sort before reusable ideas, with completed one-time activities below active one-time activities.
+- Production build, all **56 unit/sync tests**, and all **58 desktop/phone browser tests** passed. Browser coverage verifies compact textarea expansion, clearing and resizing after navigation, long-press cancellation, keyboard menus, activity ordering after completion/type conversion, absence of redundant UI, offline persistence, and preserved historical recaps. Updated desktop and phone screenshots inspected. JSDOM's missing ResizeObserver is stubbed in unit setup; real resizing is verified in browser tests.
+
 ## Remaining device/account checks
 
 - The owner created the real private account with their own password. After confirmation emails did not arrive, the owner explicitly approved activating only this account. Activation succeeded; the existing password was preserved.

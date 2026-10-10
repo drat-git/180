@@ -1,3 +1,4 @@
+import { AutoTextarea } from "./AutoTextarea";
 import { useEffect, useRef, useId, type ReactNode } from "react";
 import {
   ArrowDownRight,
@@ -181,9 +182,9 @@ export function CollapsibleText({
     <CollapsibleSection {...disclosure} storageKey={ariaLabel} value={value}>
       <label>
         <span>{label}</span>
-        <textarea
+        <AutoTextarea
           aria-label={ariaLabel}
-          rows={2}
+          rows={1}
           placeholder={placeholder}
           value={value}
           readOnly={locked}
@@ -221,9 +222,9 @@ export function CannabisDescriptions({
         {Array.from({ length: count }, (_, index) => (
           <label key={index}>
             <span>Use {index + 1}</span>
-            <textarea
+            <AutoTextarea
               aria-label={`Cannabis use ${index + 1} description`}
-              rows={2}
+              rows={1}
               placeholder="Any details you’d like to record."
               value={values[index] ?? ""}
               readOnly={locked}

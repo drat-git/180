@@ -13,6 +13,7 @@ export function visibleAntiItems(items: AntiItem[], now: number) {
     )
     .sort(
       (a, b) =>
+        Number(a.itemType === "reusable") - Number(b.itemType === "reusable") ||
         Number(!!a.completedAt) - Number(!!b.completedAt) ||
         a.createdAt.localeCompare(b.createdAt) ||
         a.id.localeCompare(b.id),

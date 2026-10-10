@@ -455,8 +455,14 @@ main {
 }
 .field-label {
   line-height: 1.5;
-  font-weight: 450;
   max-width: 63%;
+}
+.field-label,
+.field-line > label {
+  color: #242925;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 .field input[type="time"] {
   width: 130px;
@@ -1450,11 +1456,31 @@ dialog::backdrop {
 }
 
 /* Anti Rotting activity ideas and read-only past-day recaps. */
+.checklist-block[data-block="Anti Rotting"] {
+  --block-tone: #806a91;
+  --block-tint: #e9e0f1;
+  background: #f3eff8;
+  border-color: #e1d8eb;
+}
+.checklist-block[data-block="Anti Rotting"] .block-heading {
+  border-bottom-color: #e1d8eb;
+}
+.checklist-block[data-block="Anti Rotting"] .block-heading h3 {
+  color: #5d486c;
+}
+.checklist-block[data-block="Anti Rotting"] .block-heading button,
+.checklist-block[data-block="Anti Rotting"] .anti-add,
+.checklist-block[data-block="Anti Rotting"] .anti-notes button {
+  color: #786388;
+}
+.checklist-block[data-block="Anti Rotting"] .block-heading button {
+  background: #f8f5fb;
+  border-color: #e1d8eb;
+}
 .anti-intro {
   margin: 0 0 14px;
 }
 .anti-list,
-.anti-today ul,
 .anti-recap {
   list-style: none;
   padding: 0;
@@ -1462,7 +1488,19 @@ dialog::backdrop {
 }
 .anti-item {
   padding: 12px 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #e1d8eb;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.anti-item:focus-visible {
+  outline: 2px solid #a690b7;
+  outline-offset: 3px;
+  border-radius: 5px;
+}
+.anti-row input[type="checkbox"] {
+  accent-color: #806a91;
 }
 .anti-row {
   display: flex;
@@ -1474,7 +1512,7 @@ dialog::backdrop {
   flex: 1;
 }
 .anti-item.is-complete {
-  background: var(--paper);
+  background: #e9e3f0;
   opacity: 0.7;
 }
 .anti-item.is-complete .task-title {
@@ -1487,10 +1525,14 @@ dialog::backdrop {
   font-size: 12px;
   padding: 7px 9px;
   white-space: nowrap;
+  color: #786388;
+  background: #f8f5fb;
+  border-color: #e1d8eb;
 }
 .anti-log-button.selected {
-  color: var(--accent);
-  background: #eaf1e8;
+  color: #624b74;
+  background: #e9e0f1;
+  border-color: #d9cce5;
 }
 .anti-notes {
   margin: 7px 0 0 26px;
@@ -1504,27 +1546,15 @@ dialog::backdrop {
 .anti-add {
   margin-top: 12px;
 }
-.anti-today {
-  border-top: 1px solid var(--border);
-  margin-top: 18px;
-  padding-top: 15px;
-}
-.anti-today-heading,
-.anti-today li,
 .anti-recap li {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
-.anti-today-heading h4 {
-  margin: 0 0 4px;
-}
-.anti-today li,
 .anti-recap li {
   padding: 10px 0;
 }
-.anti-today li span,
 .anti-recap li > div {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -1547,5 +1577,320 @@ dialog::backdrop {
   .anti-log-button {
     font-size: 11px;
     padding: 6px;
+  }
+}
+
+/* Quiet, compact writing surfaces; the question or task remains the focus. */
+input:where(:not([type="checkbox"]):not([type="file"])),
+textarea,
+select {
+  background: transparent;
+  border: 1px solid #e2e6db;
+  border-top-color: transparent;
+  border-right-color: transparent;
+  border-left-color: transparent;
+  border-radius: 3px;
+  color: #34473b;
+}
+input:where(:not([type="checkbox"]):not([type="file"])):focus,
+textarea:focus,
+select:focus {
+  background: #f5f7f130;
+  border-color: #9baa92;
+  box-shadow: 0 0 0 2px #6c8b7409;
+  outline: none;
+}
+input::placeholder,
+textarea::placeholder {
+  color: #99a092;
+}
+.reason {
+  padding-top: 8px;
+}
+.reason label > span,
+.description > span {
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+.reason textarea {
+  padding: 6px 2px;
+  min-height: 34px;
+  max-height: 220px;
+  line-height: 1.55;
+  font-size: 13px;
+}
+.use-descriptions {
+  gap: 8px;
+}
+.description input {
+  padding: 6px 2px;
+  min-height: 32px;
+}
+.field {
+  padding: 15px 0;
+}
+.field input[type="time"] {
+  height: 30px;
+  width: 122px;
+  padding: 4px 5px;
+  background: transparent;
+}
+.duration input {
+  height: 29px;
+  padding: 4px;
+}
+input[data-complete="true"] {
+  border-color: var(--complete);
+}
+input[data-complete="false"] {
+  border-color: var(--incomplete);
+}
+input[data-complete="true"]:focus {
+  border-color: var(--complete);
+}
+input[data-complete="false"]:focus {
+  border-color: var(--incomplete);
+}
+.block-heading h3 {
+  font-size: 24px;
+  letter-spacing: -0.35px;
+}
+.journal-heading h2 {
+  font-size: 27px;
+}
+.journal-card {
+  padding: 22px;
+}
+.journal-input {
+  min-height: 140px;
+  max-height: 480px;
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1.75;
+  margin-top: 16px;
+}
+.journal-input:focus {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.journal-footer {
+  padding-top: 14px;
+  gap: 12px;
+}
+.login-card input {
+  padding: 8px 2px;
+}
+.dialog-content {
+  padding: 26px;
+}
+.dialog-content h2 {
+  font-size: 26px;
+}
+.dialog-content form > label {
+  display: block;
+  font-size: 12px;
+  color: #6c7965;
+  margin: 12px 0;
+}
+.dialog-content form > label > input,
+.dialog-content form > label > textarea,
+.dialog-content form > label > select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 2px;
+  font: inherit;
+  font-size: 14px;
+}
+.dialog-content textarea {
+  min-height: 54px;
+  max-height: 220px;
+  line-height: 1.55;
+}
+.dialog-actions {
+  margin-top: 20px;
+}
+.task-add {
+  margin-top: 12px;
+  gap: 8px;
+}
+.task-add input {
+  padding: 6px 2px;
+  min-height: 32px;
+  font-size: 12px;
+}
+.task-add-button {
+  border: 0;
+  background: transparent;
+  padding: 7px 3px;
+  min-height: 32px;
+  font-size: 11px;
+}
+.task-add-button:hover:not(:disabled) {
+  background: #f0f3e8;
+}
+.task-row {
+  padding: 9px 4px;
+  gap: 10px;
+  font-size: 15px;
+}
+.task-row .task-title {
+  color: #242925;
+  font-weight: 600;
+}
+.task-row:focus-visible {
+  outline: 2px solid #9baa92;
+  outline-offset: 2px;
+}
+.task-list > li {
+  padding: 6px 0;
+}
+.task-list > li.task-group {
+  padding: 8px 0 10px;
+}
+.task-row.is-parent {
+  background: #edf0e650;
+  padding: 10px 8px;
+}
+.task-row.is-parent .task-title {
+  font-weight: 650;
+  line-height: 1.45;
+}
+.task-parent-progress {
+  font-size: 10px;
+  color: #7d8a70;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.15px;
+}
+.task-row .subtask-button {
+  font-size: 10px;
+  gap: 3px;
+  opacity: 0.78;
+  padding: 5px 1px;
+}
+.task-children {
+  padding: 3px 0 0 18px;
+  margin: 0 0 0 16px;
+  border-left: 1px solid #dce3d2;
+}
+.task-children > li {
+  position: relative;
+}
+.task-children > li::before {
+  content: "";
+  position: absolute;
+  top: 23px;
+  left: -18px;
+  width: 14px;
+  border-top: 1px solid #dce3d2;
+}
+.task-row.is-child {
+  padding: 9px 2px;
+  font-size: 14px;
+  color: #59664f;
+}
+.task-row.is-child .task-title {
+  color: #303530;
+  font-weight: 550;
+  line-height: 1.5;
+}
+.task-row.is-child input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  flex-basis: 15px;
+}
+.task-row.is-parent.is-complete,
+.task-row.is-child.is-complete {
+  background: #f0f1ea;
+  color: #818977;
+}
+.task-row.is-complete .task-title {
+  color: #818977;
+}
+.subtask-form {
+  padding: 0 0 4px 34px;
+}
+.task-help {
+  margin: 16px 0 14px;
+}
+.task-picker-toggle {
+  padding: 7px 2px;
+  font-size: 12px;
+  background: transparent;
+  border-color: transparent;
+  border-bottom-color: #e2e6db;
+  border-radius: 3px;
+}
+.task-picker {
+  padding: 8px;
+  background: #fbfcf7;
+}
+.task-child-options {
+  margin-left: 8px;
+  padding-left: 16px;
+  border-left: 1px solid #dce3d2;
+}
+.task-child-options .task-option {
+  font-size: 12px;
+}
+.worked-on-line > span {
+  font-weight: 500;
+}
+.worked-on-list ul ul .worked-on-line > span {
+  font-size: 12px;
+  font-weight: 400;
+  color: #69765f;
+}
+.anti-row .task-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+.anti-log-button {
+  border-radius: 5px;
+}
+.anti-notes {
+  margin-left: 0;
+}
+@media (max-width: 600px) {
+  .journal-card {
+    padding: 20px 18px;
+  }
+  .journal-input {
+    min-height: 120px;
+  }
+  .reason textarea,
+  .description input,
+  .task-add input,
+  .dialog-content form > label > input,
+  .dialog-content form > label > textarea,
+  .dialog-content form > label > select,
+  .login-card input {
+    font-size: 16px;
+  }
+  .reason textarea {
+    min-height: 38px;
+    padding: 5px 2px;
+  }
+  .field input[type="time"] {
+    height: 33px;
+  }
+  .task-row {
+    gap: 8px;
+  }
+  .task-row.is-child {
+    font-size: 14px;
+  }
+  .task-children {
+    margin-left: 15px;
+    padding-left: 16px;
+  }
+  .task-children > li::before {
+    left: -16px;
+    width: 12px;
+  }
+  .dialog-content {
+    padding: 22px;
   }
 }

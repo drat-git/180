@@ -89,7 +89,7 @@ test("wake and screen time borders follow completion, clearing, and saved values
   const minutes = page.getByLabel("Screen time minutes");
   const cyan = "rgb(24, 125, 149)";
   const magenta = "rgb(154, 90, 130)";
-  const neutral = "rgb(227, 228, 217)";
+  const neutral = "rgba(0, 0, 0, 0)";
   const borders = async (color: string) => {
     for (const input of [wake, hours, minutes])
       await expect(input).toHaveCSS("border-top-color", color);

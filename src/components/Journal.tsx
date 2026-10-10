@@ -1,3 +1,4 @@
+import { AutoTextarea } from "./AutoTextarea";
 import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Camera, ImageOff, Trash2, Image as ImageIcon } from "lucide-react";
@@ -126,7 +127,7 @@ export function Journal({
       <label className="sr-only" htmlFor="journal">
         Daily journal
       </label>
-      <textarea
+      <AutoTextarea
         id="journal"
         className="journal-input"
         placeholder="What did you actually do today?"

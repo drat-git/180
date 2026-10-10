@@ -27,8 +27,8 @@ async function edit(
   notes = "",
 ) {
   await page
-    .getByRole("button", { name: `Activity options for ${title}`, exact: true })
-    .click();
+    .getByRole("group", { name: `Activity ${title}`, exact: true })
+    .press("Shift+F10");
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Activity title", exact: true })
@@ -44,15 +44,15 @@ async function edit(
 }
 async function remove(page: Page, title: string) {
   await page
-    .getByRole("button", { name: `Activity options for ${title}`, exact: true })
-    .click();
+    .getByRole("group", { name: `Activity ${title}`, exact: true })
+    .press("Shift+F10");
   await page.getByRole("button", { name: "Delete", exact: true }).click();
   await page
     .getByRole("button", { name: "Delete activity", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 }
-test("reusable ideas, notes, logging and persistent minimization work offline", async ({
+test("reusable ideas, notes and logging persist offline without a separate daily list", async ({
   page,
   context,
 }) => {
@@ -77,10 +77,10 @@ test("reusable ideas, notes, logging and persistent minimization work offline", 
       exact: true,
     }),
   ).toHaveText("Did today");
-  await page
-    .getByRole("region", { name: "Anti Rotting did today", exact: true })
-    .getByRole("button", { name: "Minimize", exact: true })
-    .click();
+  await expect(
+    page.getByRole("region", { name: "Anti Rotting did today", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Hide notes", exact: true }).click();
   await page.reload();
   await page.getByRole("button", { name: "Do Stuff", exact: true }).click();
   await expect(
@@ -90,9 +90,7 @@ test("reusable ideas, notes, logging and persistent minimization work offline", 
     }),
   ).toBeVisible();
   await expect(
-    page
-      .getByRole("region", { name: "Anti Rotting did today", exact: true })
-      .getByRole("button", { name: "Maximize", exact: true }),
+    page.getByRole("button", { name: "View notes", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", {
@@ -122,8 +120,11 @@ test("one-time completion undo removes only automatic logging and resets archive
   ).toBeVisible();
   await complete.uncheck();
   await expect(
-    page.getByRole("region", { name: "Anti Rotting did today", exact: true }),
-  ).toHaveCount(0);
+    page.getByRole("button", {
+      name: "Did this: Watch documentary",
+      exact: true,
+    }),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Did this: Watch documentary", exact: true })
     .click();
@@ -252,10 +253,10 @@ test("same-day completion undo gives worked-on recap only for manually logged it
   );
   await expect(recap.getByText("Completed", { exact: true })).toHaveCount(0);
 });
-test("deleted ideas keep today’s log removable and notes can be edited", async ({
+test("deleted ideas retain historical logs and notes can be edited", async ({
   page,
 }) => {
-  await preview(page);
+  await preview(page, "2026-10-11T01:00:00-04:00");
   await add(page, "Explore a topic");
   await edit(
     page,
@@ -269,20 +270,26 @@ test("deleted ideas keep today’s log removable and notes can be edited", async
     .click();
   await remove(page, "Explore astronomy");
   await expect(
-    page.getByRole("button", {
-      name: "Remove Explore astronomy from did today",
+    page.getByRole("group", {
+      name: "Activity Explore astronomy",
       exact: true,
     }),
-  ).toBeVisible();
-  await page
-    .getByRole("button", {
-      name: "Remove Explore astronomy from did today",
-      exact: true,
-    })
-    .click();
+  ).toHaveCount(0);
   await expect(
     page.getByRole("region", { name: "Anti Rotting did today", exact: true }),
   ).toHaveCount(0);
+  await page.clock.fastForward("01:00:01");
+  await page.getByRole("button", { name: "Show daily check-in" }).click();
+  const recap = page.getByRole("list", {
+    name: "Anti Rotting recap",
+    exact: true,
+  });
+  await expect(
+    recap.getByText("Explore astronomy", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    recap.getByText("Read about stars", { exact: true }),
+  ).toBeVisible();
 });
 test("converting a completed one-time idea to reusable reopens it and removes same-day automatic log", async ({
   page,
@@ -334,4 +341,56 @@ test("holding an activity opens options and moving cancels the hold", async ({
   await page.clock.fastForward(600);
   await page.mouse.up();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("one-time activities precede reusable ideas, including after completion and type changes", async ({
+  page,
+}) => {
+  await preview(page);
+  await add(page, "Go for a walk");
+  await add(page, "Visit the museum", "one-time");
+  await add(page, "Listen to music");
+  await add(page, "Watch a film", "one-time");
+  const titles = page.locator(".anti-list .task-title");
+  await expect(titles).toHaveText([
+    "Visit the museum",
+    "Watch a film",
+    "Go for a walk",
+    "Listen to music",
+  ]);
+  await page
+    .getByRole("checkbox", {
+      name: "Complete activity Visit the museum",
+      exact: true,
+    })
+    .check();
+  await expect(titles).toHaveText([
+    "Watch a film",
+    "Visit the museum",
+    "Go for a walk",
+    "Listen to music",
+  ]);
+  await edit(page, "Listen to music", "Listen to music", "one-time");
+  await expect(titles).toHaveText([
+    "Listen to music",
+    "Watch a film",
+    "Visit the museum",
+    "Go for a walk",
+  ]);
+  await expect(page.locator(".anti-row .small")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /^Activity options for/ }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Anti Rotting did today", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator('[data-block="Anti Rotting"]')).toHaveCSS(
+    "background-color",
+    "rgb(243, 239, 248)",
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
 });

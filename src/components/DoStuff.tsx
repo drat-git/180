@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import {
-  BriefcaseBusiness,
-  GraduationCap,
-  House,
-  MoreHorizontal,
-  Plus,
-} from "lucide-react";
+import { BriefcaseBusiness, GraduationCap, House, Plus } from "lucide-react";
 import type { Task, TaskTopic } from "../lib/model";
 import { repository } from "../lib/repository";
 import { childrenOf, sortTasks, topicLabels } from "../lib/tasks";
@@ -107,7 +101,22 @@ function TaskRow({
   const done = children.filter((t) => t.completedAt).length;
   return (
     <div
-      className={`task-row ${completed ? "is-complete" : ""}`}
+      className={`task-row ${parent ? "is-parent" : task.parentId ? "is-child" : "is-standalone"} ${completed ? "is-complete" : ""}`}
+      role="group"
+      aria-label={`Task ${task.title}`}
+      tabIndex={busy ? -1 : 0}
+      title="Hold for options, or press Shift+F10 when focused."
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget || busy) return;
+        if (
+          e.key === "ContextMenu" ||
+          (e.shiftKey && e.key === "F10") ||
+          e.key === "Enter"
+        ) {
+          e.preventDefault();
+          onMenu();
+        }
+      }}
       onPointerDown={begin}
       onPointerUp={cancel}
       onPointerCancel={cancel}
@@ -152,8 +161,8 @@ function TaskRow({
       <div className="task-copy">
         <span className="task-title">{task.title}</span>
         {parent && (
-          <span className="small">
-            {done} / {children.length} subtasks complete
+          <span className="small task-parent-progress">
+            {done} of {children.length} complete
           </span>
         )}
       </div>
@@ -168,14 +177,6 @@ function TaskRow({
           <span>Subtask</span>
         </button>
       )}
-      <button
-        className="icon-button task-menu-button"
-        aria-label={`Actions for ${task.title}`}
-        disabled={busy}
-        onClick={onMenu}
-      >
-        <MoreHorizontal size={17} />
-      </button>
     </div>
   );
 }
@@ -249,7 +250,10 @@ export function DoStuff({
                 .map((task) => {
                   const children = sortTasks(childrenOf(tasks, task.id));
                   return (
-                    <li key={task.id}>
+                    <li
+                      key={task.id}
+                      className={children.length ? "task-group" : undefined}
+                    >
                       <TaskRow
                         task={task}
                         children={children}

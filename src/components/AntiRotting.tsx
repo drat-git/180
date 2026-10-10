@@ -1,11 +1,11 @@
+import { AutoTextarea } from "./AutoTextarea";
 import { useEffect, useRef, useState } from "react";
-import { Compass, MoreHorizontal, Plus, Check } from "lucide-react";
+import { Compass, Plus, Check } from "lucide-react";
 import type { AntiCommand, AntiItem, AntiItemType } from "../lib/model";
 import { createId } from "../lib/model";
 import { repository } from "../lib/repository";
 import { useAntiRotting } from "../lib/useAntiRotting";
 import { antiRecap, logActive } from "../lib/antiRotting";
-import { dateLabel } from "../lib/dates";
 import { ChecklistBlock, Modal } from "./Controls";
 import { useMinimized } from "../lib/displayPreferences";
 
@@ -50,9 +50,28 @@ function ActivityRow({
   return (
     <li
       className={`anti-item ${completed ? "is-complete" : ""}`}
+      role="group"
+      aria-label={`Activity ${item.title}`}
+      tabIndex={busy ? -1 : 0}
+      title="Hold for options, or press Shift+F10 when focused."
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget || busy) return;
+        if (
+          e.key === "ContextMenu" ||
+          (e.shiftKey && e.key === "F10") ||
+          e.key === "Enter"
+        ) {
+          e.preventDefault();
+          onMenu();
+        }
+      }}
       onPointerDown={(e) => {
         held.current = false;
-        if (e.button !== 0 || (e.target as Element).closest("button,input"))
+        if (
+          busy ||
+          e.button !== 0 ||
+          (e.target as Element).closest("button,input")
+        )
           return;
         start.current = { x: e.clientX, y: e.clientY };
         timer.current = setTimeout(() => {
@@ -81,7 +100,7 @@ function ActivityRow({
       onContextMenu={(e) => {
         e.preventDefault();
         cancel();
-        onMenu();
+        if (!busy) onMenu();
       }}
     >
       <div className="anti-row">
@@ -101,9 +120,6 @@ function ActivityRow({
         )}
         <div className="task-copy">
           <span className="task-title">{item.title}</span>
-          <span className="small">
-            {item.itemType === "reusable" ? "Reusable" : "One-time"}
-          </span>
         </div>
         <button
           className={`anti-log-button ${didToday ? "selected" : ""}`}
@@ -114,14 +130,6 @@ function ActivityRow({
         >
           {didToday && <Check size={13} />}{" "}
           {didToday ? "Did today" : "Did this"}
-        </button>
-        <button
-          className="icon-button"
-          aria-label={`Activity options for ${item.title}`}
-          disabled={busy}
-          onClick={onMenu}
-        >
-          <MoreHorizontal size={17} />
         </button>
       </div>
       {!!item.notes && (
@@ -154,7 +162,6 @@ export function AntiRotting({
 }) {
   const { visible, logs } = useAntiRotting(userId);
   const todayLogs = logs.filter((l) => l.logicalDate === today && logActive(l));
-  const [todayHidden, setTodayHidden] = useMinimized("anti:did-today", false);
   const [form, setForm] = useState<AntiItem | "new" | null>(null),
     [menu, setMenu] = useState<AntiItem | null>(null),
     [remove, setRemove] = useState<AntiItem | null>(null);
@@ -199,11 +206,6 @@ export function AntiRotting({
       icon={<Compass size={18} />}
     >
       <p className="small anti-intro">Something to do instead of scrolling.</p>
-      {!visible.length && (
-        <p className="small task-empty">
-          Add an idea for the next time you’re bored.
-        </p>
-      )}
       <ul className="anti-list">
         {visible.map((item) => (
           <ActivityRow
@@ -237,46 +239,6 @@ export function AntiRotting({
         <Plus size={15} />
         Add activity
       </button>
-      {todayLogs.length > 0 && (
-        <section className="anti-today" aria-label="Anti Rotting did today">
-          <div className="anti-today-heading">
-            <div>
-              <h4>Did today</h4>
-              <span className="small">{dateLabel(today)}</span>
-            </div>
-            <button
-              className="text-button"
-              aria-expanded={!todayHidden}
-              onClick={() => setTodayHidden(!todayHidden)}
-            >
-              {todayHidden ? "Maximize" : "Minimize"}
-            </button>
-          </div>
-          {!todayHidden && (
-            <ul>
-              {todayLogs.map((log) => (
-                <li key={log.id}>
-                  <span>{log.title}</span>
-                  <button
-                    className="text-button"
-                    aria-label={`Remove ${log.title} from did today`}
-                    disabled={busy || blocked}
-                    onClick={() =>
-                      void mutate({
-                        itemId: log.itemId,
-                        action: "log",
-                        logged: false,
-                      })
-                    }
-                  >
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
       {menu && (
         <Modal title="Activity options" onClose={() => setMenu(null)}>
           <p>{menu.title}</p>
@@ -333,9 +295,9 @@ export function AntiRotting({
             </label>
             <label>
               Notes (optional)
-              <textarea
+              <AutoTextarea
                 aria-label="Activity notes"
-                rows={3}
+                rows={2}
                 maxLength={5000}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
