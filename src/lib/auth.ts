@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
+import { disableInstallation } from "./notifications";
 import { db } from "./db";
 export interface AppUser {
   id: string;
@@ -78,6 +79,7 @@ export function useAuth() {
     };
   }, []);
   async function signOut() {
+    await disableInstallation();
     await db.meta.delete("active-account");
     setUser(null);
     await supabase.auth.signOut({ scope: "local" });

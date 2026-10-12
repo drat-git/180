@@ -6,10 +6,10 @@ async function preview(page: Page, date = "2026-10-12T12:00:00-04:00") {
   await expect(page.getByRole("heading", { name: /Day \d+\./ })).toBeVisible();
 }
 async function tasks(page: Page) {
-  await page.getByRole("button", { name: "Do Stuff", exact: true }).click();
+  await page.getByRole("button", { name: "To-do", exact: true }).click();
 }
 async function today(page: Page) {
-  await page.getByRole("button", { name: "Show daily check-in" }).click();
+  await page.getByRole("button", { name: "Show daily checklist" }).click();
 }
 async function add(page: Page, topic: string, title: string) {
   await page.getByRole("textbox", { name: `New ${topic} task` }).fill(title);

@@ -1,6 +1,6 @@
 # 180
 
-A private, offline-first daily check-in and task list. React + TypeScript + Vite + Tailwind, with Dexie/IndexedDB and Supabase.
+A private, offline-first daily checklist and task list. React + TypeScript + Vite + Tailwind, with Dexie/IndexedDB and Supabase.
 
 Public source repository: [drat-git/180](https://github.com/drat-git/180). The app's account and cloud data remain private. The version before the card/typography refinement is preserved in commit `abb26fe`.
 
@@ -59,7 +59,7 @@ For iPhone:
 3. Install the downloaded profile in Settings → General → VPN & Device Management. Then enable full trust for this certificate in Settings → General → About → Certificate Trust Settings. See [Apple's certificate-trust instructions](https://support.apple.com/en-us/102390).
 4. Stop the certificate-download server. Run `npm run build`, then `npm run preview:https`.
 5. Open `https://192.168.4.132:4173` in Safari, sign in, and use Share → Add to Home Screen.
-6. Reopen the installed app and test offline mode. A first visit and sign-in need internet; subsequent cached check-ins work offline.
+6. Reopen the installed app and test offline mode. A first visit and sign-in need internet; subsequent cached checklists work offline.
 
 The certificate server exposes only the public `.cer` file, never a private key. Keep `.cert/authority/rootCA-key.pem` private. [mkcert documentation](https://github.com/FiloSottile/mkcert) explains local development authorities and their removal. Root trust and physical iPhone installation were not performed automatically.
 
@@ -87,7 +87,7 @@ Local-only delivery means the Mac must serve the app for a new install, updates,
 
 ## Anti Rotting
 
-Do Stuff also includes a collapsible **Anti Rotting** list of your own ideas. Add a title, optional notes, and choose Reusable or One-time. There are no categories, suggestions, subtasks, deadlines, streaks, or progress scores.
+The **Anti Rotting** tab contains a collapsible **Anti Rotting** list of your own ideas. Add a title, optional notes, and choose Reusable or One-time. There are no categories, suggestions, subtasks, deadlines, streaks, or progress scores.
 
 - **Did this / Did today** records or removes one activity log per logical day directly on the activity. One-time activities appear above reusable ideas. Hold an activity (or focus it and press Shift+F10) to edit or delete it. Reusable ideas stay available; past-day recaps preserve logged activities after deletion or archiving.
 - One-time activities have a completion checkbox. Completing automatically logs the day; reopening on that same logical day removes only the automatic contribution, preserving a manual log. Reopening on a later day preserves previous logs. Completed items remain crossed out for 12 elapsed hours; reopening/rechecking resets expiry. Changing a completed item to Reusable reopens it with the same rules.
@@ -96,14 +96,14 @@ Do Stuff also includes a collapsible **Anti Rotting** list of your own ideas. Ad
 - History uses saved records independently of current activity definitions. Late offline sync can populate an already-ended day. No midnight process or app-open requirement exists. Logs store manual/automatic provenance; events record logical date, timezone, occurrence timestamp, and per-item sequence. These support future calendar views; editing old logs and an Archive browser are deferred.
 - Dexie version 3 adds account-partitioned Anti Rotting tables without replacing existing entries, tasks, or pending writes. The idempotent `apply_anti_operation` RPC saves completion, automatic logging, and receipts atomically. Deletion tombstones dominate stale edits; rejected speculative logs are removed on acknowledgement. Writes remain locally retryable, and cloud pulls are paginated.
 
-## Do Stuff
+## To-do
 
-Use **Today / Do Stuff** to switch between the daily record and persistent **School, Career, and Life** task lists. Launch always opens today; returning from Do Stuff retains the daily date you were viewing.
+Use **Today / To-do / Anti Rotting** to switch between the daily record and persistent **School, Career, and Life** task lists. Launch always opens today; returning from another tab retains the daily date you were viewing.
 
 - Add tasks with a title, then use the small Subtask control to add one level of children. Parent completion is automatic: all remaining children must be complete. Parent checkboxes cannot toggle children. Adding an incomplete child reopens a completed parent; deleting its last child returns it to an incomplete standalone task.
 - Completed tasks move below incomplete tasks and remain visible with muted shading and strikethrough for 12 elapsed hours. Unchecking/rechecking resets that timer. Completed children stay under an unfinished parent; the group archives 12 hours after the parent completes. Archived tasks remain stored, with no Archive screen in this phase.
 - Hold a task for Edit/Delete, or use its accessible action button. Deleting a parent requires confirmation and removes its children from the list. Titles and completion history remain stored in tombstoned records.
-- Daily School and Career prompts allow multiple parent and child selections; child selections are optional. Completed items still visible in Do Stuff remain selectable. The selected list minimizes persistently, separately from its topic card. No opens an optional Why box; changing answers preserves hidden selections and reasons. Logging work does not complete a task.
+- Daily School and Career prompts allow multiple parent and child selections; child selections are optional. Completed items still visible in To-do remain selectable. The selected list minimizes persistently, separately from its topic card. No opens an optional Why box; changing answers preserves hidden selections and reasons. Logging work does not complete a task.
 - Today’s School/Career prompt appears for an unfinished task, a parent/child completion recorded today that was not undone today, or saved answers, reasons, or selected tasks. Earlier completed tasks still in their 12-hour display window do not create a new requirement; they remain selectable if another task or saved content makes the question visible. Completing a task does not automatically answer Yes.
 - Past days show a task prompt when a root task was unfinished immediately before the local 2 AM day boundary, a parent/child completion was recorded that day and not undone that day, or daily content was saved. Creating and deleting an unfinished task during the same day leaves no unanswered prompt. Later deletion/completion does not change earlier unfinished days. Reopening on a later day preserves the earlier completion day; completing/reopening/deleting on the same day leaves no requirement unless another task or saved content qualifies.
 - Applicability is derived from retained task records and completion/reopening events, including unopened days and offline history. Questions and checklist totals share the same calculation. Retired daily eligibility flags are ignored; validation still accepts them so older queued patches can sync their actual answers. No daily applicability snapshots, background jobs, or capture writes are needed. Unknown legacy history preserves saved content and known completions without inventing unanswered requirements. Class attendance remains hidden on weekends; School task activity is available every day. Life has no daily activity prompt yet.
@@ -111,7 +111,7 @@ Use **Today / Do Stuff** to switch between the daily record and persistent **Sch
 - `tasks` stores persistent account-owned records. `task_events` retains every server-applied completion/reopening transition, including automatic parent transitions, with occurrence timestamp, recorded logical date, timezone, title, topic, and relationship snapshot. Rechecking never erases earlier events. Completion history uses the device's 2 AM logical day at the time of the action and is not moved during travel.
 - Dexie schema version 2 adds tasks and events without replacing existing records or queues. Local task writes and operations are transactional and retryable; server commands are idempotent and serialized per account, with automatic parent completion in the same transaction. Task operations are independent of daily navigation dates and keep syncing during travel. Foreground expiry/resume updates archive visibility offline without requiring a background job. Task history pulls are paginated to avoid the Data API's row limit.
 
-Calendar/analytics screens, weight, notifications, OCR, nutrition metrics, workout details, and social features are deferred.
+Calendar/analytics screens, weight, OCR, nutrition metrics, workout details, and social features are deferred.
 
 ## Tests
 
@@ -129,3 +129,17 @@ Playwright runs production-PWA browser workflows in desktop and iPhone-sized Chr
 `supabase/tests/daily_record.sql` tests live daily/photo RPCs and access restrictions; `supabase/tests/anti_rotting.sql` tests daily logging, completion undo, snapshots, retry idempotency, validation, deletion, and access isolation. `supabase/tests/tasks.sql` tests hierarchy, completion history, dates, preserved activity snapshots, retry idempotency, tombstones, and task/history isolation. `supabase/tests/food.sql` verifies required breakfast state, new Snack fields, legacy compatibility, hidden text, field merging, and idempotent retries. `npm run test:database` runs all four suites. It runs in a transaction and rolls back all fixtures. It was executed successfully against the connected project. To rerun, use the Supabase SQL editor/connector, or set a server-side `SUPABASE_ACCESS_TOKEN` and run `npm run test:database`. Never put that token in a `VITE_` variable.
 
 Migrations in `supabase/migrations/` have been applied to the dedicated project. Generated TypeScript definitions are in `src/lib/database.types.ts`. Use the project's Supabase CLI to generate future migration files, and review RLS/security advisors after schema changes.
+
+
+## Appearance and daily reminders
+
+**Your space → Appearance** offers manual Light/Dark choices. Light is the default; the device remembers the choice across visits and applies it before rendering. Dark mode uses soft charcoal surfaces and preserves the existing green and lavender accents. This preference is separate from daily entries and cloud data.
+
+**Your space → Daily reminders** enables one daily Web Push notification for the signed-in app installation, defaulting to **9 PM**. It sends regardless of checklist answers. On iPhone, install the HTTPS production app using Add to Home Screen, open that app, then tap Enable reminders and allow notifications. Use Send test notification to confirm delivery. The local preview never registers production reminders. Changing notification settings requires an online authenticated session; errors do not pretend to save. Disabling affects the current installation; explicit sign-out also attempts to unsubscribe it.
+
+- Reminder time follows the installation’s stored IANA timezone, refreshed when that installation opens after travel. Enable/time changes schedule the next future occurrence, without immediate catch-up. The existing 2 AM boundary identifies logical days. Spring gaps use the first valid minute; repeated fall times use the first occurrence.
+- One Supabase Cron job invokes `send-reminders` every minute. `push-settings` verifies the real Auth user and app-owner identity. The dispatch endpoint requires its own private token. Both explicitly implement authentication; gateway legacy JWT verification is disabled to support current signing keys.
+- `push_installations` and `push_deliveries` are server-managed, with RLS enabled and client table privileges revoked. Delivery claims prevent concurrent sends, allow at most three attempts with a two-minute lease, and stop stale reminders at the next 2 AM boundary. Expired subscriptions are disabled. Notification payloads contain no answers or task titles.
+- Push/VAPID keys and the scheduler token live in encrypted Supabase Vault. A service-role-only RPC exposes just these named secrets to Edge Functions. Keys are generated once by the backend; they are never committed or included in the frontend. Pin Edge dependencies in function source. Deploy the files in `supabase/functions` with their shared helpers and `deno.json` files.
+- The custom `injectManifest` service worker keeps offline precaching and prompted updates, handles pushes, and opens Today on notification taps while preserving unsaved edits. Both Vercel frontends use the same scheduler; each installed app receives notifications on its own origin.
+- `supabase/tests/push.sql` adds rollback-only secret/access isolation, claim/concurrency, retry, expiry, and deduplication coverage to `npm run test:database`. Real iPhone permission and delivery must still be confirmed in the installed app; desktop emulation cannot establish that.

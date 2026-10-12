@@ -3,7 +3,7 @@ async function preview(page: Page, time = "2026-10-10T12:00:00-04:00") {
   await page.clock.install({ time: new Date(time) });
   await page.goto("/");
   await page.getByRole("button", { name: "Try the local preview" }).click();
-  await page.getByRole("button", { name: "Do Stuff", exact: true }).click();
+  await page.getByRole("button", { name: "Anti Rotting", exact: true }).click();
 }
 async function add(page: Page, title: string, type = "reusable", notes = "") {
   await page.getByRole("button", { name: "Add activity", exact: true }).click();
@@ -91,7 +91,7 @@ test("reusable ideas, notes and logging persist offline without a separate daily
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Hide notes", exact: true }).click();
   await page.reload();
-  await page.getByRole("button", { name: "Do Stuff", exact: true }).click();
+  await page.getByRole("button", { name: "Anti Rotting", exact: true }).click();
   await expect(
     page.getByRole("button", {
       name: "Remove today’s log for Play basketball",
@@ -178,7 +178,7 @@ test("past-day recap appears at 2 AM, is read-only, and survives rename and dele
     path: `artifacts/180-anti-rotting-${info.project.name}.png`,
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Show daily check-in" }).click();
+  await page.getByRole("button", { name: "Show daily checklist" }).click();
   const totals = await page
     .getByLabel("Daily checklist progress", { exact: true })
     .textContent();
@@ -199,7 +199,7 @@ test("past-day recap appears at 2 AM, is read-only, and survives rename and dele
   await expect(
     page.getByLabel("Daily checklist progress", { exact: true }),
   ).toHaveText(totals!);
-  await page.getByRole("button", { name: "Do Stuff", exact: true }).click();
+  await page.getByRole("button", { name: "Anti Rotting", exact: true }).click();
   await edit(
     page,
     "Read a book",
@@ -215,7 +215,7 @@ test("past-day recap appears at 2 AM, is read-only, and survives rename and dele
     })
     .uncheck();
   await remove(page, "Watch saved documentary");
-  await page.getByRole("button", { name: "Show daily check-in" }).click();
+  await page.getByRole("button", { name: "Show daily checklist" }).click();
   await expect(recap.getByText("Read a book", { exact: true })).toBeVisible();
   await expect(recap.getByText("Chapter five", { exact: true })).toBeVisible();
   await expect(recap.getByText("Completed", { exact: true })).toBeVisible();
@@ -250,7 +250,7 @@ test("same-day completion undo gives worked-on recap only for manually logged it
     await checkbox.uncheck();
   }
   await page.clock.fastForward("01:00:01");
-  await page.getByRole("button", { name: "Show daily check-in" }).click();
+  await page.getByRole("button", { name: "Show daily checklist" }).click();
   const recap = page.getByRole("list", {
     name: "Anti Rotting recap",
     exact: true,
@@ -288,7 +288,7 @@ test("deleted ideas retain historical logs and notes can be edited", async ({
     page.getByRole("region", { name: "Anti Rotting did today", exact: true }),
   ).toHaveCount(0);
   await page.clock.fastForward("01:00:01");
-  await page.getByRole("button", { name: "Show daily check-in" }).click();
+  await page.getByRole("button", { name: "Show daily checklist" }).click();
   const recap = page.getByRole("list", {
     name: "Anti Rotting recap",
     exact: true,

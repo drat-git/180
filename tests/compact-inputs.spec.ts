@@ -19,9 +19,9 @@ test("compact notes grow for text and correctly resize after returning from Do S
   await reason.fill(value);
   await expect(reason).toHaveValue(value);
   expect((await reason.boundingBox())!.height).toBeGreaterThan(empty);
-  await page.getByRole("button", { name: "Do Stuff", exact: true }).click();
+  await page.getByRole("button", { name: "To-do", exact: true }).click();
   await page.setViewportSize({ width: 360, height: 780 });
-  await page.getByRole("button", { name: "Show daily check-in" }).click();
+  await page.getByRole("button", { name: "Show daily checklist" }).click();
   await expect(reason).toHaveValue(value);
   expect(
     await reason.evaluate((node) => node.scrollHeight <= node.clientHeight + 1),

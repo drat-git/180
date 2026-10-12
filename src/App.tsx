@@ -26,6 +26,11 @@ import { repository } from "./lib/repository";
 import { SyncEngine, type SyncState } from "./lib/sync";
 import { useAuth } from "./lib/auth";
 import { DailyCheckIn } from "./components/DailyCheckIn";
+import { Appearance } from "./components/Appearance";
+import { NotificationSettings } from "./components/NotificationSettings";
+import { AntiRotting } from "./components/AntiRotting";
+import { DisplayPreferencesProvider } from "./lib/displayPreferences";
+import { useNotifications } from "./lib/notifications";
 import { DoStuff } from "./components/DoStuff";
 import { Login } from "./components/Login";
 import { Modal } from "./components/Controls";
@@ -49,8 +54,10 @@ function CheckInApp({
     [saveError, setSaveError] = useState(""),
     [saveCount, setSaveCount] = useState(0),
     [settings, setSettings] = useState(false);
-  const [screen, setScreen] = useState<"today" | "tasks">("today");
+  const [screen, setScreen] = useState<"today" | "tasks" | "anti">("today");
+  const notifications = useNotifications(userId, preview);
   const saving = saveCount > 0;
+  const notificationPending = useRef(false);
   const engine = useRef<SyncEngine | null>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const pending =
@@ -91,7 +98,7 @@ function CheckInApp({
       document.removeEventListener("visibilitychange", check);
     };
   }, []);
-  const switchScreen = (next: "today" | "tasks") => {
+  const switchScreen = (next: "today" | "tasks" | "anti") => {
     if (repository.hasUnsaved(userId)) {
       setSaveError(
         "An edit is still unsaved. Retry saving before changing screens.",
@@ -113,6 +120,41 @@ function CheckInApp({
       window.scrollTo({ top: 0, behavior: "instant" });
     }
   };
+  useEffect(() => {
+    const openToday = () => {
+      if (saving) {
+        notificationPending.current = true;
+        return;
+      }
+      if (repository.hasUnsaved(userId)) {
+        notificationPending.current = true;
+        setSaveError(
+          "Finish saving your edit before opening today’s checklist.",
+        );
+        return;
+      }
+      notificationPending.current = false;
+      setScreen("today");
+      setDate(logicalDate());
+      window.scrollTo({ top: 0, behavior: "instant" });
+    };
+    const message = (event: MessageEvent) => {
+      if (event.data?.type === "OPEN_TODAY") openToday();
+    };
+    navigator.serviceWorker?.addEventListener("message", message);
+    if (
+      notificationPending.current &&
+      !saving &&
+      !repository.hasUnsaved(userId)
+    )
+      openToday();
+    if (new URLSearchParams(location.search).get("view") === "today") {
+      openToday();
+      history.replaceState({}, "", location.pathname);
+    }
+    return () =>
+      navigator.serviceWorker?.removeEventListener("message", message);
+  }, [userId, saving, saveError]);
   const startTouch = (e: TouchEvent) => {
     if (screen !== "today") return;
     if (
@@ -256,7 +298,7 @@ function CheckInApp({
         )}
         <nav className="screen-nav" aria-label="Main navigation">
           <button
-            aria-label="Show daily check-in"
+            aria-label="Show daily checklist"
             aria-pressed={screen === "today"}
             onClick={() => switchScreen("today")}
           >
@@ -266,26 +308,49 @@ function CheckInApp({
             aria-pressed={screen === "tasks"}
             onClick={() => switchScreen("tasks")}
           >
-            Do Stuff
+            To-do
+          </button>
+          <button
+            aria-pressed={screen === "anti"}
+            onClick={() => switchScreen("anti")}
+          >
+            Anti Rotting
           </button>
         </nav>
-        {screen === "tasks" && (
+        <div hidden={screen !== "tasks"}>
           <DoStuff
             userId={userId}
-            today={today}
             blocked={!!saveError}
             onSaving={(delta) =>
               setSaveCount((count) => Math.max(0, count + delta))
             }
             onError={setSaveError}
           />
-        )}
+        </div>
+        <div hidden={screen !== "anti"}>
+          <DisplayPreferencesProvider userId={userId}>
+            <section className="do-stuff-heading">
+              <h1>
+                Anti Rotting<span className="day-title-dot">.</span>
+              </h1>
+            </section>
+            <AntiRotting
+              userId={userId}
+              today={today}
+              blocked={!!saveError}
+              onSaving={(delta) =>
+                setSaveCount((count) => Math.max(0, count + delta))
+              }
+              onError={setSaveError}
+            />
+          </DisplayPreferencesProvider>
+        </div>
         <div hidden={screen !== "today"}>
           {today < START_DATE ? (
             <section className="before-start">
               <span className="eyebrow">A NEW CHAPTER</span>
               <h1>Your Day 1 begins October 9.</h1>
-              <p>The first check-in opens at 2 AM in your local timezone.</p>
+              <p>The first checklist opens at 2 AM in your local timezone.</p>
             </section>
           ) : (
             <>
@@ -398,6 +463,8 @@ function CheckInApp({
               ? "You’re using the local preview. Your preview entries are separate from your private account."
               : email}
           </p>
+          <Appearance />
+          <NotificationSettings controller={notifications} preview={preview} />
           <div className="settings-info">
             <p>
               <WifiOff size={15} />

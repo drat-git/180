@@ -1,0 +1,5 @@
+project_id = "180"
+[functions.push-settings]
+verify_jwt = false
+[functions.send-reminders]
+verify_jwt = false

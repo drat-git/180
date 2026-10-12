@@ -116,7 +116,7 @@ test("wake and screen time borders follow completion, clearing, and saved values
     .getByRole("button", { name: "Clear screen time", exact: true })
     .click();
   await page
-    .getByRole("heading", { name: "Daily check-in", exact: true })
+    .getByRole("heading", { name: "Daily checklist", exact: true })
     .click();
   await borders(neutral);
 });
@@ -250,12 +250,14 @@ test("weekends omit class and older edits ask once per visit", async ({
   await expect(
     page.getByRole("group", { name: "Attended class" }),
   ).toBeVisible();
-  await expect(page.locator(".block-heading h3")).toHaveText(blockOrder);
+  await expect(page.locator(".block-heading h3:visible")).toHaveText(
+    blockOrder,
+  );
   await page.getByRole("button", { name: "Previous day" }).click();
   await expect(
     page.getByRole("region", { name: "School", exact: true }),
   ).toHaveCount(0);
-  await expect(page.locator(".block-heading h3")).toHaveText(
+  await expect(page.locator(".block-heading h3:visible")).toHaveText(
     blockOrder.filter((title) => title !== "School"),
   );
   await expect(page.getByRole("group", { name: "Attended class" })).toHaveCount(
@@ -499,7 +501,9 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
   context,
 }) => {
   await preview(page);
-  await expect(page.locator(".block-heading h3")).toHaveText(blockOrder);
+  await expect(page.locator(".block-heading h3:visible")).toHaveText(
+    blockOrder,
+  );
   const food = page.getByRole("region", { name: "Food", exact: true });
   const body = page.getByRole("region", { name: "Body", exact: true });
   const general = page.getByRole("region", { name: "General", exact: true });

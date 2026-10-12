@@ -206,6 +206,89 @@ export type Database = {
         };
         Relationships: [];
       };
+      push_deliveries: {
+        Row: {
+          attempts: number;
+          expires_at: string;
+          installation_id: string;
+          lease_until: string;
+          logical_date: string;
+          status: string;
+        };
+        Insert: {
+          attempts?: number;
+          expires_at: string;
+          installation_id: string;
+          lease_until?: string;
+          logical_date: string;
+          status?: string;
+        };
+        Update: {
+          attempts?: number;
+          expires_at?: string;
+          installation_id?: string;
+          lease_until?: string;
+          logical_date?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_deliveries_installation_id_fkey";
+            columns: ["installation_id"];
+            isOneToOne: false;
+            referencedRelation: "push_installations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      push_installations: {
+        Row: {
+          auth: string;
+          created_at: string;
+          enabled: boolean;
+          endpoint: string;
+          id: string;
+          last_test_at: string | null;
+          next_send_at: string;
+          origin: string;
+          p256dh: string;
+          reminder_time: string;
+          timezone: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          auth: string;
+          created_at?: string;
+          enabled?: boolean;
+          endpoint: string;
+          id: string;
+          last_test_at?: string | null;
+          next_send_at: string;
+          origin: string;
+          p256dh: string;
+          reminder_time?: string;
+          timezone: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          auth?: string;
+          created_at?: string;
+          enabled?: boolean;
+          endpoint?: string;
+          id?: string;
+          last_test_at?: string | null;
+          next_send_at?: string;
+          origin?: string;
+          p256dh?: string;
+          reminder_time?: string;
+          timezone?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       task_events: {
         Row: {
           event_type: string;
@@ -339,6 +422,14 @@ export type Database = {
       check_entry_access: {
         Args: { p_date: string; p_timezone: string };
         Returns: undefined;
+      };
+      claim_push_delivery: {
+        Args: { p_day: string; p_expires: string; p_installation: string };
+        Returns: boolean;
+      };
+      push_backend_config: {
+        Args: { p_private?: string; p_public?: string };
+        Returns: Json;
       };
       valid_daily_data: { Args: { value: Json }; Returns: boolean };
       valid_daily_data_v1: { Args: { value: Json }; Returns: boolean };

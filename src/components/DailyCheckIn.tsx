@@ -397,7 +397,7 @@ export function DailyCheckIn({
         <div className="checkin-layout">
           <section className="checkin-card">
             <div className="section-heading">
-              <h2>Daily check-in</h2>
+              <h2>Daily checklist</h2>
             </div>
             <ChecklistBlock
               title="General"
