@@ -9,7 +9,7 @@ async function preview(
   await page.goto("/");
   await page.getByRole("button", { name: "Try the local preview" }).click();
   await expect(
-    page.getByRole("heading", { name: `Day ${day}.` }),
+    page.getByRole("heading", { name: `Day ${day}` }),
   ).toBeVisible();
 }
 const answer = (
@@ -299,12 +299,12 @@ test("rollover retains the open journal and updates today navigation", async ({
     .fill("Late-night thoughts");
   await expect(page.getByRole("status")).toContainText("Saved on this device");
   await page.clock.fastForward("00:00:15");
-  await expect(page.getByRole("heading", { name: "Day 3." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Day 3" })).toBeVisible();
   await expect(
     page.getByRole("textbox", { name: "Daily journal", exact: true }),
   ).toHaveValue("Late-night thoughts");
   await page.getByRole("button", { name: "Today", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Day 4." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Day 4" })).toBeVisible();
   await expect(
     page.getByRole("textbox", { name: "Daily journal", exact: true }),
   ).toHaveValue("");
@@ -676,16 +676,16 @@ test("swipes stop at today and Day 1, and ignore journal input gestures", async 
     }, dx);
   }
   await swipe(".day-header", -120);
-  await expect(page.getByRole("heading", { name: "Day 4." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Day 4" })).toBeVisible();
   await swipe(".day-header", 120);
-  await expect(page.getByRole("heading", { name: "Day 3." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Day 3" })).toBeVisible();
   await swipe("#journal", 120);
-  await expect(page.getByRole("heading", { name: "Day 3." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Day 3" })).toBeVisible();
   await swipe(".day-header", 120);
   await swipe(".day-header", 120);
-  await expect(page.getByRole("heading", { name: "Day 1." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Day 1" })).toBeVisible();
   await swipe(".day-header", 120);
-  await expect(page.getByRole("heading", { name: "Day 1." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Day 1" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Previous day" }),
   ).toBeDisabled();

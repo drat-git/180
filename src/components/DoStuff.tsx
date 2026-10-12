@@ -225,10 +225,11 @@ export function DoStuff({
   return (
     <DisplayPreferencesProvider userId={userId}>
       <section className="do-stuff-heading">
-        <h1>
-          To-do<span className="day-title-dot">.</span>
-        </h1>
-        <p>A few things worth getting to.</p>
+        <h1>To-do</h1>
+        <p>
+          “When you want something, all the universe conspires in helping you to
+          achieve it.”
+        </p>
       </section>
       <div className="task-topics">
         {(["school", "career", "life"] as const).map((topic) => (

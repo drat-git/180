@@ -3,7 +3,7 @@ async function preview(page: Page, date = "2026-10-12T12:00:00-04:00") {
   await page.clock.install({ time: new Date(date) });
   await page.goto("/");
   await page.getByRole("button", { name: "Try the local preview" }).click();
-  await expect(page.getByRole("heading", { name: /Day \d+\./ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Day \d+/ })).toBeVisible();
 }
 async function tasks(page: Page) {
   await page.getByRole("button", { name: "To-do", exact: true }).click();

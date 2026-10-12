@@ -157,7 +157,7 @@ test("Days 1–3 retain their original food fields, counts, and saved records ac
   await page.clock.setSystemTime(new Date("2026-10-12T12:00:00-04:00"));
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Day 4.", exact: true }),
+    page.getByRole("heading", { name: "Day 4", exact: true }),
   ).toBeVisible();
   await expect(answer(page, original, "Yes")).toHaveAttribute(
     "aria-pressed",

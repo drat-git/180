@@ -100,6 +100,6 @@ test("a reminder opens Today from another tab and an older date", async ({
       .getByRole("button", { name: "Show daily checklist" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
-    page.getByRole("heading", { name: "Day 4.", exact: true }),
+    page.getByRole("heading", { name: "Day 4", exact: true }),
   ).toBeVisible();
 });

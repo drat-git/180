@@ -329,11 +329,6 @@ function CheckInApp({
         </div>
         <div hidden={screen !== "anti"}>
           <DisplayPreferencesProvider userId={userId}>
-            <section className="do-stuff-heading">
-              <h1>
-                Anti Rotting<span className="day-title-dot">.</span>
-              </h1>
-            </section>
             <AntiRotting
               userId={userId}
               today={today}
@@ -371,10 +366,7 @@ function CheckInApp({
                             "PAST ENTRY"
                           )}
                         </div>
-                        <h1>
-                          Day {dayNumber(date)}
-                          <span className="day-title-dot">.</span>
-                        </h1>
+                        <h1>Day {dayNumber(date)}</h1>
                         <p>{dateLabel(date)}</p>
                         <div
                           className="day-progress"
