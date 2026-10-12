@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { ActivityTopic, Answer, Task, TaskSelection } from "../lib/model";
 import { childrenOf, sortTasks, topicLabels } from "../lib/tasks";
 import { BinaryAnswer, Reason } from "./Controls";
@@ -177,19 +177,6 @@ export function TaskActivity({
                     <li key={selection.taskId}>
                       <div className="worked-on-line">
                         <span>{selection.title}</span>
-                        <button
-                          className="icon-button"
-                          aria-label={`Remove recorded task ${selection.title}`}
-                          onClick={() =>
-                            change(
-                              selections.filter(
-                                (s) => s.taskId !== selection.taskId,
-                              ),
-                            )
-                          }
-                        >
-                          <X size={13} />
-                        </button>
                       </div>
                       {selection.children.length > 0 && (
                         <ul>
@@ -197,27 +184,6 @@ export function TaskActivity({
                             <li key={child.taskId}>
                               <div className="worked-on-line">
                                 <span>{child.title}</span>
-                                <button
-                                  className="icon-button"
-                                  aria-label={`Remove recorded subtask ${child.title}`}
-                                  onClick={() =>
-                                    change(
-                                      selections.map((s) =>
-                                        s.taskId !== selection.taskId
-                                          ? s
-                                          : {
-                                              ...s,
-                                              children: s.children.filter(
-                                                (c) =>
-                                                  c.taskId !== child.taskId,
-                                              ),
-                                            },
-                                      ),
-                                    )
-                                  }
-                                >
-                                  <X size={13} />
-                                </button>
                               </div>
                             </li>
                           ))}
