@@ -63,10 +63,10 @@ test("visible task activity questions contribute to block and daily totals", asy
   await page.getByRole("button", { name: "Previous day" }).click();
   await expect(
     page.getByLabel("Daily checklist progress", { exact: true }),
-  ).toHaveText("0/14 checks complete");
+  ).toHaveText("0/12 checks complete");
   await expect(
     page.getByLabel("School checklist progress", { exact: true }),
-  ).toHaveText("0/1 complete");
+  ).toHaveCount(0);
 });
 
 test("task groups complete automatically, sort below active tasks, and reset their archive timer", async ({
@@ -248,11 +248,13 @@ test("rename and deletion preserve the recorded task title and delete parents wi
 test("school work appears on weekends; historical task edits ask once and Life has no daily prompt", async ({
   page,
 }) => {
-  await preview(page);
+  await preview(page, "2026-10-10T12:00:00-04:00");
   await tasks(page);
   await add(page, "school", "Homework");
   await add(page, "life", "Laundry");
+  await page.clock.fastForward("48:00:00");
   await today(page);
+  await page.getByRole("button", { name: "Today", exact: true }).click();
   await page.getByRole("button", { name: "Previous day" }).click();
   await expect(
     page.getByRole("group", { name: "Attended class", exact: true }),
@@ -397,4 +399,199 @@ test("representative task and daily-selection layouts fit desktop and phone", as
     path: `artifacts/180-task-activity-${test.info().project.name}.png`,
     fullPage: true,
   });
+});
+
+async function remove(page: Page, title: string) {
+  const row = page.getByRole("group", { name: `Task ${title}`, exact: true });
+  await expect(row).toHaveAttribute("tabindex", "0");
+  await row.press("Shift+F10");
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+  const confirmation = page.getByRole("button", {
+    name: "Delete task",
+    exact: true,
+  });
+  if (await confirmation.count()) await confirmation.click();
+  await expect(row).toHaveCount(0);
+}
+const question = (page: Page, topic = "school") =>
+  page.getByRole("group", { name: `Worked on ${topic} tasks?`, exact: true });
+
+test("yesterday's completion remains selectable but never creates today's question", async ({
+  page,
+}) => {
+  await preview(page, "2026-10-09T23:00:00-04:00");
+  await tasks(page);
+  await add(page, "school", "Old homework");
+  await page
+    .getByRole("checkbox", { name: "Complete Old homework", exact: true })
+    .check();
+  await expect(
+    page.getByRole("checkbox", { name: "Complete Old homework", exact: true }),
+  ).toBeChecked();
+  await page.clock.fastForward("03:00:01");
+  await today(page);
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(question(page)).toHaveCount(0);
+  await tasks(page);
+  await expect(
+    page.getByRole("checkbox", { name: "Complete Old homework", exact: true }),
+  ).toBeVisible();
+  await add(page, "school", "New homework");
+  await today(page);
+  await answer(page, "school", "Yes").click();
+  await page.getByRole("button", { name: "Choose school tasks" }).click();
+  await expect(
+    page.getByRole("checkbox", { name: "Old homework Completed", exact: true }),
+  ).toBeVisible();
+  await answer(page, "school", "Yes").click(); // Clear the answer, no content was saved.
+  await tasks(page);
+  await remove(page, "New homework");
+  await today(page);
+  await expect(question(page)).toHaveCount(0);
+  await page.clock.fastForward("09:00:00");
+  await expect(question(page)).toHaveCount(0);
+  await page.clock.fastForward("15:00:00");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(question(page)).toHaveCount(0); // Saturday had only older completion + deleted task.
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(question(page)).toBeVisible(); // Friday's actual completion is preserved.
+});
+
+test("completion keeps today's unanswered question after archive and survives later navigation", async ({
+  page,
+}) => {
+  await preview(page, "2026-10-09T03:00:00-04:00");
+  await tasks(page);
+  await add(page, "career", "Resume");
+  await page
+    .getByRole("checkbox", { name: "Complete Resume", exact: true })
+    .check();
+  await page.clock.fastForward("12:00:01");
+  await expect(
+    page.getByRole("checkbox", { name: "Complete Resume", exact: true }),
+  ).toHaveCount(0);
+  await today(page);
+  await expect(question(page, "career")).toBeVisible();
+  await expect(
+    page.getByLabel("Daily checklist progress", { exact: true }),
+  ).toHaveText("0/14 checks complete");
+  await page.clock.fastForward("11:00:00");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(question(page, "career")).toHaveCount(0);
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(question(page, "career")).toBeVisible();
+});
+
+test("deletion removes today's unanswered question while preserving unopened unfinished days", async ({
+  page,
+  context,
+}) => {
+  await preview(page, "2026-10-09T12:00:00-04:00");
+  await tasks(page);
+  await add(page, "school", "Carryover");
+  await page.clock.fastForward("48:00:00");
+  await remove(page, "Carryover");
+  await today(page);
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(question(page)).toHaveCount(0);
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(question(page)).toBeVisible(); // Saturday was never opened until now.
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(question(page)).toBeVisible();
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await context.setOffline(true);
+  await page.reload();
+  await expect(question(page)).toHaveCount(0); // Launch opens today.
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(question(page)).toBeVisible();
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(question(page)).toBeVisible();
+});
+
+test("same-day creation/deletion and completion undo leave no historical requirement", async ({
+  page,
+}) => {
+  await preview(page, "2026-10-09T12:00:00-04:00");
+  await tasks(page);
+  await add(page, "school", "Temporary");
+  await remove(page, "Temporary");
+  await today(page);
+  await expect(question(page)).toHaveCount(0);
+  await tasks(page);
+  await add(page, "school", "Undo");
+  const check = page.getByRole("checkbox", {
+    name: "Complete Undo",
+    exact: true,
+  });
+  await check.check();
+  await expect(check).toBeChecked();
+  await check.uncheck();
+  await expect(check).not.toBeChecked();
+  await remove(page, "Undo");
+  await today(page);
+  await expect(question(page)).toHaveCount(0);
+  await page.clock.fastForward("24:00:00");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(question(page)).toHaveCount(0);
+});
+
+test("a completed child preserves applicability after its unfinished parent is deleted", async ({
+  page,
+}) => {
+  await preview(page, "2026-10-09T12:00:00-04:00");
+  await tasks(page);
+  await add(page, "school", "Parent");
+  await child(page, "Parent", "Done child");
+  await page
+    .getByRole("textbox", { name: "New subtask", exact: true })
+    .fill("Unfinished child");
+  await page.getByRole("button", { name: "Add subtask", exact: true }).click();
+  await page
+    .getByRole("checkbox", { name: "Complete Done child", exact: true })
+    .check();
+  await expect(
+    page.getByRole("checkbox", { name: "Complete Parent", exact: true }),
+  ).not.toBeChecked();
+  await remove(page, "Parent");
+  await today(page);
+  await expect(question(page)).toBeVisible();
+  await page.clock.fastForward("24:00:00");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(question(page)).toHaveCount(0);
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(question(page)).toBeVisible();
+});
+
+test("saved No and its reason survive deletion without task completion", async ({
+  page,
+}) => {
+  await preview(page, "2026-10-09T12:00:00-04:00");
+  await tasks(page);
+  await add(page, "career", "Draft resume");
+  await today(page);
+  await answer(page, "career", "No").click();
+  await page
+    .getByRole("textbox", { name: "Worked on career tasks? reason" })
+    .fill("Busy today");
+  await tasks(page);
+  await remove(page, "Draft resume");
+  await today(page);
+  await expect(answer(page, "career", "No")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(
+    page.getByRole("textbox", { name: "Worked on career tasks? reason" }),
+  ).toHaveValue("Busy today");
+  await page.clock.fastForward("24:00:00");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(question(page, "career")).toHaveCount(0);
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Worked on career tasks? reason" }),
+  ).toHaveValue("Busy today");
 });

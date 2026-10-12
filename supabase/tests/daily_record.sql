@@ -35,6 +35,13 @@ begin
   assert failed,'Future date accepted';failed:=false;
   begin perform public.apply_entry_patch(d,gen_random_uuid(),'{}','Not/A/Timezone');exception when others then failed:=true;end;
   assert failed,'Invalid timezone accepted';
+  assert not exists(select 1 from pg_catalog.pg_trigger where tgrelid='public.daily_entries'::regclass and tgname='preserve_task_eligibility'),'Retired eligibility trigger remains';
+  assert to_regprocedure('public.preserve_task_eligibility()') is null,'Retired trigger function remains';
+  result:=public.apply_entry_patch(d,gen_random_uuid(),'{"schoolTasksEligible":true,"schoolTasksStatus":false,"schoolTasksReason":"Keep this real answer"}','America/New_York');
+  assert result->'data'->>'schoolTasksReason'='Keep this real answer','Legacy queued patch lost its real answer';
+  result:=public.apply_entry_patch(d,gen_random_uuid(),'{"schoolTasksEligible":false,"schoolTasksStatus":null}','America/New_York');
+  assert result->'data'->>'schoolTasksEligible'='false','Retired eligibility remains forced true';
+  assert result->'data'->>'schoolTasksReason'='Keep this real answer','Clearing legacy metadata lost saved content';
   perform public.apply_image_operation(d,gen_random_uuid(),photo,1,false,'America/New_York');
   result:=public.apply_image_operation(d,gen_random_uuid(),photo,1,true,'America/New_York');
   assert result->>'deleted_at' is not null,'Photo deletion not recorded';

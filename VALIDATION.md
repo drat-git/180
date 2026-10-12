@@ -67,3 +67,11 @@
 - Production hosting is connected to GitHub through the existing Vercel projects. Reliable recovery-email delivery and callback configuration still require a real recovery-flow check.
 
 There is no privileged bootstrap endpoint, and no service-role key in the frontend. The rejected endpoint deployment did not take place.
+
+
+## Task question applicability — October 11, 2026
+
+- Restored the latest pushed application baseline (`42a8677`) before implementing the replacement. Removed the discarded daily eligibility capture effects and flags from the application. The already applied experimental migration remains as an audit record; a compensating migration removes its trigger/function without deleting saved data. Legacy flags remain valid input for older queued patches and are ignored by the new calculation.
+- Questions and totals now share a calculation using retained tasks/events and saved daily content. Today requires an unfinished task, a parent/child completion today not undone today, or saved content. Earlier completed tasks in their 12-hour display window do not create a new requirement. Past days use unfinished roots at the local 2 AM boundary, qualifying completions that day, or saved content. Same-day deletion removes unanswered requirements; later deletion preserves earlier unfinished days. No daily snapshots or background writes are added.
+- **76 unit tests**, **70 desktop/phone browser tests**, and the production build passed. Coverage includes older completion carryover, completed tasks remaining selectable, completion archive, same-day creation/deletion and undo, child completion with parent deletion, automatic parent transitions, saved Yes/No/reasons/title snapshots, weekend counts, unopened days, offline reload, 2 AM and DST boundaries, late cloud history pulls, retired flags, and loading readiness.
+- All three rollback-only live database suites passed. They verify hierarchy/history, snapshots, retry idempotency, owner/access isolation, and legacy queued updates with preserved answers. Confirmed the retired trigger/function are absent. Generated database types are unchanged. React review confirmed no capture effects or conditional hooks were introduced.

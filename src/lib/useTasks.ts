@@ -1,16 +1,25 @@
 import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "./db";
-import type { Task } from "./model";
+import type { Task, TaskEvent } from "./model";
 const EMPTY_TASKS: Task[] = [];
+const EMPTY_EVENTS: TaskEvent[] = [];
 import { TASK_RETENTION_MS, visibleRoots } from "./tasks";
 
 export function useTasks(userId: string) {
-  const tasks =
-    useLiveQuery(
-      () => db.tasks.where("userId").equals(userId).toArray(),
-      [userId],
-    ) ?? EMPTY_TASKS;
+  const snapshot = useLiveQuery(
+    () =>
+      db.transaction("r", db.tasks, db.taskEvents, async () => {
+        const [tasks, events] = await Promise.all([
+          db.tasks.where("userId").equals(userId).toArray(),
+          db.taskEvents.where("userId").equals(userId).toArray(),
+        ]);
+        return { tasks, events };
+      }),
+    [userId],
+  );
+  const tasks = snapshot?.tasks ?? EMPTY_TASKS;
+  const events = snapshot?.events ?? EMPTY_EVENTS;
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     const update = () => setNow(Date.now());
@@ -33,5 +42,10 @@ export function useTasks(userId: string) {
       document.removeEventListener("visibilitychange", update);
     };
   }, [tasks]);
-  return { tasks, roots: visibleRoots(tasks, now) };
+  return {
+    tasks,
+    events,
+    ready: snapshot !== undefined,
+    roots: visibleRoots(tasks, now),
+  };
 }

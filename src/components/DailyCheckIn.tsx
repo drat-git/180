@@ -32,6 +32,7 @@ import {
   ChecklistBlock,
 } from "./Controls";
 import { TaskActivity } from "./TaskActivity";
+import { taskActivityVisibility } from "../lib/taskActivityVisibility";
 import { useTasks } from "../lib/useTasks";
 import { AntiRottingRecap } from "./AntiRotting";
 import { Journal } from "./Journal";
@@ -117,8 +118,16 @@ export function DailyCheckIn({
       />
     ) : null;
   }
-  const { tasks, roots } = useTasks(userId);
-  const progress = checklistProgress(data, date, roots);
+  const { tasks, roots, events, ready } = useTasks(userId);
+  const activityVisibility = taskActivityVisibility(
+    data,
+    date,
+    today,
+    tasks,
+    events,
+    ready,
+  );
+  const progress = checklistProgress(data, date, activityVisibility);
   function activity(topic: ActivityTopic) {
     const statusKey = `${topic}TasksStatus` as const;
     const reasonKey = `${topic}TasksReason` as const;
@@ -126,6 +135,7 @@ export function DailyCheckIn({
     return (
       <TaskActivity
         topic={topic}
+        visible={activityVisibility[topic]}
         roots={roots}
         tasks={tasks}
         status={data[statusKey]}

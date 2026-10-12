@@ -3,6 +3,8 @@ import { db } from "./db";
 import { applyAntiCommand, antiRecap } from "./antiRotting";
 import type { AntiCommand, AntiItem, AntiLog, AntiEvent } from "./model";
 import { applyTaskCommand } from "./tasks";
+import { emptyData } from "./model";
+import { taskActivityVisibility } from "./taskActivityVisibility";
 import type { Task, TaskCommand, TaskEvent } from "./model";
 import { repository } from "./repository";
 const mock = vi.hoisted(() => ({
@@ -14,7 +16,10 @@ const mock = vi.hoisted(() => ({
   download: vi.fn(),
   today: "2026-10-09",
 }));
-vi.mock("./dates", () => ({ logicalDate: () => mock.today }));
+vi.mock("./dates", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./dates")>()),
+  logicalDate: () => mock.today,
+}));
 vi.mock("./supabase", () => ({
   supabase: {
     auth: { getSession: mock.getSession },
@@ -502,4 +507,52 @@ it("a delayed cloud activity record populates an already closed day's recap", as
       "2026-10-09",
     )[0],
   ).toMatchObject({ title: "Basketball", notes: "Park", completed: false });
+});
+
+it("a late cloud pull reconstructs past applicability and ignores retired flags without daily writes", async () => {
+  mock.today = "2026-10-11";
+  remote.data.schoolTasksEligible = true;
+  const base: TaskCommand = {
+    taskId: "late-task",
+    action: "create",
+    title: "Offline homework",
+    topic: "school",
+    at: "2026-10-10T16:00:00Z",
+    logicalDate: "2026-10-10",
+    timezone: "America/New_York",
+  };
+  remoteTasks = applyTaskCommand([], "owner", "late-create", base).tasks;
+  const completion = applyTaskCommand(remoteTasks, "owner", "late-complete", {
+    ...base,
+    action: "complete",
+    completed: true,
+    at: "2026-10-10T23:00:00Z",
+  });
+  remoteTasks = applyTaskCommand(completion.tasks, "owner", "late-delete", {
+    ...base,
+    action: "delete",
+    at: "2026-10-11T16:00:00Z",
+    logicalDate: mock.today,
+  }).tasks;
+  remoteEvents = completion.events;
+  const worker = engine();
+  await worker.run();
+  expect(worker.state).toBe("synced");
+  const tasks = await db.tasks.where("userId").equals("owner").toArray();
+  const events = await db.taskEvents.where("userId").equals("owner").toArray();
+  const data = (await db.entries.get(["owner", "2026-10-09"]))!.data;
+  expect(
+    taskActivityVisibility(data, "2026-10-09", mock.today, tasks, events)
+      .school,
+  ).toBe(false);
+  expect(
+    taskActivityVisibility(emptyData(), "2026-10-10", mock.today, tasks, events)
+      .school,
+  ).toBe(true);
+  expect(
+    taskActivityVisibility(emptyData(), mock.today, mock.today, tasks, events)
+      .school,
+  ).toBe(false);
+  expect(mock.rpc).not.toHaveBeenCalled();
+  expect(await db.outbox.count()).toBe(0);
 });

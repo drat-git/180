@@ -26,9 +26,12 @@ async function edit(
   type = "reusable",
   notes = "",
 ) {
-  await page
-    .getByRole("group", { name: `Activity ${title}`, exact: true })
-    .press("Shift+F10");
+  const row = page.getByRole("group", {
+    name: `Activity ${title}`,
+    exact: true,
+  });
+  await expect(row).toHaveAttribute("tabindex", "0");
+  await row.press("Shift+F10");
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Activity title", exact: true })
@@ -43,9 +46,12 @@ async function edit(
   await expect(page.getByRole("dialog")).toHaveCount(0);
 }
 async function remove(page: Page, title: string) {
-  await page
-    .getByRole("group", { name: `Activity ${title}`, exact: true })
-    .press("Shift+F10");
+  const row = page.getByRole("group", {
+    name: `Activity ${title}`,
+    exact: true,
+  });
+  await expect(row).toHaveAttribute("tabindex", "0");
+  await row.press("Shift+F10");
   await page.getByRole("button", { name: "Delete", exact: true }).click();
   await page
     .getByRole("button", { name: "Delete activity", exact: true })

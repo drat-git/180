@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { checklistProgress } from "./checklist";
-import { binaryFields, emptyData, type Task } from "./model";
+import { checklistProgress as countChecklist } from "./checklist";
+import { taskActivityVisibility } from "./taskActivityVisibility";
+import { binaryFields, emptyData, type Task, type DailyData } from "./model";
+
+const checklistProgress = (data: DailyData, date: string, tasks: Task[]) =>
+  countChecklist(
+    data,
+    date,
+    taskActivityVisibility(data, date, "2026-10-12", tasks, []),
+  );
 
 const weekday = "2026-10-12";
 const weekend = "2026-10-11";

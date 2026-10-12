@@ -1,11 +1,7 @@
 import { weekday } from "./dates";
-import {
-  THRESHOLDS,
-  timeMinutes,
-  type ActivityTopic,
-  type DailyData,
-  type Task,
-} from "./model";
+import { THRESHOLDS, timeMinutes, type DailyData } from "./model";
+
+import type { TaskActivityVisibility } from "./taskActivityVisibility";
 
 export type ChecklistBlockTitle =
   "General" | "School" | "Career" | "Food" | "Body";
@@ -41,25 +37,10 @@ export function cannabisComplete(
   );
 }
 
-export function activityVisible(
-  topic: ActivityTopic,
-  roots: readonly Task[],
-  status: DailyData["schoolTasksStatus"],
-  reason: string,
-  selections: DailyData["schoolTasksWorkedOn"],
-) {
-  return (
-    roots.some((task) => task.topic === topic) ||
-    status !== null ||
-    !!reason.trim() ||
-    selections.length > 0
-  );
-}
-
 export function checklistProgress(
   data: DailyData,
   date: string,
-  roots: readonly Task[],
+  activity: TaskActivityVisibility,
 ): ChecklistProgress {
   const count = (checks: boolean[]): ChecklistCount => ({
     completed: checks.filter(Boolean).length,
@@ -71,15 +52,7 @@ export function checklistProgress(
       : [];
   const career = [data.applicationsStatus === true];
   for (const topic of ["school", "career"] as const) {
-    if (
-      activityVisible(
-        topic,
-        roots,
-        data[`${topic}TasksStatus`],
-        data[`${topic}TasksReason`],
-        data[`${topic}TasksWorkedOn`],
-      )
-    )
+    if (activity[topic])
       (topic === "school" ? school : career).push(
         data[`${topic}TasksStatus`] === true,
       );
