@@ -13,6 +13,7 @@ import { db } from "../lib/db";
 import { repository } from "../lib/repository";
 import {
   binaryFields,
+  newFoodChecklist,
   emptyData,
   reasonVisible,
   answerPatch,
@@ -31,6 +32,7 @@ import {
   CannabisDescriptions,
   ChecklistBlock,
 } from "./Controls";
+import { AMBreakfast } from "./AMBreakfast";
 import { TaskActivity } from "./TaskActivity";
 import { taskActivityVisibility } from "../lib/taskActivityVisibility";
 import { useTasks } from "../lib/useTasks";
@@ -107,10 +109,11 @@ export function DailyCheckIn({
     if (locked) requestUnlock(apply);
     else apply();
   }
-  function reason(key: ReasonKey, label: string) {
+  function reason(key: ReasonKey, label: string, preferenceKey?: string) {
     return reasonVisible(key, data) ? (
       <Reason
         label={label}
+        preferenceKey={preferenceKey}
         value={data[`${key}Reason`]}
         locked={locked}
         onAttempt={() => requestUnlock()}
@@ -155,20 +158,33 @@ export function DailyCheckIn({
   }
   const weekdayOnly = weekday(date) !== 0 && weekday(date) !== 6;
   function renderFields(keys: BinaryKey[]) {
-    return binaryFields
-      .filter(
-        (f) => keys.includes(f.key) && (!("weekdays" in f) || weekdayOnly),
-      )
+    return keys
+      .map((key) => binaryFields.find((field) => field.key === key)!)
+      .filter((f) => !("weekdays" in f) || weekdayOnly)
       .map((field) => {
         const key = field.key;
+        const label = newFoodChecklist(date)
+          ? ((
+              { meal1: "Lunch", meal2: "Dinner", shake: "PM Shake" } as Partial<
+                Record<BinaryKey, string>
+              >
+            )[key] ?? field.label)
+          : field.label;
         const countKey =
           key === "cannabis" ? "cannabisCount" : "applicationsCount";
         return (
           <div className="field" key={key}>
             <div className="field-line">
-              <span className="field-label">{field.label}</span>
+              <span className="field-label">
+                {label}
+                {key === "snack" && (
+                  <span className="food-helper">
+                    Fruit, protein bar, boba, etc
+                  </span>
+                )}
+              </span>
               <BinaryAnswer
-                label={field.label}
+                label={label}
                 value={data[`${key}Status`]}
                 completed={
                   key === "cannabis" ? cannabisComplete(data) : undefined
@@ -188,7 +204,8 @@ export function DailyCheckIn({
             {"description" in field && data[`${key}Status`] === true && (
               <CollapsibleText
                 label="What did you eat?"
-                ariaLabel={`${field.label} food description`}
+                ariaLabel={`${label} food description`}
+                preferenceKey={`${field.label} food description`}
                 addLabel="What did you eat? Add description"
                 viewLabel="View food description"
                 initiallyExpanded
@@ -226,7 +243,7 @@ export function DailyCheckIn({
                 }}
               />
             )}
-            {reason(key, field.label)}
+            {reason(key, label, `${field.label} reason`)}
           </div>
         );
       });
@@ -414,7 +431,19 @@ export function DailyCheckIn({
               icon={<Utensils size={18} />}
               progress={progress.blocks.Food}
             >
-              {renderFields(["meal1", "meal2", "snack1", "snack2", "shake"])}
+              {newFoodChecklist(date) ? (
+                <>
+                  <AMBreakfast
+                    data={data}
+                    locked={locked}
+                    onAttempt={() => requestUnlock()}
+                    onPatch={patch}
+                  />
+                  {renderFields(["meal1", "meal2", "shake", "snack"])}
+                </>
+              ) : (
+                renderFields(["meal1", "meal2", "snack1", "snack2", "shake"])
+              )}
             </ChecklistBlock>
             <ChecklistBlock
               title="Body"

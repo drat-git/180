@@ -4,12 +4,39 @@ export const THRESHOLDS = {
   screenMinutes: 210,
 } as const;
 export type Answer = boolean | null;
+export const FOOD_UPDATE_DATE = "2026-10-12";
+export const newFoodChecklist = (date: string) => date >= FOOD_UPDATE_DATE;
+export type BreakfastChoice = "shake" | "meal";
+export interface BreakfastAnswer {
+  status: Answer;
+  choice: BreakfastChoice | null;
+}
+export const breakfastLabels = {
+  shake: "AM shake",
+  meal: "Calorie dense meal",
+} as const;
+export const breakfastLabel = "AM Shake/Calorie-Dense Breakfast";
+export function breakfastAnswerPatch(
+  current: BreakfastAnswer,
+  answer: boolean,
+): EntryPatch {
+  return {
+    amBreakfast: {
+      status: current.status === answer ? null : answer,
+      choice: null,
+    },
+  };
+}
+export function breakfastComplete(data: Pick<DailyData, "amBreakfast">) {
+  return data.amBreakfast.status === true && data.amBreakfast.choice !== null;
+}
 export const binaryFields = [
   { key: "meal1", label: "Meal 1", description: true },
   { key: "meal2", label: "Meal 2", description: true },
   { key: "snack1", label: "Snack 1", description: true },
   { key: "snack2", label: "Snack 2", description: true },
   { key: "shake", label: "Bulking shake" },
+  { key: "snack", label: "Snack", description: true },
   { key: "amPosture", label: "AM posture exercises" },
   { key: "pmPosture", label: "PM posture exercises" },
   { key: "lifted", label: "Lifted" },
@@ -25,6 +52,10 @@ export type BinaryKey = (typeof binaryFields)[number]["key"];
 export type ReasonKey = BinaryKey | "wake" | "screenTime";
 export type DailyData = Record<`${BinaryKey}Status`, Answer> &
   Record<`${ReasonKey}Reason`, string> & {
+    amBreakfast: BreakfastAnswer;
+    amBreakfastReason: string;
+    amBreakfastDescription: string;
+    snackDescription: string;
     schoolTasksStatus: Answer;
     careerTasksStatus: Answer;
     schoolTasksReason: string;
@@ -180,6 +211,10 @@ export interface PendingOperation {
 }
 export const emptyData = (): DailyData =>
   ({
+    amBreakfast: { status: null, choice: null },
+    amBreakfastReason: "",
+    amBreakfastDescription: "",
+    snackDescription: "",
     schoolTasksStatus: null,
     careerTasksStatus: null,
     schoolTasksReason: "",

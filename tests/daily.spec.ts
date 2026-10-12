@@ -28,20 +28,20 @@ test("answer icons use cyan and magenta, with cannabis colors following completi
   const magenta = "rgb(154, 90, 130)";
   const cannabisYes = answer(page, "Used cannabis?", "Yes");
   const cannabisNo = answer(page, "Used cannabis?", "No");
-  await answer(page, "Meal 1", "Yes").click();
-  await expect(answer(page, "Meal 1", "Yes")).toHaveCSS(
+  await answer(page, "Lunch", "Yes").click();
+  await expect(answer(page, "Lunch", "Yes")).toHaveCSS(
     "background-color",
     cyan,
   );
-  await expect(answer(page, "Meal 1", "Yes").locator("svg")).toBeVisible();
-  await expect(answer(page, "Meal 1", "Yes")).toHaveText("");
-  await answer(page, "Meal 1", "No").click();
-  await expect(answer(page, "Meal 1", "No")).toHaveCSS(
+  await expect(answer(page, "Lunch", "Yes").locator("svg")).toBeVisible();
+  await expect(answer(page, "Lunch", "Yes")).toHaveText("");
+  await answer(page, "Lunch", "No").click();
+  await expect(answer(page, "Lunch", "No")).toHaveCSS(
     "background-color",
     magenta,
   );
-  await expect(answer(page, "Meal 1", "No").locator("svg")).toBeVisible();
-  await expect(answer(page, "Meal 1", "No")).toHaveText("");
+  await expect(answer(page, "Lunch", "No").locator("svg")).toBeVisible();
+  await expect(answer(page, "Lunch", "No")).toHaveText("");
   await cannabisNo.click();
   await expect(cannabisNo).toHaveCSS("background-color", cyan);
   await cannabisYes.click();
@@ -155,7 +155,7 @@ test("checklist progress respects thresholds and survives collapsed blocks and o
   for (const label of [
     "Attended class",
     "Applied to jobs or internships?",
-    "Meal 1",
+    "Lunch",
     "Lifted",
   ])
     await answer(page, label, "Yes").click();
@@ -197,18 +197,18 @@ test("answers, reasons, food descriptions and text survive an offline reload", a
   context,
 }) => {
   await preview(page);
-  await answer(page, "Meal 1", "No").click();
+  await answer(page, "Lunch", "No").click();
   await page
-    .getByRole("textbox", { name: "Meal 1 reason" })
+    .getByRole("textbox", { name: "Lunch reason" })
     .fill("Forgot groceries");
-  await answer(page, "Meal 1", "Yes").click();
+  await answer(page, "Lunch", "Yes").click();
   await page
-    .getByRole("textbox", { name: "Meal 1 food description" })
+    .getByRole("textbox", { name: "Lunch food description" })
     .fill("Rice and eggs");
-  await answer(page, "Meal 1", "No").click();
-  await expect(
-    page.getByRole("textbox", { name: "Meal 1 reason" }),
-  ).toHaveValue("Forgot groceries");
+  await answer(page, "Lunch", "No").click();
+  await expect(page.getByRole("textbox", { name: "Lunch reason" })).toHaveValue(
+    "Forgot groceries",
+  );
   await page.getByRole("button", { name: "Minimize", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Daily journal", exact: true })
@@ -222,23 +222,23 @@ test("answers, reasons, food descriptions and text survive an offline reload", a
   await expect(
     page.getByRole("textbox", { name: "Daily journal", exact: true }),
   ).toHaveValue("A small but good day.");
-  await expect(
-    page.getByRole("textbox", { name: "Meal 1 reason" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Lunch reason" })).toHaveCount(
+    0,
+  );
   await page.getByRole("button", { name: "View reason", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Lunch reason" })).toHaveValue(
+    "Forgot groceries",
+  );
+  await answer(page, "Lunch", "Yes").click();
   await expect(
-    page.getByRole("textbox", { name: "Meal 1 reason" }),
-  ).toHaveValue("Forgot groceries");
-  await answer(page, "Meal 1", "Yes").click();
-  await expect(
-    page.getByRole("textbox", { name: "Meal 1 food description" }),
+    page.getByRole("textbox", { name: "Lunch food description" }),
   ).toHaveValue("Rice and eggs");
-  await answer(page, "Meal 1", "Yes").click();
-  await expect(answer(page, "Meal 1", "Yes")).toHaveAttribute(
+  await answer(page, "Lunch", "Yes").click();
+  await expect(answer(page, "Lunch", "Yes")).toHaveAttribute(
     "aria-pressed",
     "false",
   );
-  await expect(answer(page, "Meal 1", "No")).toHaveAttribute(
+  await expect(answer(page, "Lunch", "No")).toHaveAttribute(
     "aria-pressed",
     "false",
   );
@@ -371,7 +371,7 @@ test("every food description minimizes and reopens without losing its text", asy
   page,
 }) => {
   await preview(page);
-  for (const label of ["Meal 1", "Meal 2", "Snack 1", "Snack 2"]) {
+  for (const label of ["Lunch", "Dinner", "Snack"]) {
     await answer(page, label, "Yes").click();
     const field = page
       .locator(".field")
@@ -388,7 +388,7 @@ test("every food description minimizes and reopens without losing its text", asy
   }
   await page.getByRole("button", { name: "Previous day" }).click();
   await page.getByRole("button", { name: "Today", exact: true }).click();
-  for (const label of ["Meal 1", "Meal 2", "Snack 1", "Snack 2"]) {
+  for (const label of ["Lunch", "Dinner", "Snack"]) {
     const field = page
       .locator(".field")
       .filter({ has: page.getByRole("group", { name: label, exact: true }) });
@@ -524,11 +524,11 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
     .getByRole("button", { name: "Increase how many applications?" })
     .click();
   for (const label of [
-    "Meal 1",
-    "Meal 2",
-    "Snack 1",
-    "Snack 2",
-    "Bulking shake",
+    "AM Shake/Calorie-Dense Breakfast",
+    "Lunch",
+    "Dinner",
+    "PM Shake",
+    "Snack",
   ])
     await expect(
       food.getByRole("group", { name: label, exact: true }),
@@ -554,14 +554,14 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
   await expect(
     page.getByText("A MOMENT TO REFLECT", { exact: true }),
   ).toHaveCount(0);
-  await answer(page, "Meal 1", "No").click();
+  await answer(page, "Lunch", "No").click();
   await page
-    .getByRole("textbox", { name: "Meal 1 reason" })
+    .getByRole("textbox", { name: "Lunch reason" })
     .fill("Example reason");
   await food.getByRole("button", { name: "Minimize", exact: true }).click();
-  await answer(page, "Meal 2", "Yes").click();
+  await answer(page, "Dinner", "Yes").click();
   await page
-    .getByRole("textbox", { name: "Meal 2 food description" })
+    .getByRole("textbox", { name: "Dinner food description" })
     .fill("Example food");
   await food.getByRole("button", { name: "Minimize", exact: true }).click();
   await answer(page, "Used cannabis?", "Yes").click();
@@ -629,17 +629,17 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
     .getByRole("button", { name: "View use descriptions", exact: true })
     .click();
   await expect(
-    reopened.getByRole("textbox", { name: "Meal 1 reason" }),
+    reopened.getByRole("textbox", { name: "Lunch reason" }),
   ).toHaveValue("Example reason");
   await expect(
-    reopened.getByRole("textbox", { name: "Meal 2 food description" }),
+    reopened.getByRole("textbox", { name: "Dinner food description" }),
   ).toHaveValue("Example food");
   await expect(
     reopened.getByRole("textbox", { name: "Cannabis use 1 description" }),
   ).toHaveValue("Example use");
   await reopened.reload();
   await expect(
-    reopened.getByRole("textbox", { name: "Meal 1 reason" }),
+    reopened.getByRole("textbox", { name: "Lunch reason" }),
   ).toHaveValue("Example reason");
 });
 test("swipes stop at today and Day 1, and ignore journal input gestures", async ({

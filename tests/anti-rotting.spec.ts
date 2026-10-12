@@ -73,6 +73,9 @@ test("reusable ideas, notes and logging persist offline without a separate daily
   await expect(
     page.getByText("Bring the ball\nGo to the park", { exact: true }),
   ).toBeVisible();
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
   await context.setOffline(true);
   await page
     .getByRole("button", { name: "Did this: Play basketball", exact: true })

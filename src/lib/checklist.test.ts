@@ -79,6 +79,7 @@ describe("daily checklist progress", () => {
   it("counts binary Yes only and sums all five blocks", () => {
     const data = emptyData();
     for (const { key } of binaryFields) data[`${key}Status`] = true;
+    data.amBreakfast = { status: true, choice: "shake" };
     data.wakeTime = "09:00";
     data.screenTimeMinutes = 180;
     data.cannabisCount = 2;
@@ -126,4 +127,29 @@ describe("daily checklist progress", () => {
       total: 1,
     });
   });
+});
+
+it("keeps legacy snacks in Days 1–3 totals and uses the required AM choice from Day 4", () => {
+  const data = emptyData();
+  data.snack1Status = data.snack2Status = true;
+  expect(checklistProgress(data, "2026-10-11", []).blocks.Food).toEqual({
+    completed: 2,
+    total: 5,
+  });
+  expect(checklistProgress(data, "2026-10-12", []).blocks.Food).toEqual({
+    completed: 0,
+    total: 5,
+  });
+  data.amBreakfast = { status: true, choice: null };
+  data.snackStatus = true;
+  expect(checklistProgress(data, "2026-10-12", []).blocks.Food.completed).toBe(
+    1,
+  );
+  data.amBreakfast.choice = "meal";
+  expect(checklistProgress(data, "2026-10-12", []).blocks.Food.completed).toBe(
+    2,
+  );
+  expect(checklistProgress(data, "2026-10-11", []).blocks.Food.completed).toBe(
+    2,
+  );
 });

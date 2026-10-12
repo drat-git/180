@@ -556,3 +556,25 @@ it("a late cloud pull reconstructs past applicability and ignores retired flags 
   expect(mock.rpc).not.toHaveBeenCalled();
   expect(await db.outbox.count()).toBe(0);
 });
+
+it("syncs coupled breakfast state and new snack fields without erasing legacy data on retry", async () => {
+  await repository.patchDay("owner", "2026-10-09", {
+    amBreakfast: { status: true, choice: "meal" },
+    amBreakfastDescription: "Eggs",
+    snackStatus: true,
+    snackDescription: "Fruit",
+  });
+  failAfterCommit = true;
+  const worker = engine();
+  await worker.run();
+  expect(await db.outbox.count()).toBe(1);
+  remote.data.amBreakfast = { status: true, choice: null };
+  remote.revision++;
+  await worker.run();
+  const data = (await db.entries.get(["owner", "2026-10-09"]))!.data;
+  expect(data.amBreakfast).toEqual({ status: true, choice: null });
+  expect(data.amBreakfastDescription).toBe("Eggs");
+  expect(data.snackDescription).toBe("Fruit");
+  expect(data.meal1Reason).toBe("Device B groceries");
+  expect(await db.outbox.count()).toBe(0);
+});

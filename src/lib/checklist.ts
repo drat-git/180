@@ -1,5 +1,11 @@
 import { weekday } from "./dates";
-import { THRESHOLDS, timeMinutes, type DailyData } from "./model";
+import {
+  THRESHOLDS,
+  timeMinutes,
+  breakfastComplete,
+  newFoodChecklist,
+  type DailyData,
+} from "./model";
 
 import type { TaskActivityVisibility } from "./taskActivityVisibility";
 
@@ -66,13 +72,23 @@ export function checklistProgress(
     School: count(school),
     Career: count(career),
     Food: count(
-      [
-        data.meal1Status,
-        data.meal2Status,
-        data.snack1Status,
-        data.snack2Status,
-        data.shakeStatus,
-      ].map((status) => status === true),
+      newFoodChecklist(date)
+        ? [
+            breakfastComplete(data),
+            ...[
+              data.meal1Status,
+              data.meal2Status,
+              data.shakeStatus,
+              data.snackStatus,
+            ].map((status) => status === true),
+          ]
+        : [
+            data.meal1Status,
+            data.meal2Status,
+            data.snack1Status,
+            data.snack2Status,
+            data.shakeStatus,
+          ].map((status) => status === true),
     ),
     Body: count(
       [data.amPostureStatus, data.pmPostureStatus, data.liftedStatus].map(

@@ -160,6 +160,7 @@ function CollapsibleSection({
 export function CollapsibleText({
   label,
   ariaLabel,
+  preferenceKey,
   placeholder,
   value,
   onChange,
@@ -169,6 +170,7 @@ export function CollapsibleText({
 }: {
   label: string;
   ariaLabel: string;
+  preferenceKey?: string;
   addLabel: string;
   viewLabel: string;
   placeholder: string;
@@ -179,7 +181,11 @@ export function CollapsibleText({
   onAttempt: () => void;
 }) {
   return (
-    <CollapsibleSection {...disclosure} storageKey={ariaLabel} value={value}>
+    <CollapsibleSection
+      {...disclosure}
+      storageKey={preferenceKey ?? ariaLabel}
+      value={value}
+    >
       <label>
         <span>{label}</span>
         <AutoTextarea
@@ -241,6 +247,7 @@ export function CannabisDescriptions({
 }
 export function Reason(props: {
   label: string;
+  preferenceKey?: string;
   value: string;
   onChange: (v: string) => void;
   locked: boolean;

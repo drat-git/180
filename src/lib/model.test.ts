@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { emptyData, reasonVisible, answerPatch } from "./model";
+import {
+  emptyData,
+  reasonVisible,
+  answerPatch,
+  breakfastAnswerPatch,
+  breakfastComplete,
+  newFoodChecklist,
+} from "./model";
 describe("daily rules", () => {
   it("uses strict thresholds", () => {
     const d = emptyData();
@@ -42,4 +49,22 @@ describe("daily rules", () => {
       cannabisStatus: true,
     });
   });
+});
+
+it("uses the Day 4 boundary and requires a fresh breakfast choice after every toggle", () => {
+  expect(newFoodChecklist("2026-10-11")).toBe(false);
+  expect(newFoodChecklist("2026-10-12")).toBe(true);
+  const data = emptyData();
+  data.amBreakfastDescription = "Eggs and toast";
+  Object.assign(data, breakfastAnswerPatch(data.amBreakfast, true));
+  expect(breakfastComplete(data)).toBe(false);
+  data.amBreakfast.choice = "meal";
+  expect(breakfastComplete(data)).toBe(true);
+  Object.assign(data, breakfastAnswerPatch(data.amBreakfast, true));
+  expect(data.amBreakfast).toEqual({ status: null, choice: null });
+  Object.assign(data, breakfastAnswerPatch(data.amBreakfast, true));
+  expect(data.amBreakfast).toEqual({ status: true, choice: null });
+  Object.assign(data, breakfastAnswerPatch(data.amBreakfast, false));
+  expect(data.amBreakfast).toEqual({ status: false, choice: null });
+  expect(data.amBreakfastDescription).toBe("Eggs and toast");
 });
