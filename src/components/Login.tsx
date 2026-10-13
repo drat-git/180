@@ -170,7 +170,7 @@ export function Login({
           >
             {setup
               ? "Already set up? Sign in"
-              : "First time? Set up your private account"}
+              : "Sign up"}
           </button>
         )}
         <div className="login-divider" />
