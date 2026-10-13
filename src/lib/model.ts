@@ -4,6 +4,8 @@ export const THRESHOLDS = {
   screenMinutes: 210,
 } as const;
 export type Answer = boolean | null;
+export const CREATINE_START_DATE = "2026-10-13";
+export const creatineVisible = (date: string) => date >= CREATINE_START_DATE;
 export const FOOD_UPDATE_DATE = "2026-10-12";
 export const newFoodChecklist = (date: string) => date >= FOOD_UPDATE_DATE;
 export type BreakfastChoice = "shake" | "meal";
@@ -40,6 +42,7 @@ export const binaryFields = [
   { key: "amPosture", label: "AM posture exercises" },
   { key: "pmPosture", label: "PM posture exercises" },
   { key: "lifted", label: "Lifted" },
+  { key: "creatine", label: "Creatine", fromDate: CREATINE_START_DATE },
   { key: "classAttendance", label: "Attended class", weekdays: true },
   { key: "cannabis", label: "Used cannabis?", count: true },
   {

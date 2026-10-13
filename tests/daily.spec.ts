@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-const blockOrder = ["General", "School", "Career", "Food", "Body"];
+const blockOrder = ["General", "School", "Career", "Diet", "Body"];
 async function preview(
   page: import("@playwright/test").Page,
   time = "2026-10-12T12:00:00-04:00",
@@ -8,9 +8,7 @@ async function preview(
   await page.clock.install({ time: new Date(time) });
   await page.goto("/");
   await page.getByRole("button", { name: "Try the local preview" }).click();
-  await expect(
-    page.getByRole("heading", { name: `Day ${day}` }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: `Day ${day}` })).toBeVisible();
 }
 const answer = (
   page: import("@playwright/test").Page,
@@ -164,7 +162,7 @@ test("checklist progress respects thresholds and survives collapsed blocks and o
     ["General", "3/3"],
     ["School", "1/1"],
     ["Career", "1/1"],
-    ["Food", "1/5"],
+    ["Diet", "1/5"],
     ["Body", "1/3"],
   ]) {
     await page
@@ -247,6 +245,11 @@ test("weekends omit class and older edits ask once per visit", async ({
   page,
 }) => {
   await preview(page);
+  const quote = page.getByText(
+    "“We are what we repeatedly do. Excellence, then, is not an act, but a habit.” - Aristotle",
+    { exact: true },
+  );
+  await expect(quote).toBeVisible();
   await expect(
     page.getByRole("group", { name: "Attended class" }),
   ).toBeVisible();
@@ -266,7 +269,15 @@ test("weekends omit class and older edits ask once per visit", async ({
   await expect(
     page.getByText("Yesterday’s entry is still freely editable."),
   ).toBeVisible();
+  await expect(quote).toHaveCount(0);
+  await expect(page.locator(".yesterday-note")).toHaveCSS(
+    "color",
+    "rgb(179, 95, 25)",
+  );
+  await expect(page.locator(".yesterday-note")).toHaveCSS("font-weight", "500");
   await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(quote).toHaveCount(0);
+  await expect(page.locator(".yesterday-note")).toHaveCount(0);
   await expect(
     page.getByRole("region", { name: "School", exact: true }),
   ).toHaveCount(0);
@@ -504,7 +515,7 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
   await expect(page.locator(".block-heading h3:visible")).toHaveText(
     blockOrder,
   );
-  const food = page.getByRole("region", { name: "Food", exact: true });
+  const food = page.getByRole("region", { name: "Diet", exact: true });
   const body = page.getByRole("region", { name: "Body", exact: true });
   const general = page.getByRole("region", { name: "General", exact: true });
   const school = page.getByRole("region", { name: "School", exact: true });

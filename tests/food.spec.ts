@@ -12,7 +12,7 @@ async function start(page: Page, time = "2026-10-12T12:00:00-04:00") {
 const saved = (page: Page) =>
   expect(page.locator(".save-state")).toContainText("Saved on this device");
 const food = (page: Page) =>
-  page.getByRole("region", { name: "Food", exact: true });
+  page.getByRole("region", { name: "Diet", exact: true });
 
 test("Day 4 food requires an AM choice, resets it, and preserves hidden text offline", async ({
   page,
@@ -26,7 +26,7 @@ test("Day 4 food requires an AM choice, resets it, and preserves hidden text off
     "PM Shake",
     "SnackFruit, protein bar, boba, etc",
   ]);
-  const progress = page.getByLabel("Food checklist progress", { exact: true });
+  const progress = page.getByLabel("Diet checklist progress", { exact: true });
   await answer(page, original, "Yes").click();
   await expect(
     page.getByRole("radio", { name: "AM shake", exact: true }),
@@ -164,7 +164,7 @@ test("Days 1–3 retain their original food fields, counts, and saved records ac
     "false",
   );
   await expect(
-    page.getByLabel("Food checklist progress", { exact: true }),
+    page.getByLabel("Diet checklist progress", { exact: true }),
   ).toHaveText("0/5 complete");
   await page.getByRole("button", { name: "Previous day", exact: true }).click();
   await expect(food(page).locator(".field-label")).toHaveText(legacy);
@@ -175,7 +175,7 @@ test("Days 1–3 retain their original food fields, counts, and saved records ac
     }),
   ).toHaveValue("Original second snack");
   await expect(
-    page.getByLabel("Food checklist progress", { exact: true }),
+    page.getByLabel("Diet checklist progress", { exact: true }),
   ).toHaveText("5/5 complete");
   expect(await recorded()).toEqual(before);
   for (let day = 2; day >= 1; day--) {

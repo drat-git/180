@@ -4,6 +4,7 @@ import {
   timeMinutes,
   breakfastComplete,
   newFoodChecklist,
+  creatineVisible,
   type DailyData,
 } from "./model";
 
@@ -91,9 +92,12 @@ export function checklistProgress(
           ].map((status) => status === true),
     ),
     Body: count(
-      [data.amPostureStatus, data.pmPostureStatus, data.liftedStatus].map(
-        (status) => status === true,
-      ),
+      [
+        data.amPostureStatus,
+        data.pmPostureStatus,
+        data.liftedStatus,
+        ...(creatineVisible(date) ? [data.creatineStatus] : []),
+      ].map((status) => status === true),
     ),
   };
   return {

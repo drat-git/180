@@ -752,6 +752,19 @@ input[data-complete="false"] {
 .past-note .text-button {
   margin-left: auto;
 }
+.today-quote {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+.yesterday-note {
+  color: #b35f19;
+  font-weight: 500;
+}
+:root[data-theme="dark"] .yesterday-note {
+  color: #e5a15f;
+}
 .error-banner {
   display: flex;
   align-items: center;

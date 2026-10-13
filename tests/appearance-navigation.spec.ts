@@ -16,6 +16,12 @@ test("separate tabs preserve drafts and settings clearly select soft dark mode",
     page.getByRole("heading", { name: "Daily checklist", exact: true }),
   ).toBeVisible();
   await nav.getByRole("button", { name: "To-do", exact: true }).click();
+  await expect(
+    page.getByText(
+      "“Every action you take is a vote for the type of person you wish to become.” - James Clear",
+      { exact: true },
+    ),
+  ).toBeVisible();
   await page
     .getByRole("textbox", { name: "New school task" })
     .fill("Draft homework");
@@ -68,6 +74,12 @@ test("separate tabs preserve drafts and settings clearly select soft dark mode",
     path: `artifacts/180-dark-${test.info().project.name}.png`,
     fullPage: true,
   });
+  await page.getByRole("button", { name: "Previous day", exact: true }).click();
+  await expect(page.locator(".yesterday-note")).toHaveCSS(
+    "color",
+    "rgb(229, 161, 95)",
+  );
+  await page.getByRole("button", { name: "Today", exact: true }).click();
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });

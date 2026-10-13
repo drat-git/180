@@ -160,7 +160,11 @@ export function DailyCheckIn({
   function renderFields(keys: BinaryKey[]) {
     return keys
       .map((key) => binaryFields.find((field) => field.key === key)!)
-      .filter((f) => !("weekdays" in f) || weekdayOnly)
+      .filter(
+        (f) =>
+          (!("weekdays" in f) || weekdayOnly) &&
+          (!("fromDate" in f) || date >= f.fromDate),
+      )
       .map((field) => {
         const key = field.key;
         const label = newFoodChecklist(date)
@@ -427,7 +431,8 @@ export function DailyCheckIn({
               {activity("career")}
             </ChecklistBlock>
             <ChecklistBlock
-              title="Food"
+              title="Diet"
+              preferenceKey="Food"
               icon={<Utensils size={18} />}
               progress={progress.blocks.Food}
             >
@@ -450,7 +455,7 @@ export function DailyCheckIn({
               icon={<Activity size={18} />}
               progress={progress.blocks.Body}
             >
-              {renderFields(["amPosture", "pmPosture", "lifted"])}
+              {renderFields(["amPosture", "pmPosture", "lifted", "creatine"])}
             </ChecklistBlock>
             <AntiRottingRecap userId={userId} date={date} today={today} />
           </section>

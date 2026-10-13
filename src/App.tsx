@@ -412,6 +412,12 @@ function CheckInApp({
                         <span />
                       </div>
                     </section>
+                    {current && (
+                      <p className="today-quote">
+                        “We are what we repeatedly do. Excellence, then, is not
+                        an act, but a habit.” - Aristotle
+                      </p>
+                    )}
                     {!current && date === addDays(today, -1) && (
                       <div className="yesterday-note">
                         Yesterday’s entry is still freely editable.

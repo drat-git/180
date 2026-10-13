@@ -578,3 +578,22 @@ it("syncs coupled breakfast state and new snack fields without erasing legacy da
   expect(data.meal1Reason).toBe("Device B groceries");
   expect(await db.outbox.count()).toBe(0);
 });
+
+it("syncs Creatine answers and preserves its hidden reason across acknowledgement-loss retries", async () => {
+  await repository.patchDay("owner", "2026-10-09", {
+    creatineStatus: false,
+    creatineReason: "Forgot",
+  });
+  failAfterCommit = true;
+  const worker = engine();
+  await worker.run();
+  expect(await db.outbox.count()).toBe(1);
+  remote.data.creatineStatus = true;
+  remote.revision++;
+  await worker.run();
+  const data = (await db.entries.get(["owner", "2026-10-09"]))!.data;
+  expect(data.creatineStatus).toBe(true);
+  expect(data.creatineReason).toBe("Forgot");
+  expect(data.meal1Reason).toBe("Device B groceries");
+  expect(await db.outbox.count()).toBe(0);
+});

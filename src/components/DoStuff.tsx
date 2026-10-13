@@ -227,8 +227,8 @@ export function DoStuff({
       <section className="do-stuff-heading">
         <h1>To-do</h1>
         <p>
-          “When you want something, all the universe conspires in helping you to
-          achieve it.”
+          “Every action you take is a vote for the type of person you wish to
+          become.” - James Clear
         </p>
       </section>
       <div className="task-topics">

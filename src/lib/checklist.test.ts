@@ -153,3 +153,29 @@ it("keeps legacy snacks in Days 1–3 totals and uses the required AM choice fro
     2,
   );
 });
+
+it("adds Creatine to Body and daily totals only from Day 5", () => {
+  const data = emptyData();
+  expect(checklistProgress(data, "2026-10-12", []).blocks.Body).toEqual({
+    completed: 0,
+    total: 3,
+  });
+  expect(checklistProgress(data, "2026-10-13", [])).toMatchObject({
+    completed: 0,
+    total: 14,
+    blocks: { Body: { completed: 0, total: 4 } },
+  });
+  data.creatineStatus = true;
+  expect(checklistProgress(data, "2026-10-13", [])).toMatchObject({
+    completed: 1,
+    total: 14,
+    blocks: { Body: { completed: 1, total: 4 } },
+  });
+  expect(checklistProgress(data, "2026-10-12", []).blocks.Body).toEqual({
+    completed: 0,
+    total: 3,
+  });
+  expect(checklistProgress(data, "2026-10-18", []).total).toBe(13);
+  data.creatineStatus = false;
+  expect(checklistProgress(data, "2026-10-13", []).completed).toBe(0);
+});
