@@ -964,12 +964,20 @@ dialog::backdrop {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  color: var(--ink-657b5b);
-  font-size: 12px;
+  min-height: 52px;
+  gap: 16px;
+  border: 1px dashed var(--line-d3d9c8);
+  border-radius: 8px;
+  background: var(--surface-eeefe5);
+  padding: 14px 16px;
+  color: var(--ink-758269);
+  font-size: 14px;
+  font-weight: 700;
   margin-bottom: 9px;
+}
+.preview-link:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--line-d3d9c8);
 }
 .privacy-note {
   display: flex;

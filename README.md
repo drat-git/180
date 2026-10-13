@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open **http://localhost:3000**. **Try the local preview** keeps entries on this browser, separate from the private account. The initial handoff is currently serving the production build at this address, including offline reload support. To restart that handoff, run `npm run build` followed by `npm run preview -- --port 3000`. Use `npm run dev` for development.
+Open **http://localhost:3000**. **Try the demo mode** keeps entries on this browser, separate from the private account. The initial handoff is currently serving the production build at this address, including offline reload support. To restart that handoff, run `npm run build` followed by `npm run preview -- --port 3000`. Use `npm run dev` for development.
 
 For the complete PWA, including offline reloads:
 

@@ -170,14 +170,12 @@ export function Login({
               setMessage("");
             }}
           >
-            {setup
-              ? "Already set up? Sign in"
-              : "Sign up"}
+            {setup ? "Already set up? Sign in" : "Sign up"}
           </button>
         )}
         <div className="login-divider" />
         <button className="preview-link" onClick={onPreview}>
-          Try the local preview <ArrowRight size={16} />
+          Try the demo mode <ArrowRight size={16} aria-hidden="true" />
         </button>
         <p className="small">
           Preview entries stay on this device, separate from your account.

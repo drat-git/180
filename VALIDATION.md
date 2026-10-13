@@ -126,3 +126,9 @@ There is no privileged bootstrap endpoint, and no service-role key in the fronte
 
 - The switcher tab is labeled Anti-rot. Its activity-card heading is "Things to do instead of scrolling", followed by "Topics to explore, skills to learn, specific media, activities, places to go, etc". Existing purple styling, stored activities, note preferences, and non-collapsible behavior are preserved. Past-day recap content remains unchanged.
 - Production build and six focused desktop/phone browser scenarios passed, covering the exact new copy, tab navigation, retained styling, layout width, activity ordering/history, and dark mode. Updated screenshots retained; phone activity-card layout inspected. No cloud or data changes were needed.
+
+
+## Demo entry button — October 13, 2026
+
+- The sign-in/sign-up entry button now reads "Try the demo mode" in bold, retains its existing right arrow, and uses the preview banner's themed tinted background, dashed border, and rounded corners. It spans the card width with a 52-pixel minimum height. No reset or account action was added inside this button.
+- Production build and two focused desktop/phone public-entry browser checks passed. Checks verify the bold label, dashed border, arrow, availability from the sign-up screen, and successful entry into the existing isolated demo. Desktop and phone entry screenshots inspected. No authentication or data behavior changed.

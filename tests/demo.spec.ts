@@ -3,7 +3,7 @@ import { openPrivateApp } from "./private-fixture";
 
 async function openDemo(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: "Try the local preview" }).click();
+  await page.getByRole("button", { name: "Try the demo mode" }).click();
   await expect(
     page.getByRole("heading", { name: "Day 3", exact: true }),
   ).toBeVisible();
@@ -37,7 +37,20 @@ test("public entry, blank Day 3 and demo-only checklist defaults", async ({
     page.getByRole("textbox", { name: "Email", exact: true }),
   ).toHaveValue("");
   await expect(page.locator("body")).not.toContainText("dratgit@gmail.com");
-  await page.getByRole("button", { name: "Try the local preview" }).click();
+  const demoButton = page.getByRole("button", {
+    name: "Try the demo mode",
+    exact: true,
+  });
+  await expect(demoButton).toHaveCSS("font-weight", "700");
+  await expect(demoButton).toHaveCSS("border-top-style", "dashed");
+  await expect(demoButton.locator("svg")).toBeVisible();
+  await page.getByRole("button", { name: "Sign up", exact: true }).click();
+  await expect(demoButton).toBeVisible();
+  await page.screenshot({
+    path: `artifacts/180-demo-entry-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Try the demo mode" }).click();
   await expect(
     page.getByRole("heading", { name: "Day 3", exact: true }),
   ).toBeVisible();
