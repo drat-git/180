@@ -1,3 +1,4 @@
+import { openPrivateApp } from "./private-fixture";
 import { test, expect } from "@playwright/test";
 const blockOrder = ["General", "School", "Career", "Diet", "Body"];
 async function preview(
@@ -6,8 +7,7 @@ async function preview(
   day = 4,
 ) {
   await page.clock.install({ time: new Date(time) });
-  await page.goto("/");
-  await page.getByRole("button", { name: "Try the local preview" }).click();
+  await openPrivateApp(page);
   await expect(page.getByRole("heading", { name: `Day ${day}` })).toBeVisible();
 }
 const answer = (
@@ -67,9 +67,7 @@ test("answer icons use cyan and magenta, with cannabis colors following completi
   await expect(
     page.getByLabel("General checklist progress", { exact: true }),
   ).toHaveText("0/3 complete");
-  await expect(page.locator(".save-state")).toContainText(
-    "Saved on this device",
-  );
+  await expect(page.locator(".save-state")).toContainText("Sign in to sync");
   await page.reload();
   await expect(cannabisYes).toHaveCSS("background-color", magenta);
   await cannabisYes.click();
@@ -100,9 +98,7 @@ test("wake and screen time borders follow completion, clearing, and saved values
   await wake.fill("10:01");
   await minutes.fill("31");
   await borders(magenta);
-  await expect(page.locator(".save-state")).toContainText(
-    "Saved on this device",
-  );
+  await expect(page.locator(".save-state")).toContainText("Sign in to sync");
   await page.reload();
   await borders(magenta);
   await wake.fill("00:00");
@@ -171,9 +167,7 @@ test("checklist progress respects thresholds and survives collapsed blocks and o
     await expect(block(title)).toBeVisible();
     await expect(block(title)).toHaveText(`${expected} complete`);
   }
-  await expect(page.locator(".save-state")).toContainText(
-    "Saved on this device",
-  );
+  await expect(page.locator(".save-state")).toContainText("Sign in to sync");
   await page.getByRole("button", { name: "Previous day" }).click();
   await expect(total).toHaveText("0/12 checks complete");
   await expect(block("School")).toHaveCount(0);
@@ -211,7 +205,7 @@ test("answers, reasons, food descriptions and text survive an offline reload", a
   await page
     .getByRole("textbox", { name: "Daily journal", exact: true })
     .fill("A small but good day.");
-  await expect(page.getByRole("status")).toContainText("Saved on this device");
+  await expect(page.getByRole("status")).toContainText("Sign in to sync");
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
@@ -308,7 +302,7 @@ test("rollover retains the open journal and updates today navigation", async ({
   await page
     .getByRole("textbox", { name: "Daily journal", exact: true })
     .fill("Late-night thoughts");
-  await expect(page.getByRole("status")).toContainText("Saved on this device");
+  await expect(page.getByRole("status")).toContainText("Sign in to sync");
   await page.clock.fastForward("00:00:15");
   await expect(page.getByRole("heading", { name: "Day 3" })).toBeVisible();
   await expect(
@@ -362,7 +356,7 @@ test("multiple journal photos survive reload and individual removal", async ({
   await expect(
     page.getByRole("button", { name: "View journal photo" }),
   ).toHaveCount(2);
-  await expect(page.getByRole("status")).toContainText("Saved on this device");
+  await expect(page.getByRole("status")).toContainText("Sign in to sync");
   await page.reload();
   await expect(
     page.getByRole("button", { name: "View journal photo" }),
@@ -448,11 +442,11 @@ test("cannabis descriptions minimize together and survive count changes and offl
   await less.click();
   await field.getByRole("button", { name: "View use descriptions" }).click();
   await page.screenshot({
-    path: `artifacts/180-description-update-${test.info().project.name}.png`,
+    path: `test-results/private-screenshots/180-description-update-${test.info().project.name}.png`,
     fullPage: true,
   });
   await field.screenshot({
-    path: `artifacts/180-cannabis-descriptions-${test.info().project.name}.png`,
+    path: `test-results/private-screenshots/180-cannabis-descriptions-${test.info().project.name}.png`,
   });
   await less.click();
   await less.click();
@@ -469,9 +463,7 @@ test("cannabis descriptions minimize together and survive count changes and offl
   await expect(
     page.getByRole("textbox", { name: "Cannabis use 2 description" }),
   ).toHaveValue("Example use 2");
-  await expect(page.locator(".save-state")).toContainText(
-    "Saved on this device",
-  );
+  await expect(page.locator(".save-state")).toContainText("Sign in to sync");
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
@@ -503,7 +495,7 @@ test("layout fits the viewport and focusable controls stay reachable", async ({
     fullPage: true,
   });
   await page.screenshot({
-    path: `artifacts/180-checklist-blocks-${test.info().project.name}.png`,
+    path: `test-results/private-screenshots/180-checklist-blocks-${test.info().project.name}.png`,
     fullPage: true,
   });
 });
@@ -588,9 +580,7 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
     await page
       .getByRole("button", { name: `Minimize ${title}`, exact: true })
       .click();
-  await expect(page.locator(".save-state")).toContainText(
-    "Saved on this device",
-  );
+  await expect(page.locator(".save-state")).toContainText("Sign in to sync");
   await page.reload();
   for (const title of blockOrder)
     await expect(

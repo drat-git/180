@@ -1,8 +1,8 @@
+import { openPrivateApp } from "./private-fixture";
 import { test, expect, type Page } from "@playwright/test";
 async function preview(page: Page, date = "2026-10-12T12:00:00-04:00") {
   await page.clock.install({ time: new Date(date) });
-  await page.goto("/");
-  await page.getByRole("button", { name: "Try the local preview" }).click();
+  await openPrivateApp(page);
   await expect(page.getByRole("heading", { name: /Day \d+/ })).toBeVisible();
 }
 async function tasks(page: Page) {
@@ -317,7 +317,7 @@ test("holding opens task actions and moving cancels the hold", async ({
     ),
   ).toBe(true);
   await page.screenshot({
-    path: `artifacts/180-do-stuff-${test.info().project.name}.png`,
+    path: `test-results/private-screenshots/180-do-stuff-${test.info().project.name}.png`,
     fullPage: true,
   });
 });
@@ -368,7 +368,7 @@ test("representative task and daily-selection layouts fit desktop and phone", as
     ),
   ).toBe(true);
   await page.screenshot({
-    path: `artifacts/180-do-stuff-${test.info().project.name}.png`,
+    path: `test-results/private-screenshots/180-do-stuff-${test.info().project.name}.png`,
     fullPage: true,
   });
   await today(page);
@@ -396,7 +396,7 @@ test("representative task and daily-selection layouts fit desktop and phone", as
     .check();
   await page.getByRole("button", { name: "Choose career tasks" }).click();
   await page.screenshot({
-    path: `artifacts/180-task-activity-${test.info().project.name}.png`,
+    path: `test-results/private-screenshots/180-task-activity-${test.info().project.name}.png`,
     fullPage: true,
   });
 });

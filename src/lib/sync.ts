@@ -4,6 +4,7 @@ import { supabase } from "./supabase";
 import { pushAnti, pullAnti } from "./antiSync";
 import { pushTask, pullTasks } from "./taskSync";
 import { logicalDate } from "./dates";
+import { isDemoUser } from "./appMode";
 import {
   emptyData,
   type DailyData,
@@ -67,6 +68,7 @@ export class SyncEngine {
     this.onState();
   }
   start() {
+    if (isDemoUser(this.userId)) return;
     this.stopped = false;
     repository.onChange = () => this.schedule(600);
     window.addEventListener("online", this.wake);
@@ -115,7 +117,7 @@ export class SyncEngine {
     });
   }
   async run() {
-    if (this.running || this.stopped) return;
+    if (isDemoUser(this.userId) || this.running || this.stopped) return;
     if (!navigator.onLine) {
       this.set("offline");
       return;

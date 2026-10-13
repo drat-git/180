@@ -12,7 +12,12 @@ import {
 } from "./model";
 import { applyAntiCommand } from "./antiRotting";
 import { applyTaskCommand } from "./tasks";
-import { logicalDate } from "./dates";
+import {
+  clockForUser,
+  isDemoUser,
+  recordedDateForUser,
+  timezoneForUser,
+} from "./appMode";
 import { normalizePhoto } from "./photos";
 export interface EntryRepository {
   getDay(userId: string, date: string): Promise<DailyEntry | undefined>;
@@ -58,11 +63,24 @@ export class LocalRepository implements EntryRepository {
         await this.patchDay(userId, key.slice(userId.length + 1), {});
   }
   constructor(public database: AppDatabase = db) {}
+  private async enqueue(operation: PendingOperation) {
+    if (!isDemoUser(operation.userId))
+      await this.database.outbox.add(operation);
+  }
+  discardDemoUnsaved(userId: string) {
+    if (!isDemoUser(userId)) throw new Error("Only demo drafts can be reset.");
+    for (const key of this.unsaved.keys())
+      if (key.startsWith(userId + "|")) this.unsaved.delete(key);
+    for (const [key, op] of this.unsavedTasks)
+      if (op.userId === userId) this.unsavedTasks.delete(key);
+    for (const [key, op] of this.unsavedAnti)
+      if (op.userId === userId) this.unsavedAnti.delete(key);
+  }
   getDay(userId: string, date: string) {
     return this.database.entries.get([userId, date]);
   }
   async patchDay(userId: string, date: string, patch: EntryPatch) {
-    const now = new Date().toISOString();
+    const now = clockForUser(userId).toISOString();
     const key = userId + "|" + date;
     patch = { ...this.unsaved.get(key), ...patch };
     this.unsaved.set(key, patch);
@@ -81,7 +99,7 @@ export class LocalRepository implements EntryRepository {
           createdAt: entry?.createdAt ?? now,
           updatedAt: now,
         });
-        await this.database.outbox.add({
+        await this.enqueue({
           operationId: createId(),
           userId,
           logicalDate: date,
@@ -122,7 +140,7 @@ export class LocalRepository implements EntryRepository {
               );
               await this.database.tasks.bulkPut(tasks);
               await this.database.taskEvents.bulkPut(events);
-              await this.database.outbox.add(op);
+              await this.enqueue(op);
             },
           );
           this.unsavedTasks.delete(op.operationId);
@@ -136,19 +154,19 @@ export class LocalRepository implements EntryRepository {
     userId: string,
     input: Omit<TaskCommand, "at" | "logicalDate" | "timezone">,
   ) {
-    const now = new Date();
+    const now = clockForUser(userId);
     const operationId = createId();
     this.unsavedTasks.set(operationId, {
       operationId,
       userId,
-      logicalDate: logicalDate(now),
+      logicalDate: recordedDateForUser(userId, now),
       kind: "task",
       createdAt: now.toISOString(),
       taskCommand: {
         ...input,
         at: now.toISOString(),
-        logicalDate: logicalDate(now),
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        logicalDate: recordedDateForUser(userId, now),
+        timezone: timezoneForUser(userId),
       },
     });
     return this.flushTaskWrites(userId);
@@ -224,7 +242,7 @@ export class LocalRepository implements EntryRepository {
               await this.database.antiItems.bulkPut(next.items);
               await this.database.antiLogs.bulkPut(next.logs);
               await this.database.antiEvents.bulkPut(next.events);
-              await this.database.outbox.add(op);
+              await this.enqueue(op);
             },
           );
           this.unsavedAnti.delete(op.operationId);
@@ -238,19 +256,19 @@ export class LocalRepository implements EntryRepository {
     userId: string,
     input: Omit<AntiCommand, "at" | "logicalDate" | "timezone">,
   ) {
-    const now = new Date(),
+    const now = clockForUser(userId),
       operationId = createId();
     this.unsavedAnti.set(operationId, {
       operationId,
       userId,
-      logicalDate: logicalDate(now),
+      logicalDate: recordedDateForUser(userId, now),
       kind: "anti-rotting",
       createdAt: now.toISOString(),
       antiCommand: {
         ...input,
         at: now.toISOString(),
-        logicalDate: logicalDate(now),
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        logicalDate: recordedDateForUser(userId, now),
+        timezone: timezoneForUser(userId),
       },
     });
     return this.flushAntiWrites(userId);
@@ -264,7 +282,7 @@ export class LocalRepository implements EntryRepository {
     if (file.size > 50 * 1024 * 1024)
       throw new Error("Choose a photo smaller than 50 MB.");
     const id = createId(),
-      now = new Date().toISOString();
+      now = clockForUser(userId).toISOString();
     if (!(await this.getDay(userId, date)))
       await this.patchDay(userId, date, {});
     const existing = await this.database.images
@@ -297,7 +315,7 @@ export class LocalRepository implements EntryRepository {
           blob: new Blob([file], { type }),
           normalized: false,
         });
-        await this.database.outbox.add({
+        await this.enqueue({
           operationId: createId(),
           userId,
           logicalDate: date,
@@ -331,7 +349,7 @@ export class LocalRepository implements EntryRepository {
   async removePhoto(userId: string, id: string) {
     const image = await this.database.images.get(id);
     if (!image || image.userId !== userId) return;
-    const now = new Date().toISOString();
+    const now = clockForUser(userId).toISOString();
     await this.database.transaction(
       "rw",
       this.database.images,
@@ -342,7 +360,7 @@ export class LocalRepository implements EntryRepository {
           updatedAt: now,
           localError: undefined,
         });
-        await this.database.outbox.add({
+        await this.enqueue({
           operationId: createId(),
           userId,
           logicalDate: image.logicalDate,

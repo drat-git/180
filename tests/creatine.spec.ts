@@ -1,3 +1,4 @@
+import { openPrivateApp } from "./private-fixture";
 import { test, expect, type Page } from "@playwright/test";
 const answer = (page: Page, label: string, value: string) =>
   page
@@ -5,8 +6,7 @@ const answer = (page: Page, label: string, value: string) =>
     .getByRole("button", { name: value, exact: true });
 async function start(page: Page, time: string) {
   await page.clock.install({ time: new Date(time) });
-  await page.goto("/");
-  await page.getByRole("button", { name: "Try the local preview" }).click();
+  await openPrivateApp(page);
 }
 const body = (page: Page) =>
   page.getByRole("region", { name: "Body", exact: true });
@@ -15,7 +15,9 @@ const progress = (page: Page) =>
 const total = (page: Page) =>
   page.getByLabel("Daily checklist progress", { exact: true });
 const saved = (page: Page) =>
-  expect(page.locator(".save-state")).toContainText("Saved on this device");
+  expect(page.locator(".save-state")).toHaveText(
+    /^(Sign in to sync|Saved locally · offline)$/,
+  );
 
 test("Creatine starts at Day 5's 2 AM boundary without changing earlier checklists or totals", async ({
   page,
@@ -120,7 +122,7 @@ test("Creatine answers and optional reasons persist offline, minimize, clear, an
     .click();
   await expect(reason).toHaveCount(0);
   await body(page).screenshot({
-    path: `artifacts/180-creatine-${test.info().project.name}.png`,
+    path: `test-results/private-screenshots/180-creatine-${test.info().project.name}.png`,
   });
   await page.clock.setSystemTime(new Date("2026-10-15T12:00:00-04:00"));
   await page.reload();

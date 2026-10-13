@@ -1,5 +1,6 @@
 import { addDays, logicalDate } from "./dates";
 import type { ActivityTopic, DailyData, Task, TaskEvent } from "./model";
+import { PRIVATE_MODE, demoLogicalDate, type AppMode } from "./appMode";
 
 export type TaskActivityVisibility = Record<ActivityTopic, boolean>;
 
@@ -12,8 +13,11 @@ export function taskActivityVisibility(
   tasks: readonly Task[],
   events: readonly TaskEvent[],
   ready = true,
+  mode: AppMode = PRIVATE_MODE,
 ): TaskActivityVisibility {
-  const end = new Date(`${addDays(date, 1)}T02:00:00`).getTime();
+  const end = new Date(
+    `${addDays(date, 1)}T02:00:00${mode.demo ? "-04:00" : ""}`,
+  ).getTime();
   const history = new Map<string, TaskEvent[]>();
   const byId = new Map(tasks.map((task) => [task.id, task]));
   for (const event of events) {
@@ -40,7 +44,9 @@ export function taskActivityVisibility(
         title: task.title,
         type: "completed",
         at: task.completedAt,
-        logicalDate: logicalDate(new Date(task.completedAt)),
+        logicalDate: mode.demo
+          ? demoLogicalDate(new Date(task.completedAt))
+          : logicalDate(new Date(task.completedAt)),
         timezone: "",
       });
       history.set(task.id, list);

@@ -217,12 +217,14 @@ export function CannabisDescriptions({
   onChange,
   locked,
   onAttempt,
+  subject = "Cannabis",
 }: {
   count: number;
   values: string[];
   onChange: (index: number, value: string) => void;
   locked: boolean;
   onAttempt: () => void;
+  subject?: string;
 }) {
   return (
     <CollapsibleSection
@@ -237,7 +239,7 @@ export function CannabisDescriptions({
           <label key={index}>
             <span>Use {index + 1}</span>
             <AutoTextarea
-              aria-label={`Cannabis use ${index + 1} description`}
+              aria-label={`${subject} use ${index + 1} description`}
               rows={1}
               placeholder="Any details you’d like to record."
               value={values[index] ?? ""}

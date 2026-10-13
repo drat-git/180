@@ -46,6 +46,7 @@ import {
   wakeComplete,
   type ChecklistProgress,
 } from "../lib/checklist";
+import { modeForUser } from "../lib/appMode";
 export function DailyCheckIn({
   userId,
   date,
@@ -63,6 +64,8 @@ export function DailyCheckIn({
   onError: (v: string) => void;
   renderHeader?: (progress: ChecklistProgress) => ReactNode;
 }) {
+  const mode = modeForUser(userId);
+  const modernFood = mode.modernFood || newFoodChecklist(date);
   const entry = useLiveQuery(
     () => db.entries.get([userId, date]),
     [userId, date],
@@ -110,7 +113,7 @@ export function DailyCheckIn({
     else apply();
   }
   function reason(key: ReasonKey, label: string, preferenceKey?: string) {
-    return reasonVisible(key, data) ? (
+    return reasonVisible(key, data, mode.wakeMinutes) ? (
       <Reason
         label={label}
         preferenceKey={preferenceKey}
@@ -129,8 +132,9 @@ export function DailyCheckIn({
     tasks,
     events,
     ready,
+    mode,
   );
-  const progress = checklistProgress(data, date, activityVisibility);
+  const progress = checklistProgress(data, date, activityVisibility, mode);
   function activity(topic: ActivityTopic) {
     const statusKey = `${topic}TasksStatus` as const;
     const reasonKey = `${topic}TasksReason` as const;
@@ -163,17 +167,21 @@ export function DailyCheckIn({
       .filter(
         (f) =>
           (!("weekdays" in f) || weekdayOnly) &&
-          (!("fromDate" in f) || date >= f.fromDate),
+          (mode.demo || !("fromDate" in f) || date >= f.fromDate),
       )
       .map((field) => {
         const key = field.key;
-        const label = newFoodChecklist(date)
-          ? ((
-              { meal1: "Lunch", meal2: "Dinner", shake: "PM Shake" } as Partial<
-                Record<BinaryKey, string>
-              >
-            )[key] ?? field.label)
-          : field.label;
+        const label =
+          mode.labels[key] ??
+          (modernFood
+            ? ((
+                {
+                  meal1: "Lunch",
+                  meal2: "Dinner",
+                  shake: "PM Shake",
+                } as Partial<Record<BinaryKey, string>>
+              )[key] ?? field.label)
+            : field.label);
         const countKey =
           key === "cannabis" ? "cannabisCount" : "applicationsCount";
         return (
@@ -191,7 +199,7 @@ export function DailyCheckIn({
                 label={label}
                 value={data[`${key}Status`]}
                 completed={
-                  key === "cannabis" ? cannabisComplete(data) : undefined
+                  key === "cannabis" ? cannabisComplete(data, mode) : undefined
                 }
                 onChange={(answer) =>
                   patch(
@@ -233,6 +241,7 @@ export function DailyCheckIn({
             )}
             {key === "cannabis" && data.cannabisStatus === true && (
               <CannabisDescriptions
+                subject={mode.demo ? "Vaping" : "Cannabis"}
                 count={data.cannabisCount ?? 1}
                 values={data.cannabisUseDescriptions}
                 locked={locked}
@@ -262,7 +271,7 @@ export function DailyCheckIn({
         <input
           id="wake"
           type="time"
-          data-complete={data.wakeTime ? wakeComplete(data) : undefined}
+          data-complete={data.wakeTime ? wakeComplete(data, mode) : undefined}
           value={data.wakeTime ?? ""}
           readOnly={locked}
           onFocus={() => {
@@ -436,9 +445,10 @@ export function DailyCheckIn({
               icon={<Utensils size={18} />}
               progress={progress.blocks.Food}
             >
-              {newFoodChecklist(date) ? (
+              {modernFood ? (
                 <>
                   <AMBreakfast
+                    mode={mode}
                     data={data}
                     locked={locked}
                     onAttempt={() => requestUnlock()}
@@ -455,7 +465,7 @@ export function DailyCheckIn({
               icon={<Activity size={18} />}
               progress={progress.blocks.Body}
             >
-              {renderFields(["amPosture", "pmPosture", "lifted", "creatine"])}
+              {renderFields(mode.bodyFields)}
             </ChecklistBlock>
             <AntiRottingRecap userId={userId} date={date} today={today} />
           </section>
@@ -479,8 +489,8 @@ export function DailyCheckIn({
             }}
           >
             <p>
-              You’re editing Day {dayNumber(date)} from {dateLabel(date)}.
-              Changes will modify your historical record.
+              You’re editing Day {dayNumber(date, mode.startDate)} from{" "}
+              {dateLabel(date)}. Changes will modify your historical record.
             </p>
             <div className="dialog-actions">
               <button

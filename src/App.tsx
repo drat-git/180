@@ -13,14 +13,7 @@ import {
   Settings2,
   WifiOff,
 } from "lucide-react";
-import {
-  logicalDate,
-  dayNumber,
-  dateLabel,
-  addDays,
-  canNavigate,
-} from "./lib/dates";
-import { START_DATE } from "./lib/model";
+import { dayNumber, dateLabel, addDays, canNavigate } from "./lib/dates";
 import { db } from "./lib/db";
 import { repository } from "./lib/repository";
 import { SyncEngine, type SyncState } from "./lib/sync";
@@ -34,27 +27,35 @@ import { useNotifications } from "./lib/notifications";
 import { DoStuff } from "./components/DoStuff";
 import { Login } from "./components/Login";
 import { Modal } from "./components/Controls";
+import { DEMO_SESSION_KEY, modeForUser, todayForUser } from "./lib/appMode";
+import { clearDemoDisplayPreferences, demoSession, seedDemo } from "./lib/demo";
+import { applyTheme, restorePrivateTheme } from "./lib/theme";
 function CheckInApp({
   userId,
   email,
   onExit,
   preview,
   cached,
+  onReset,
 }: {
   userId: string;
   email: string;
   onExit: () => void;
   preview: boolean;
   cached?: boolean;
+  onReset?: () => void;
 }) {
-  const [today, setToday] = useState(() => logicalDate()),
-    [date, setDate] = useState(() => logicalDate()),
+  const mode = modeForUser(userId);
+  const [today, setToday] = useState(() => todayForUser(userId)),
+    [date, setDate] = useState(() => todayForUser(userId)),
     [state, setState] = useState<SyncState>("local"),
     [syncError, setSyncError] = useState(""),
     [saveError, setSaveError] = useState(""),
     [saveCount, setSaveCount] = useState(0),
     [settings, setSettings] = useState(false);
-  const [screen, setScreen] = useState<"today" | "tasks" | "anti">("today");
+  const [screen, setScreen] = useState<"today" | "tasks" | "anti" | "calendar">(
+    "today",
+  );
   const notifications = useNotifications(userId, preview);
   const saving = saveCount > 0;
   const notificationPending = useRef(false);
@@ -84,8 +85,9 @@ function CheckInApp({
     };
   }, [userId, preview]);
   useEffect(() => {
+    if (mode.demo) return;
     const check = () => {
-      const current = logicalDate();
+      const current = todayForUser(userId);
       setToday(current);
       setDate((old) => (old > current ? current : old));
     };
@@ -97,8 +99,8 @@ function CheckInApp({
       window.removeEventListener("focus", check);
       document.removeEventListener("visibilitychange", check);
     };
-  }, []);
-  const switchScreen = (next: "today" | "tasks" | "anti") => {
+  }, [userId, mode.demo]);
+  const switchScreen = (next: "today" | "tasks" | "anti" | "calendar") => {
     if (repository.hasUnsaved(userId)) {
       setSaveError(
         "An edit is still unsaved. Retry saving before changing screens.",
@@ -115,7 +117,7 @@ function CheckInApp({
       );
       return;
     }
-    if (canNavigate(target, today)) {
+    if (canNavigate(target, today, mode.startDate)) {
       setDate(target);
       window.scrollTo({ top: 0, behavior: "instant" });
     }
@@ -135,7 +137,7 @@ function CheckInApp({
       }
       notificationPending.current = false;
       setScreen("today");
-      setDate(logicalDate());
+      setDate(todayForUser(userId));
       window.scrollTo({ top: 0, behavior: "instant" });
     };
     const message = (event: MessageEvent) => {
@@ -210,7 +212,12 @@ function CheckInApp({
                     ? "All changes synced"
                     : "Saved locally";
   return (
-    <div className="app-shell" onTouchStart={startTouch} onTouchEnd={endTouch}>
+    <div
+      className="app-shell"
+      data-demo={mode.demo || undefined}
+      onTouchStart={startTouch}
+      onTouchEnd={endTouch}
+    >
       <header className="topbar">
         <a
           className="wordmark"
@@ -255,12 +262,25 @@ function CheckInApp({
             <span>
               LOCAL PREVIEW{" "}
               <span className="preview-detail">
-                · Entries stay on this device.
+                · Sample entries stay on this device.
               </span>
             </span>
-            <button className="text-button" onClick={onExit}>
-              Sign in <ArrowUpRight size={14} />
-            </button>
+            <div className="preview-actions">
+              <button
+                className="text-button"
+                disabled={saving}
+                onClick={onReset}
+              >
+                Reset demo
+              </button>
+              <button
+                className="text-button"
+                disabled={saving}
+                onClick={onExit}
+              >
+                Sign in <ArrowUpRight size={14} />
+              </button>
+            </div>
           </div>
         )}
         {(saveError || syncError) && (
@@ -316,7 +336,20 @@ function CheckInApp({
           >
             Anti-rot
           </button>
+          {mode.demo && (
+            <button
+              aria-pressed={screen === "calendar"}
+              onClick={() => switchScreen("calendar")}
+            >
+              Calendar
+            </button>
+          )}
         </nav>
+        {mode.demo && (
+          <div hidden={screen !== "calendar"} className="demo-calendar">
+            <p>Interactive calendar view coming soon!</p>
+          </div>
+        )}
         <div hidden={screen !== "tasks"}>
           <DoStuff
             userId={userId}
@@ -341,7 +374,7 @@ function CheckInApp({
           </DisplayPreferencesProvider>
         </div>
         <div hidden={screen !== "today"}>
-          {today < START_DATE ? (
+          {today < mode.startDate ? (
             <section className="before-start">
               <span className="eyebrow">A NEW CHAPTER</span>
               <h1>Your Day 1 begins October 9.</h1>
@@ -366,7 +399,7 @@ function CheckInApp({
                             "PAST ENTRY"
                           )}
                         </div>
-                        <h1>Day {dayNumber(date)}</h1>
+                        <h1>Day {dayNumber(date, mode.startDate)}</h1>
                         <p>{dateLabel(date)}</p>
                         <div
                           className="day-progress"
@@ -385,7 +418,13 @@ function CheckInApp({
                         <button
                           className="icon-button"
                           aria-label="Previous day"
-                          disabled={!canNavigate(addDays(date, -1), today)}
+                          disabled={
+                            !canNavigate(
+                              addDays(date, -1),
+                              today,
+                              mode.startDate,
+                            )
+                          }
                           onClick={() => navigate(addDays(date, -1))}
                         >
                           <ChevronLeft size={20} />
@@ -439,7 +478,11 @@ function CheckInApp({
           )}
         </div>
         <footer className="page-footer">
-          <span>A new day starts at 2 AM.</span>
+          <span>
+            {mode.demo
+              ? "Demo stays on Day 3 · Tuesday, October 13."
+              : "A new day starts at 2 AM."}
+          </span>
         </footer>
       </main>
       {updateReady && (
@@ -461,19 +504,33 @@ function CheckInApp({
               ? "You’re using the local preview. Your preview entries are separate from your private account."
               : email}
           </p>
-          <Appearance />
+          <Appearance preview={preview} />
           <NotificationSettings controller={notifications} preview={preview} />
           <div className="settings-info">
             <p>
               <WifiOff size={15} />
-              Local entries work offline after your first sign-in.
+              {mode.demo
+                ? "Demo entries work offline after your first visit."
+                : "Local entries work offline after your first sign-in."}
             </p>
             <p>
-              Day 1: October 9, 2026
-              <br />
-              Day boundary: 2 AM · device local time
-              <br />
-              Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
+              {mode.demo ? (
+                <>
+                  Day 1: October 11, 2026
+                  <br />
+                  Demo time: October 13, 2026 · 8 AM Eastern
+                  <br />
+                  Time stays fixed so you can explore the sample history.
+                </>
+              ) : (
+                <>
+                  Day 1: October 9, 2026
+                  <br />
+                  Day boundary: 2 AM · device local time
+                  <br />
+                  Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                </>
+              )}
             </p>
             <p>On iPhone, open in Safari, then Share → Add to Home Screen.</p>
             {pending > 0 && !preview && (
@@ -490,6 +547,80 @@ function CheckInApp({
         </Modal>
       )}
     </div>
+  );
+}
+function DemoPreview({ onExit }: { onExit: () => void }) {
+  const [userId] = useState(demoSession);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState("");
+  const [generation, setGeneration] = useState(0);
+  const [attempt, setAttempt] = useState(0);
+  const retryReset = useRef(false);
+  useEffect(() => {
+    applyTheme("dark");
+    return restorePrivateTheme;
+  }, []);
+  useEffect(() => {
+    let active = true;
+    const reset = retryReset.current;
+    void seedDemo(userId, reset)
+      .then(() => {
+        if (!active) return;
+        if (reset) {
+          repository.discardDemoUnsaved(userId);
+          clearDemoDisplayPreferences(userId);
+          retryReset.current = false;
+        }
+        applyTheme("dark");
+        setError("");
+        setReady(true);
+      })
+      .catch((e) => {
+        if (active)
+          setError(
+            e instanceof Error ? e.message : "Could not prepare the demo.",
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId, attempt]);
+  if (!ready)
+    return (
+      <div className="loading">
+        <span className="wordmark">180</span>
+        {error ? (
+          <>
+            <p role="alert">Could not prepare the demo. {error}</p>
+            <button
+              className="text-button"
+              onClick={() => setAttempt((n) => n + 1)}
+            >
+              Try again
+            </button>
+            <button className="text-button" onClick={onExit}>
+              Back to sign in
+            </button>
+          </>
+        ) : (
+          <p>Opening the demo…</p>
+        )}
+      </div>
+    );
+  return (
+    <CheckInApp
+      key={generation}
+      userId={userId}
+      email=""
+      preview
+      onExit={onExit}
+      onReset={() => {
+        retryReset.current = true;
+        setReady(false);
+        setGeneration((n) => n + 1);
+        setAttempt((n) => n + 1);
+      }}
+    />
   );
 }
 export default function App() {
@@ -509,6 +640,8 @@ export default function App() {
       <Login
         onPreview={() => {
           sessionStorage.setItem("180-preview", "true");
+          sessionStorage.removeItem(DEMO_SESSION_KEY);
+          applyTheme("dark");
           setPreview(true);
           auth.setRecovery(false);
         }}
@@ -517,18 +650,25 @@ export default function App() {
         initialError={auth.error}
       />
     );
+  if (preview)
+    return (
+      <DemoPreview
+        onExit={() => {
+          sessionStorage.removeItem("180-preview");
+          sessionStorage.removeItem(DEMO_SESSION_KEY);
+          setPreview(false);
+        }}
+      />
+    );
   return (
     <CheckInApp
-      key={preview ? "preview" : auth.user!.id}
-      userId={preview ? "local-preview" : auth.user!.id}
+      key={auth.user!.id}
+      userId={auth.user!.id}
       email={auth.user?.email ?? ""}
-      preview={preview}
+      preview={false}
       cached={auth.user?.cached}
       onExit={() => {
-        if (preview) {
-          sessionStorage.removeItem("180-preview");
-          setPreview(false);
-        } else void auth.signOut();
+        void auth.signOut();
       }}
     />
   );

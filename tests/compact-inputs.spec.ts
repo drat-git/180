@@ -1,10 +1,10 @@
+import { openPrivateApp } from "./private-fixture";
 import { test, expect } from "@playwright/test";
 test("compact notes grow for text and correctly resize after returning from Do Stuff", async ({
   page,
 }) => {
   await page.clock.install({ time: new Date("2026-10-10T12:00:00-04:00") });
-  await page.goto("/");
-  await page.getByRole("button", { name: "Try the local preview" }).click();
+  await openPrivateApp(page);
   await page
     .getByRole("group", { name: "Meal 1", exact: true })
     .getByRole("button", { name: "No", exact: true })

@@ -1,3 +1,4 @@
+import { openPrivateApp } from "./private-fixture";
 import { test, expect, type Page } from "@playwright/test";
 const original = "AM Shake/Calorie-Dense Breakfast";
 const answer = (page: Page, label: string, value: string) =>
@@ -6,11 +7,10 @@ const answer = (page: Page, label: string, value: string) =>
     .getByRole("button", { name: value, exact: true });
 async function start(page: Page, time = "2026-10-12T12:00:00-04:00") {
   await page.clock.install({ time: new Date(time) });
-  await page.goto("/");
-  await page.getByRole("button", { name: "Try the local preview" }).click();
+  await openPrivateApp(page);
 }
 const saved = (page: Page) =>
-  expect(page.locator(".save-state")).toContainText("Saved on this device");
+  expect(page.locator(".save-state")).toContainText("Sign in to sync");
 const food = (page: Page) =>
   page.getByRole("region", { name: "Diet", exact: true });
 
@@ -110,7 +110,7 @@ test("Day 4 food requires an AM choice, resets it, and preserves hidden text off
     ),
   ).toBe(true);
   await food(page).screenshot({
-    path: `artifacts/180-food-day-four-${test.info().project.name}.png`,
+    path: `test-results/private-screenshots/180-food-day-four-${test.info().project.name}.png`,
   });
 });
 

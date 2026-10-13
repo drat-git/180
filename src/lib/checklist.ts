@@ -9,6 +9,7 @@ import {
 } from "./model";
 
 import type { TaskActivityVisibility } from "./taskActivityVisibility";
+import { PRIVATE_MODE, type AppMode } from "./appMode";
 
 export type ChecklistBlockTitle =
   "General" | "School" | "Career" | "Food" | "Body";
@@ -20,11 +21,14 @@ export interface ChecklistProgress extends ChecklistCount {
   blocks: Record<ChecklistBlockTitle, ChecklistCount>;
 }
 
-export function wakeComplete(data: Pick<DailyData, "wakeTime">) {
+export function wakeComplete(
+  data: Pick<DailyData, "wakeTime">,
+  mode: AppMode = PRIVATE_MODE,
+) {
   return (
     data.wakeTime !== null &&
     data.wakeTime !== "" &&
-    timeMinutes(data.wakeTime) <= THRESHOLDS.wakeMinutes
+    timeMinutes(data.wakeTime) <= mode.wakeMinutes
   );
 }
 
@@ -37,10 +41,13 @@ export function screenTimeComplete(data: Pick<DailyData, "screenTimeMinutes">) {
 
 export function cannabisComplete(
   data: Pick<DailyData, "cannabisStatus" | "cannabisCount">,
+  mode: AppMode = PRIVATE_MODE,
 ) {
   return (
     data.cannabisStatus === false ||
-    (data.cannabisStatus === true && (data.cannabisCount ?? 1) <= 2)
+    (mode.cannabisUseLimit !== null &&
+      data.cannabisStatus === true &&
+      (data.cannabisCount ?? 1) <= mode.cannabisUseLimit)
   );
 }
 
@@ -48,6 +55,7 @@ export function checklistProgress(
   data: DailyData,
   date: string,
   activity: TaskActivityVisibility,
+  mode: AppMode = PRIVATE_MODE,
 ): ChecklistProgress {
   const count = (checks: boolean[]): ChecklistCount => ({
     completed: checks.filter(Boolean).length,
@@ -66,14 +74,14 @@ export function checklistProgress(
   }
   const blocks = {
     General: count([
-      wakeComplete(data),
+      wakeComplete(data, mode),
       screenTimeComplete(data),
-      cannabisComplete(data),
+      cannabisComplete(data, mode),
     ]),
     School: count(school),
     Career: count(career),
     Food: count(
-      newFoodChecklist(date)
+      mode.modernFood || newFoodChecklist(date)
         ? [
             breakfastComplete(data),
             ...[
@@ -92,12 +100,11 @@ export function checklistProgress(
           ].map((status) => status === true),
     ),
     Body: count(
-      [
-        data.amPostureStatus,
-        data.pmPostureStatus,
-        data.liftedStatus,
-        ...(creatineVisible(date) ? [data.creatineStatus] : []),
-      ].map((status) => status === true),
+      mode.bodyFields
+        .filter(
+          (key) => mode.demo || key !== "creatine" || creatineVisible(date),
+        )
+        .map((key) => data[`${key}Status`] === true),
     ),
   };
   return {

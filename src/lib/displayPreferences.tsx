@@ -5,6 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { isDemoUser } from "./appMode";
 
 const DisplayContext = createContext({
   userId: "local-preview",
@@ -34,13 +35,18 @@ export function DisplayPreferencesProvider({
 // They are separate from daily records and do not enqueue cloud edits.
 export function useMinimized(control: string, fallback = false) {
   const { userId, onError } = useContext(DisplayContext);
+  const defaultMinimized =
+    isDemoUser(userId) &&
+    (control === "block:Career" || control === "block:Food")
+      ? true
+      : fallback;
   const key = `180:display:${encodeURIComponent(userId)}:${control}`;
   function read() {
     try {
       const stored = window.localStorage.getItem(key);
-      return stored === null ? fallback : stored === "minimized";
+      return stored === null ? defaultMinimized : stored === "minimized";
     } catch {
-      return fallback;
+      return defaultMinimized;
     }
   }
   const [minimized, setState] = useState(read);

@@ -15,8 +15,8 @@ export function logicalDate(now = new Date()): string {
   const date = calendarDate(now);
   return now.getHours() < 2 ? addDays(date, -1) : date;
 }
-export function dayNumber(date: string): number {
-  return dateOrdinal(date) - dateOrdinal(START_DATE) + 1;
+export function dayNumber(date: string, startDate = START_DATE): number {
+  return dateOrdinal(date) - dateOrdinal(startDate) + 1;
 }
 export function weekday(date: string): number {
   return new Date(dateOrdinal(date) * 86400000).getUTCDay();
@@ -29,8 +29,12 @@ export function dateLabel(date: string): string {
     timeZone: "UTC",
   }).format(new Date(dateOrdinal(date) * 86400000));
 }
-export function canNavigate(date: string, today: string): boolean {
-  return date >= START_DATE && date <= today;
+export function canNavigate(
+  date: string,
+  today: string,
+  startDate = START_DATE,
+): boolean {
+  return date >= startDate && date <= today;
 }
 export function needsUnlock(date: string, today: string): boolean {
   return dateOrdinal(today) - dateOrdinal(date) > 1;

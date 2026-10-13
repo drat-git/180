@@ -1,8 +1,8 @@
+import { openPrivateApp } from "./private-fixture";
 import { test, expect, type Page } from "@playwright/test";
 async function preview(page: Page, time = "2026-10-10T12:00:00-04:00") {
   await page.clock.install({ time: new Date(time) });
-  await page.goto("/");
-  await page.getByRole("button", { name: "Try the local preview" }).click();
+  await openPrivateApp(page);
   await page.getByRole("button", { name: "Anti-rot", exact: true }).click();
   await expect(
     page.getByRole("heading", {
@@ -199,7 +199,7 @@ test("past-day recap appears at 2 AM, is read-only, and survives rename and dele
     ),
   ).toBe(true);
   await page.screenshot({
-    path: `artifacts/180-anti-rotting-${info.project.name}.png`,
+    path: `test-results/private-screenshots/180-anti-rotting-${info.project.name}.png`,
     fullPage: true,
   });
   await page.getByRole("button", { name: "Show daily checklist" }).click();
@@ -249,7 +249,7 @@ test("past-day recap appears at 2 AM, is read-only, and survives rename and dele
   await expect(recap.getByText("Chapter five", { exact: true })).toBeVisible();
   await expect(recap.getByText("Completed", { exact: true })).toBeVisible();
   await page.screenshot({
-    path: `artifacts/180-anti-rotting-recap-${info.project.name}.png`,
+    path: `test-results/private-screenshots/180-anti-rotting-recap-${info.project.name}.png`,
     fullPage: true,
   });
   await page.getByRole("button", { name: "Today", exact: true }).click();

@@ -1,25 +1,27 @@
 import {
   breakfastAnswerPatch,
   breakfastComplete,
-  breakfastLabel,
-  breakfastLabels,
   type BreakfastChoice,
   type DailyData,
   type EntryPatch,
 } from "../lib/model";
 import { BinaryAnswer, CollapsibleText, Reason } from "./Controls";
+import { PRIVATE_MODE, type AppMode } from "../lib/appMode";
 
 export function AMBreakfast({
   data,
   locked,
   onAttempt,
   onPatch,
+  mode = PRIVATE_MODE,
 }: {
   data: DailyData;
   locked: boolean;
   onAttempt: () => void;
   onPatch: (patch: EntryPatch) => void;
+  mode?: AppMode;
 }) {
+  const { breakfastLabel, breakfastLabels } = mode;
   const { status, choice } = data.amBreakfast;
   const label =
     status === true && choice ? breakfastLabels[choice] : breakfastLabel;
@@ -59,7 +61,11 @@ export function AMBreakfast({
       {status === true && choice === "meal" && (
         <CollapsibleText
           label="What did you eat?"
-          ariaLabel="Calorie dense meal food description"
+          ariaLabel={
+            mode.demo
+              ? "Meal food description"
+              : "Calorie dense meal food description"
+          }
           preferenceKey="am-breakfast-food-description"
           addLabel="What did you eat? Add description"
           viewLabel="View food description"

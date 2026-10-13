@@ -2338,3 +2338,23 @@ input[data-complete="false"]:focus {
   --complete: #287f94;
   --incomplete: #975579;
 }
+
+/* Preview-only additions leave the private app layout untouched. */
+[data-demo] .preview-banner {
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.preview-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.demo-calendar {
+  padding: 48px 20px;
+  color: var(--ink-72776a);
+}
+@media (max-width: 360px) {
+  [data-demo] .screen-nav button {
+    padding-inline: 5px;
+  }
+}

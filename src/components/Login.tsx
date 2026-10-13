@@ -12,7 +12,7 @@ export function Login({
   onRecovered: () => void;
   initialError?: string;
 }) {
-  const [email, setEmail] = useState("dratgit@gmail.com"),
+  const [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [reset, setReset] = useState(false),
     [setup, setSetup] = useState(false),
@@ -44,7 +44,9 @@ export function Login({
         setMessage("Check your email for a password reset link.");
       } else if (setup) {
         if (email.toLowerCase() !== "dratgit@gmail.com")
-          throw new Error("This app is private to dratgit@gmail.com.");
+          throw new Error(
+            "Account setup is reserved for the app owner. You can try the local preview.",
+          );
         if (password.length < 8) throw new Error("Use at least 8 characters.");
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -92,7 +94,7 @@ export function Login({
             : reset
               ? "We’ll send a link to reset your password."
               : setup
-                ? "Create your private account with dratgit@gmail.com."
+                ? "Set up the app owner’s private account."
                 : "A quiet place to record what you did, and how the day felt."}
         </p>
         <form onSubmit={submit}>

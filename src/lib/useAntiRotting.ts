@@ -4,6 +4,7 @@ import { db } from "./db";
 import { visibleAntiItems } from "./antiRotting";
 import { TASK_RETENTION_MS } from "./tasks";
 import type { AntiItem, AntiLog, AntiEvent } from "./model";
+import { clockForUser, isDemoUser } from "./appMode";
 const EMPTY: { items: AntiItem[]; logs: AntiLog[]; events: AntiEvent[] } = {
   items: [],
   logs: [],
@@ -19,8 +20,12 @@ export function useAntiRotting(userId: string) {
       }),
       [userId],
     ) ?? EMPTY;
-  const [now, setNow] = useState(Date.now);
+  const [now, setNow] = useState(() => clockForUser(userId).getTime());
   useEffect(() => {
+    if (isDemoUser(userId)) {
+      setNow(clockForUser(userId).getTime());
+      return;
+    }
     const update = () => setNow(Date.now());
     const times = data.items
       .filter((i) => i.completedAt && !i.deletedAt)
@@ -40,6 +45,6 @@ export function useAntiRotting(userId: string) {
       window.removeEventListener("focus", update);
       document.removeEventListener("visibilitychange", update);
     };
-  }, [data.items]);
+  }, [data.items, userId]);
   return { ...data, visible: visibleAntiItems(data.items, now) };
 }

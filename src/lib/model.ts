@@ -244,11 +244,13 @@ export const emptyData = (): DailyData =>
     ) as Record<`${BinaryKey}Status`, Answer> &
       Record<`${BinaryKey}Reason`, string>),
   }) as DailyData;
-export function reasonVisible(key: ReasonKey, data: DailyData): boolean {
+export function reasonVisible(
+  key: ReasonKey,
+  data: DailyData,
+  wakeMinutes: number = THRESHOLDS.wakeMinutes,
+): boolean {
   if (key === "wake")
-    return (
-      !!data.wakeTime && timeMinutes(data.wakeTime) > THRESHOLDS.wakeMinutes
-    );
+    return !!data.wakeTime && timeMinutes(data.wakeTime) > wakeMinutes;
   if (key === "screenTime")
     return (
       data.screenTimeMinutes !== null &&

@@ -1,11 +1,11 @@
+import { openPrivateApp } from "./private-fixture";
 import { test, expect } from "@playwright/test";
 test("separate tabs preserve drafts and settings clearly select soft dark mode", async ({
   page,
   context,
 }) => {
   await page.clock.install({ time: new Date("2026-10-12T12:00:00-04:00") });
-  await page.goto("/");
-  await page.getByRole("button", { name: "Try the local preview" }).click();
+  await openPrivateApp(page);
   const nav = page.getByRole("navigation", { name: "Main navigation" });
   await expect(nav.getByRole("button")).toHaveText([
     "Today",
@@ -57,9 +57,9 @@ test("separate tabs preserve drafts and settings clearly select soft dark mode",
   ).toBe("rgb(41, 47, 44)");
   await expect(
     space.getByRole("button", { name: "Enable reminders" }),
-  ).toHaveCount(0); // Preview never registers production pushes.
+  ).toBeDisabled(); // Offline private fixtures cannot register production pushes.
   await page.screenshot({
-    path: `artifacts/180-your-space-dark-${test.info().project.name}.png`,
+    path: `test-results/private-screenshots/180-your-space-dark-${test.info().project.name}.png`,
     fullPage: true,
   });
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
@@ -71,7 +71,7 @@ test("separate tabs preserve drafts and settings clearly select soft dark mode",
     .getByRole("button", { name: "Yes", exact: true })
     .click();
   await page.screenshot({
-    path: `artifacts/180-dark-${test.info().project.name}.png`,
+    path: `test-results/private-screenshots/180-dark-${test.info().project.name}.png`,
     fullPage: true,
   });
   await page.getByRole("button", { name: "Previous day", exact: true }).click();
@@ -97,8 +97,7 @@ test("a reminder opens Today from another tab and an older date", async ({
   page,
 }) => {
   await page.clock.install({ time: new Date("2026-10-12T12:00:00-04:00") });
-  await page.goto("/");
-  await page.getByRole("button", { name: "Try the local preview" }).click();
+  await openPrivateApp(page);
   await page.getByRole("button", { name: "Previous day" }).click();
   await page.getByRole("button", { name: "To-do", exact: true }).click();
   await page.evaluate(() =>

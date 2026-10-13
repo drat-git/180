@@ -5,6 +5,7 @@ import type { Task, TaskEvent } from "./model";
 const EMPTY_TASKS: Task[] = [];
 const EMPTY_EVENTS: TaskEvent[] = [];
 import { TASK_RETENTION_MS, visibleRoots } from "./tasks";
+import { clockForUser, isDemoUser } from "./appMode";
 
 export function useTasks(userId: string) {
   const snapshot = useLiveQuery(
@@ -20,8 +21,12 @@ export function useTasks(userId: string) {
   );
   const tasks = snapshot?.tasks ?? EMPTY_TASKS;
   const events = snapshot?.events ?? EMPTY_EVENTS;
-  const [now, setNow] = useState(Date.now);
+  const [now, setNow] = useState(() => clockForUser(userId).getTime());
   useEffect(() => {
+    if (isDemoUser(userId)) {
+      setNow(clockForUser(userId).getTime());
+      return;
+    }
     const update = () => setNow(Date.now());
     const next = tasks
       .filter((t) => !t.parentId && t.completedAt && !t.deletedAt)
@@ -41,7 +46,7 @@ export function useTasks(userId: string) {
       window.removeEventListener("focus", update);
       document.removeEventListener("visibilitychange", update);
     };
-  }, [tasks]);
+  }, [tasks, userId]);
   return {
     tasks,
     events,

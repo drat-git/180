@@ -1,7 +1,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "../lib/theme";
-export function Appearance() {
-  const { theme, setTheme, error } = useTheme();
+export function Appearance({ preview = false }: { preview?: boolean }) {
+  const { theme, setTheme, error } = useTheme(preview);
   return (
     <section className="settings-section" aria-labelledby="appearance-title">
       <h3 id="appearance-title">Appearance</h3>

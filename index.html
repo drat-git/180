@@ -10,7 +10,10 @@
     <script>
       try {
         const theme =
-          localStorage.getItem("180:theme") === "dark" ? "dark" : "light";
+          sessionStorage.getItem("180-preview") === "true" ||
+          localStorage.getItem("180:theme") === "dark"
+            ? "dark"
+            : "light";
         document.documentElement.dataset.theme = theme;
         document.documentElement.style.colorScheme = theme;
         document.querySelector('meta[name="theme-color"]').content =
