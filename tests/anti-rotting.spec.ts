@@ -157,7 +157,17 @@ test("one-time completion undo removes only automatic logging and resets archive
 test("past-day recap appears at 2 AM, is read-only, and survives rename and deletion", async ({
   page,
 }, info) => {
+  await page.addInitScript(() => {
+    for (const key of ["anti-rotting", "anti-recap"])
+      localStorage.setItem(
+        `180:display:local-preview:block:${key}`,
+        "minimized",
+      );
+  });
   await preview(page, "2026-10-11T01:00:00-04:00");
+  await expect(
+    page.getByRole("button", { name: /^(Minimize|Maximize) Anti Rotting$/ }),
+  ).toHaveCount(0);
   await add(page, "Read a book", "reusable", "Chapter five");
   await add(page, "Watch saved documentary", "one-time", "A film about space");
   await page
@@ -191,6 +201,9 @@ test("past-day recap appears at 2 AM, is read-only, and survives rename and dele
     exact: true,
   });
   await expect(recap).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /^(Minimize|Maximize) Anti Rotting$/ }),
+  ).toHaveCount(0);
   await expect(recap.getByText("Read a book", { exact: true })).toBeVisible();
   await expect(recap.getByText("Worked on", { exact: true })).toHaveCount(1);
   await expect(recap.getByText("Completed", { exact: true })).toHaveCount(1);

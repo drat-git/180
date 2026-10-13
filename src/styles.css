@@ -402,11 +402,16 @@ main {
   letter-spacing: -0.4px;
   font-weight: 400;
 }
-.block-heading button {
+.block-heading .block-toggle {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
   font-size: 11px;
   color: var(--ink-687860);
-  padding: 7px 9px;
-  min-height: 34px;
+  padding: 0;
+  min-height: 38px;
   border: 1px solid var(--line-e8ebdf);
   border-radius: 20px;
   background: var(--surface-f8f9f3);

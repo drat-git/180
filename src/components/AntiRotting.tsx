@@ -203,6 +203,7 @@ export function AntiRotting({
     <ChecklistBlock
       title="Anti Rotting"
       preferenceKey="anti-rotting"
+      collapsible={false}
       icon={<Compass size={18} />}
     >
       <p className="small anti-intro">Something to do instead of scrolling.</p>
@@ -377,6 +378,7 @@ export function AntiRottingRecap({
     <ChecklistBlock
       title="Anti Rotting"
       preferenceKey="anti-recap"
+      collapsible={false}
       icon={<Compass size={18} />}
     >
       <ul className="anti-recap" aria-label="Anti Rotting recap">

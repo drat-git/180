@@ -108,3 +108,15 @@ There is no privileged bootstrap endpoint, and no service-role key in the fronte
 
 - Today shows the supplied Aristotle quote beneath the Day header; yesterday retains its editing reminder, now at weight 500 with readable orange colors in light/dark themes. Older days show neither of these notices. The To-do heading uses the supplied James Clear quote.
 - Production build and four focused desktop/phone browser checks passed. Existing navigation and theme workflows verify quote visibility by date, the To-do text, yesterday styling in both themes, and unchanged historical editing behavior. Updated dark-theme screenshots retained. No persistence or cloud changes were needed.
+
+
+## Anti Rotting expansion — October 13, 2026
+
+- Removed the block-level Minimize/Maximize control from the Anti Rotting list and past-day recaps. Both stay expanded even if an older browser preference stored them as minimized. Individual note disclosure controls remain available, and other checklist/task blocks retain their normal minimization behavior.
+- Production build, four control/component tests, and four focused desktop/phone browser workflows passed. Regression coverage seeds old minimized preferences and verifies activities/recaps stay accessible without a block toggle; the existing cross-day/reload test verifies other blocks still minimize persistently. Updated Anti Rotting screenshots retained. No cloud or saved-record changes were needed.
+
+
+## Chevron-only block controls — October 13, 2026
+
+- Daily checklist and To-do card headers now use icon-only up/down chevrons. Buttons are 38 pixels square with 18-pixel icons, while accessible Minimize/Maximize labels, expanded-state semantics, keyboard focus, and stored preferences remain unchanged. Individual text-box disclosure buttons retain their text; Anti Rotting remains non-collapsible.
+- Production build, four component/control tests, and four focused desktop/phone browser workflows passed. Checks verify persistent minimization across navigation/reloads and task/daily layouts; updated screenshots retained and phone To-do layout inspected.

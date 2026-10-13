@@ -17,24 +17,27 @@ export function ChecklistBlock({
   icon,
   preferenceKey,
   progress,
+  collapsible = true,
   children,
 }: {
   title: string;
   icon?: ReactNode;
   preferenceKey?: string;
   progress?: ChecklistCount;
+  collapsible?: boolean;
   children: ReactNode;
 }) {
   const [minimized, setMinimized] = useMinimized(
     `block:${preferenceKey ?? title}`,
   );
   const contentId = useId();
+  const collapsed = collapsible && minimized;
   return (
     <section
       className="checklist-block"
       aria-label={title}
       data-block={title}
-      data-minimized={minimized}
+      data-minimized={collapsed}
     >
       <div className="block-heading">
         <div className="block-title">
@@ -55,19 +58,24 @@ export function ChecklistBlock({
             )}
           </div>
         </div>
-        <button
-          type="button"
-          className="text-button"
-          aria-expanded={!minimized}
-          aria-controls={contentId}
-          aria-label={minimized ? `Maximize ${title}` : `Minimize ${title}`}
-          onClick={() => setMinimized(!minimized)}
-        >
-          {minimized ? "Maximize" : "Minimize"}
-          {minimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
-        </button>
+        {collapsible && (
+          <button
+            type="button"
+            className="block-toggle"
+            aria-expanded={!minimized}
+            aria-controls={contentId}
+            aria-label={minimized ? `Maximize ${title}` : `Minimize ${title}`}
+            onClick={() => setMinimized(!minimized)}
+          >
+            {minimized ? (
+              <ChevronDown size={18} aria-hidden="true" />
+            ) : (
+              <ChevronUp size={18} aria-hidden="true" />
+            )}
+          </button>
+        )}
       </div>
-      <div id={contentId} hidden={minimized}>
+      <div id={contentId} hidden={collapsed}>
         {children}
       </div>
     </section>

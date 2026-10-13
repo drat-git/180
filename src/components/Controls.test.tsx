@@ -36,6 +36,9 @@ it("remembers minimized controls after remount and isolates each account", async
     </DisplayPreferencesProvider>
   );
   let rendered = render(view("owner"));
+  expect(
+    screen.getByRole("button", { name: "Minimize Food" }).textContent,
+  ).toBe("");
   await userEvent.click(screen.getByRole("button", { name: "Minimize" }));
   await userEvent.click(screen.getByRole("button", { name: "Minimize Food" }));
   rendered.unmount();
@@ -79,4 +82,26 @@ it("opens saved reasons and minimizes without changing text", async () => {
     />,
   );
   expect(screen.getByRole("textbox")).toHaveValue("No groceries");
+});
+
+it("keeps non-collapsible blocks accessible despite an old minimized preference", () => {
+  localStorage.setItem(
+    "180:display:fixed-block-owner:block:anti-rotting",
+    "minimized",
+  );
+  render(
+    <DisplayPreferencesProvider userId="fixed-block-owner">
+      <ChecklistBlock
+        title="Anti Rotting"
+        preferenceKey="anti-rotting"
+        collapsible={false}
+      >
+        <span>Available activities</span>
+      </ChecklistBlock>
+    </DisplayPreferencesProvider>,
+  );
+  expect(screen.getByText("Available activities")).toBeVisible();
+  expect(
+    screen.queryByRole("button", { name: /Minimize|Maximize/ }),
+  ).toBeNull();
 });
