@@ -1474,24 +1474,55 @@ dialog::backdrop {
 }
 
 /* Anti Rotting activity ideas and read-only past-day recaps. */
-.checklist-block[data-block="Anti Rotting"] {
+.checklist-block:is(
+  [data-block="Anti Rotting"],
+  [data-block="Things to do instead of scrolling"]
+) {
   --block-tone: var(--ink-806a91);
   --block-tint: var(--surface-e9e0f1);
   background: var(--surface-f3eff8);
   border-color: var(--line-e1d8eb);
 }
-.checklist-block[data-block="Anti Rotting"] .block-heading {
+.checklist-block:is(
+    [data-block="Anti Rotting"],
+    [data-block="Things to do instead of scrolling"]
+  )
+  .block-heading {
   border-bottom-color: var(--line-e1d8eb);
 }
-.checklist-block[data-block="Anti Rotting"] .block-heading h3 {
+.checklist-block:is(
+    [data-block="Anti Rotting"],
+    [data-block="Things to do instead of scrolling"]
+  )
+  .block-heading
+  h3 {
   color: var(--ink-5d486c);
 }
-.checklist-block[data-block="Anti Rotting"] .block-heading button,
-.checklist-block[data-block="Anti Rotting"] .anti-add,
-.checklist-block[data-block="Anti Rotting"] .anti-notes button {
+.checklist-block:is(
+    [data-block="Anti Rotting"],
+    [data-block="Things to do instead of scrolling"]
+  )
+  .block-heading
+  button,
+.checklist-block:is(
+    [data-block="Anti Rotting"],
+    [data-block="Things to do instead of scrolling"]
+  )
+  .anti-add,
+.checklist-block:is(
+    [data-block="Anti Rotting"],
+    [data-block="Things to do instead of scrolling"]
+  )
+  .anti-notes
+  button {
   color: var(--ink-786388);
 }
-.checklist-block[data-block="Anti Rotting"] .block-heading button {
+.checklist-block:is(
+    [data-block="Anti Rotting"],
+    [data-block="Things to do instead of scrolling"]
+  )
+  .block-heading
+  button {
   background: var(--surface-f8f5fb);
   border-color: var(--line-e1d8eb);
 }

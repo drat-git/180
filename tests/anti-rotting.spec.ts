@@ -3,7 +3,19 @@ async function preview(page: Page, time = "2026-10-10T12:00:00-04:00") {
   await page.clock.install({ time: new Date(time) });
   await page.goto("/");
   await page.getByRole("button", { name: "Try the local preview" }).click();
-  await page.getByRole("button", { name: "Anti Rotting", exact: true }).click();
+  await page.getByRole("button", { name: "Anti-rot", exact: true }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Things to do instead of scrolling",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Topics to explore, skills to learn, specific media, activities, places to go, etc",
+      { exact: true },
+    ),
+  ).toBeVisible();
 }
 async function add(page: Page, title: string, type = "reusable", notes = "") {
   await page.getByRole("button", { name: "Add activity", exact: true }).click();
@@ -91,7 +103,7 @@ test("reusable ideas, notes and logging persist offline without a separate daily
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Hide notes", exact: true }).click();
   await page.reload();
-  await page.getByRole("button", { name: "Anti Rotting", exact: true }).click();
+  await page.getByRole("button", { name: "Anti-rot", exact: true }).click();
   await expect(
     page.getByRole("button", {
       name: "Remove today’s log for Play basketball",
@@ -166,7 +178,9 @@ test("past-day recap appears at 2 AM, is read-only, and survives rename and dele
   });
   await preview(page, "2026-10-11T01:00:00-04:00");
   await expect(
-    page.getByRole("button", { name: /^(Minimize|Maximize) Anti Rotting$/ }),
+    page.getByRole("button", {
+      name: /^(Minimize|Maximize) (Anti Rotting|Things to do instead of scrolling)$/,
+    }),
   ).toHaveCount(0);
   await add(page, "Read a book", "reusable", "Chapter five");
   await add(page, "Watch saved documentary", "one-time", "A film about space");
@@ -202,7 +216,9 @@ test("past-day recap appears at 2 AM, is read-only, and survives rename and dele
   });
   await expect(recap).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /^(Minimize|Maximize) Anti Rotting$/ }),
+    page.getByRole("button", {
+      name: /^(Minimize|Maximize) (Anti Rotting|Things to do instead of scrolling)$/,
+    }),
   ).toHaveCount(0);
   await expect(recap.getByText("Read a book", { exact: true })).toBeVisible();
   await expect(recap.getByText("Worked on", { exact: true })).toHaveCount(1);
@@ -212,7 +228,7 @@ test("past-day recap appears at 2 AM, is read-only, and survives rename and dele
   await expect(
     page.getByLabel("Daily checklist progress", { exact: true }),
   ).toHaveText(totals!);
-  await page.getByRole("button", { name: "Anti Rotting", exact: true }).click();
+  await page.getByRole("button", { name: "Anti-rot", exact: true }).click();
   await edit(
     page,
     "Read a book",
@@ -406,10 +422,9 @@ test("one-time activities precede reusable ideas, including after completion and
   await expect(
     page.getByRole("region", { name: "Anti Rotting did today", exact: true }),
   ).toHaveCount(0);
-  await expect(page.locator('[data-block="Anti Rotting"]')).toHaveCSS(
-    "background-color",
-    "rgb(243, 239, 248)",
-  );
+  await expect(
+    page.locator('[data-block="Things to do instead of scrolling"]'),
+  ).toHaveCSS("background-color", "rgb(243, 239, 248)");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

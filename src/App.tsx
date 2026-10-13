@@ -314,7 +314,7 @@ function CheckInApp({
             aria-pressed={screen === "anti"}
             onClick={() => switchScreen("anti")}
           >
-            Anti Rotting
+            Anti-rot
           </button>
         </nav>
         <div hidden={screen !== "tasks"}>

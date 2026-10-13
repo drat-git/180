@@ -88,7 +88,7 @@ Local-only delivery means the Mac must serve the app for a new install, updates,
 
 ## Anti Rotting
 
-The **Anti Rotting** tab contains an always-expanded **Anti Rotting** list of your own ideas. Add a title, optional notes, and choose Reusable or One-time. There are no categories, suggestions, subtasks, deadlines, streaks, or progress scores.
+The **Anti-rot** tab contains an always-expanded **Things to do instead of scrolling** list of your own ideas. Add a title, optional notes, and choose Reusable or One-time. There are no categories, suggestions, subtasks, deadlines, streaks, or progress scores.
 
 - **Did this / Did today** records or removes one activity log per logical day directly on the activity. One-time activities appear above reusable ideas. Hold an activity (or focus it and press Shift+F10) to edit or delete it. Reusable ideas stay available; past-day recaps preserve logged activities after deletion or archiving.
 - One-time activities have a completion checkbox. Completing automatically logs the day; reopening on that same logical day removes only the automatic contribution, preserving a manual log. Reopening on a later day preserves previous logs. Completed items remain crossed out for 12 elapsed hours; reopening/rechecking resets expiry. Changing a completed item to Reusable reopens it with the same rules.
@@ -99,7 +99,7 @@ The **Anti Rotting** tab contains an always-expanded **Anti Rotting** list of yo
 
 ## To-do
 
-Use **Today / To-do / Anti Rotting** to switch between the daily record and persistent **School, Career, and Life** task lists. Launch always opens today; returning from another tab retains the daily date you were viewing.
+Use **Today / To-do / Anti-rot** to switch between the daily record and persistent **School, Career, and Life** task lists. Launch always opens today; returning from another tab retains the daily date you were viewing.
 
 - Add tasks with a title, then use the small Subtask control to add one level of children. Parent completion is automatic: all remaining children must be complete. Parent checkboxes cannot toggle children. Adding an incomplete child reopens a completed parent; deleting its last child returns it to an incomplete standalone task.
 - Completed tasks move below incomplete tasks and remain visible with muted shading and strikethrough for 12 elapsed hours. Unchecking/rechecking resets that timer. Completed children stay under an unfinished parent; the group archives 12 hours after the parent completes. Archived tasks remain stored, with no Archive screen in this phase.

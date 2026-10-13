@@ -201,12 +201,15 @@ export function AntiRotting({
   }
   return (
     <ChecklistBlock
-      title="Anti Rotting"
+      title="Things to do instead of scrolling"
       preferenceKey="anti-rotting"
       collapsible={false}
       icon={<Compass size={18} />}
     >
-      <p className="small anti-intro">Something to do instead of scrolling.</p>
+      <p className="small anti-intro">
+        Topics to explore, skills to learn, specific media, activities, places
+        to go, etc
+      </p>
       <ul className="anti-list">
         {visible.map((item) => (
           <ActivityRow

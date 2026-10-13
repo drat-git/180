@@ -10,7 +10,7 @@ test("separate tabs preserve drafts and settings clearly select soft dark mode",
   await expect(nav.getByRole("button")).toHaveText([
     "Today",
     "To-do",
-    "Anti Rotting",
+    "Anti-rot",
   ]);
   await expect(
     page.getByRole("heading", { name: "Daily checklist", exact: true }),
@@ -28,7 +28,7 @@ test("separate tabs preserve drafts and settings clearly select soft dark mode",
   await expect(
     page.getByRole("button", { name: "Add activity", exact: true }),
   ).toHaveCount(0);
-  await nav.getByRole("button", { name: "Anti Rotting", exact: true }).click();
+  await nav.getByRole("button", { name: "Anti-rot", exact: true }).click();
   await page.getByRole("button", { name: "Add activity", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Activity title", exact: true })

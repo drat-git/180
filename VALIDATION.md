@@ -120,3 +120,9 @@ There is no privileged bootstrap endpoint, and no service-role key in the fronte
 
 - Daily checklist and To-do card headers now use icon-only up/down chevrons. Buttons are 38 pixels square with 18-pixel icons, while accessible Minimize/Maximize labels, expanded-state semantics, keyboard focus, and stored preferences remain unchanged. Individual text-box disclosure buttons retain their text; Anti Rotting remains non-collapsible.
 - Production build, four component/control tests, and four focused desktop/phone browser workflows passed. Checks verify persistent minimization across navigation/reloads and task/daily layouts; updated screenshots retained and phone To-do layout inspected.
+
+
+## Anti-rot wording — October 13, 2026
+
+- The switcher tab is labeled Anti-rot. Its activity-card heading is "Things to do instead of scrolling", followed by "Topics to explore, skills to learn, specific media, activities, places to go, etc". Existing purple styling, stored activities, note preferences, and non-collapsible behavior are preserved. Past-day recap content remains unchanged.
+- Production build and six focused desktop/phone browser scenarios passed, covering the exact new copy, tab navigation, retained styling, layout width, activity ordering/history, and dark mode. Updated screenshots retained; phone activity-card layout inspected. No cloud or data changes were needed.
