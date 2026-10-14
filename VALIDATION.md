@@ -1,4 +1,17 @@
-# Validation — October 9, 2026
+# Validation log
+
+[Project overview](README.md) · [Current testing instructions](docs/development.md#testing)
+
+This is a dated record of implementation checks. Earlier sections describe the app at the time of each check; they are not the current feature list or a guarantee of checks on every revision. Current screenshots are in [`docs/images`](docs/images); `artifacts/` contains earlier visual checks.
+
+## Repository presentation — October 14, 2026
+
+- All **170 unit/component/persistence/sync tests passed**, and TypeScript checks and the production build passed. The existing bundle-size and service-worker option deprecation warnings remain.
+- Captured and inspected six screenshots from the live public demo using synthetic samples: four Classic Dark, one Blue Slate Light, and one Monochrome Dark mobile view. All used Forest & Rust completion colors and Classic Anti-rot colors.
+- Checked documentation formatting and local links. The new GitHub Actions workflow runs unit tests and a production build without private backend credentials; browser and hosted database suites remain separate checks.
+- This change updates repository presentation and CI; application behavior and database configuration are unchanged.
+
+## Initial daily app — October 9, 2026
 
 - Production build: passed; generated application shell, manifest, icons, and a service worker precaching the full app, including offline HEIC-conversion code.
 - Unit/component/sync tests: **23 passed**. Includes field thresholds, date boundaries, durable minimization and account-specific display preferences, atomic local saves, quota-failure retry, account partitioning, offline merge behavior, in-flight edits, expired sessions, lost acknowledgements, renewal failures retaining local access, explicit sign-out locking the app, travel keeping future edits queued, and photo deletion cleanup after interrupted uploads.
