@@ -47,7 +47,7 @@ export const binaryFields = [
   { key: "cannabis", label: "Used cannabis?", count: true },
   {
     key: "applications",
-    label: "Applied to jobs or internships?",
+    label: "Applied to jobs or internships",
     count: true,
   },
 ] as const;

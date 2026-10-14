@@ -8,7 +8,7 @@ const check = (page: Page, title: string) =>
   page.getByRole("checkbox", { name: `Complete ${title}`, exact: true });
 const answer = (page: Page, topic: string, value = "Yes") =>
   page
-    .getByRole("group", { name: `Worked on ${topic} tasks?`, exact: true })
+    .getByRole("group", { name: `Worked on ${topic} tasks`, exact: true })
     .getByRole("button", { name: value, exact: true });
 const recorded = (page: Page, topic = "school") =>
   page.getByRole("group", { name: `Recorded ${topic} tasks`, exact: true });
@@ -88,7 +88,7 @@ test("completion records child hierarchy and School/Career progress immediately;
   await daily(page);
   await answer(page, "school", "No").click();
   await page
-    .getByRole("textbox", { name: "Worked on school tasks? reason" })
+    .getByRole("textbox", { name: "Worked on school tasks reason" })
     .fill("Keep reason");
   await todo(page);
   await check(page, "Outline").check();
@@ -127,7 +127,7 @@ test("completion records child hierarchy and School/Career progress immediately;
   );
   await answer(page, "school", "No").click();
   await expect(
-    page.getByRole("textbox", { name: "Worked on school tasks? reason" }),
+    page.getByRole("textbox", { name: "Worked on school tasks reason" }),
   ).toHaveValue("Keep reason");
 });
 

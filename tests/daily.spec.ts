@@ -148,7 +148,7 @@ test("checklist progress respects thresholds and survives collapsed blocks and o
   await page.getByLabel("Screen time minutes").fill("30");
   for (const label of [
     "Attended class",
-    "Applied to jobs or internships?",
+    "Applied to jobs or internships",
     "Lunch",
     "Lifted",
   ])
@@ -517,7 +517,7 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
   ).toBeVisible();
   await expect(
     career.getByRole("group", {
-      name: "Applied to jobs or internships?",
+      name: "Applied to jobs or internships",
       exact: true,
     }),
   ).toBeVisible();
@@ -526,7 +526,7 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
       page.getByRole("button", { name: `Minimize ${title}`, exact: true }),
     ).toHaveAttribute("aria-expanded", "true");
   await answer(page, "Attended class", "Yes").click();
-  await answer(page, "Applied to jobs or internships?", "Yes").click();
+  await answer(page, "Applied to jobs or internships", "Yes").click();
   await career
     .getByRole("button", { name: "Increase how many applications?" })
     .click();
@@ -611,7 +611,7 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
     "true",
   );
   await expect(
-    answer(reopened, "Applied to jobs or internships?", "Yes"),
+    answer(reopened, "Applied to jobs or internships", "Yes"),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
     reopened.getByLabel("How many applications?", { exact: true }),

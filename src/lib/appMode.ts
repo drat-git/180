@@ -42,7 +42,7 @@ export const DEMO_MODE: AppMode = {
   modernFood: true,
   bodyFields: ["pmPosture", "lifted", "creatine"],
   labels: {
-    cannabis: "Vaped?",
+    cannabis: "Vaped",
     shake: "Creatine",
     pmPosture: "8500 steps",
     lifted: "Exercised",

@@ -75,7 +75,7 @@ test("all 54 combinations resolve independent layers, neutral unanswered control
       .getByRole("button", { name: value, exact: true });
   await answer("AM posture exercises", "Yes").click();
   await answer("Used cannabis?", "No").click();
-  await answer("Applied to jobs or internships?", "No").click();
+  await answer("Applied to jobs or internships", "No").click();
   await page.locator("#wake").fill("08:00");
   await page
     .getByRole("spinbutton", { name: "Screen time hours", exact: true })
@@ -90,7 +90,7 @@ test("all 54 combinations resolve independent layers, neutral unanswered control
       '[aria-label="AM posture exercises"] button.selected',
     )!;
     const incomplete = document.querySelector<HTMLButtonElement>(
-      '[aria-label="Applied to jobs or internships?"] button.selected',
+      '[aria-label="Applied to jobs or internships"] button.selected',
     )!;
     const noComplete = document.querySelector<HTMLButtonElement>(
       '[aria-label="Used cannabis?"] button.selected',

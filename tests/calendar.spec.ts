@@ -201,7 +201,7 @@ test("saved edits and Life checkoffs update the preview and survive offline relo
   await openCalendar(page);
   await preview(page).getByRole("button", { name: "Open day" }).click();
   await page
-    .getByRole("group", { name: "Vaped?", exact: true })
+    .getByRole("group", { name: "Vaped", exact: true })
     .getByRole("button", { name: "Yes", exact: true })
     .click();
   await expect(page.locator(".save-state")).toHaveText("Saved on this device");
@@ -211,7 +211,7 @@ test("saved edits and Life checkoffs update the preview and survive offline relo
   ).toHaveAttribute("data-band", "0");
   await preview(page).getByRole("button", { name: "Open day" }).click();
   await page
-    .getByRole("group", { name: "Vaped?", exact: true })
+    .getByRole("group", { name: "Vaped", exact: true })
     .getByRole("button", { name: "No", exact: true })
     .click();
   await expect(page.locator(".save-state")).toHaveText("Saved on this device");

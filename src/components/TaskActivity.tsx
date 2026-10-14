@@ -35,7 +35,7 @@ export function TaskActivity({
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useMinimized(`activity:${topic}`);
   const available = roots.filter((t) => t.topic === topic);
-  const label = `Worked on ${topic} tasks?`;
+  const label = `Worked on ${topic} tasks`;
   if (!visible) return null;
   const change = (next: TaskSelection[]) => {
     if (locked) onAttempt();
@@ -83,6 +83,7 @@ export function TaskActivity({
       {status === false && (
         <Reason
           label={label}
+          preferenceKey={`${label}? reason`}
           value={reason}
           locked={locked}
           onAttempt={onAttempt}

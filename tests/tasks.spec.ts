@@ -42,7 +42,7 @@ async function child(page: Page, parent: string, title: string) {
 }
 function answer(page: Page, topic: string, choice: string) {
   return page
-    .getByRole("group", { name: `Worked on ${topic} tasks?`, exact: true })
+    .getByRole("group", { name: `Worked on ${topic} tasks`, exact: true })
     .getByRole("button", { name: choice, exact: true });
 }
 
@@ -175,14 +175,14 @@ test("daily parent/child selections remain readable after archive, offline reloa
   await page.getByRole("button", { name: "Choose school tasks" }).click();
   const field = page.locator(".task-activity").filter({
     has: page.getByRole("group", {
-      name: "Worked on school tasks?",
+      name: "Worked on school tasks",
       exact: true,
     }),
   });
   await field.getByRole("button", { name: "Minimize", exact: true }).click();
   await answer(page, "school", "No").click();
   await page
-    .getByRole("textbox", { name: "Worked on school tasks? reason" })
+    .getByRole("textbox", { name: "Worked on school tasks reason" })
     .fill("Saved reason");
   await answer(page, "school", "Yes").click();
   await expect(
@@ -210,7 +210,7 @@ test("daily parent/child selections remain readable after archive, offline reloa
   await page.clock.fastForward("02:00:01");
   await page.getByRole("button", { name: "Today", exact: true }).click();
   await expect(
-    page.getByRole("group", { name: "Worked on school tasks?", exact: true }),
+    page.getByRole("group", { name: "Worked on school tasks", exact: true }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Previous day" }).click();
   await expect(recorded).toContainText("Read notes");
@@ -275,7 +275,7 @@ test("school work appears on weekends; historical task edits ask once and Life h
     page.getByRole("group", { name: "Attended class", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("group", { name: "Worked on school tasks?", exact: true }),
+    page.getByRole("group", { name: "Worked on school tasks", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("group", { name: "Worked on life tasks?", exact: true }),
@@ -439,7 +439,7 @@ async function remove(page: Page, title: string) {
   await expect(row).toHaveCount(0);
 }
 const question = (page: Page, topic = "school") =>
-  page.getByRole("group", { name: `Worked on ${topic} tasks?`, exact: true });
+  page.getByRole("group", { name: `Worked on ${topic} tasks`, exact: true });
 
 test("yesterday's completion remains selectable but never creates today's question", async ({
   page,
@@ -604,7 +604,7 @@ test("saved No and its reason survive deletion without task completion", async (
   await today(page);
   await answer(page, "career", "No").click();
   await page
-    .getByRole("textbox", { name: "Worked on career tasks? reason" })
+    .getByRole("textbox", { name: "Worked on career tasks reason" })
     .fill("Busy today");
   await tasks(page);
   await remove(page, "Draft resume");
@@ -614,13 +614,13 @@ test("saved No and its reason survive deletion without task completion", async (
     "true",
   );
   await expect(
-    page.getByRole("textbox", { name: "Worked on career tasks? reason" }),
+    page.getByRole("textbox", { name: "Worked on career tasks reason" }),
   ).toHaveValue("Busy today");
   await page.clock.fastForward("24:00:00");
   await page.getByRole("button", { name: "Today", exact: true }).click();
   await expect(question(page, "career")).toHaveCount(0);
   await page.getByRole("button", { name: "Previous day" }).click();
   await expect(
-    page.getByRole("textbox", { name: "Worked on career tasks? reason" }),
+    page.getByRole("textbox", { name: "Worked on career tasks reason" }),
   ).toHaveValue("Busy today");
 });

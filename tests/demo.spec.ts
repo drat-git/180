@@ -149,7 +149,7 @@ test("past entries show varied samples, absent Sunday school and protected histo
   await expect(
     page.getByRole("textbox", { name: "Vaping use 1 description" }),
   ).toHaveCount(0);
-  await expect(answer(page, "Vaped?", "No")).toHaveAttribute(
+  await expect(answer(page, "Vaped", "No")).toHaveAttribute(
     "aria-pressed",
     "true",
   );
@@ -329,20 +329,20 @@ test("demo thresholds, breakfast choices and local-only visitor actions", async 
   await expect(
     page.getByRole("textbox", { name: "Screen time reason" }),
   ).toBeVisible();
-  await answer(page, "Vaped?", "No").click();
-  const completeColor = await answer(page, "Vaped?", "No").evaluate(
+  await answer(page, "Vaped", "No").click();
+  const completeColor = await answer(page, "Vaped", "No").evaluate(
     (el) => getComputedStyle(el).backgroundColor,
   );
-  await answer(page, "Vaped?", "Yes").click();
+  await answer(page, "Vaped", "Yes").click();
   await expect(page.getByLabel("How many times?", { exact: true })).toHaveText(
     "1",
   );
-  await expect(answer(page, "Vaped?", "Yes")).toHaveCSS(
+  await expect(answer(page, "Vaped", "Yes")).toHaveCSS(
     "background-color",
     "rgb(151, 85, 121)",
   );
   expect(
-    await answer(page, "Vaped?", "Yes").evaluate(
+    await answer(page, "Vaped", "Yes").evaluate(
       (el) => getComputedStyle(el).backgroundColor,
     ),
   ).not.toBe(completeColor);
