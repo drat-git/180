@@ -344,6 +344,8 @@ export type Database = {
           completed_at: string | null;
           created_at: string;
           deleted_at: string | null;
+          estimated_minutes: number | null;
+          high_priority: boolean;
           id: string;
           parent_id: string | null;
           revision: number;
@@ -356,6 +358,8 @@ export type Database = {
           completed_at?: string | null;
           created_at: string;
           deleted_at?: string | null;
+          estimated_minutes?: number | null;
+          high_priority?: boolean;
           id: string;
           parent_id?: string | null;
           revision?: number;
@@ -368,6 +372,8 @@ export type Database = {
           completed_at?: string | null;
           created_at?: string;
           deleted_at?: string | null;
+          estimated_minutes?: number | null;
+          high_priority?: boolean;
           id?: string;
           parent_id?: string | null;
           revision?: number;

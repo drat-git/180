@@ -1,5 +1,32 @@
-import type { Task, TaskCommand, TaskEvent } from "./model";
+import type { Task, TaskCommand, TaskEvent, TaskOptions } from "./model";
 
+export const MAX_ESTIMATE_MINUTES = 525600;
+export function validateTaskOptions(
+  options: TaskOptions,
+  parentId?: string | null,
+) {
+  if (
+    "estimatedMinutes" in options &&
+    options.estimatedMinutes !== null &&
+    (!Number.isInteger(options.estimatedMinutes) ||
+      options.estimatedMinutes! < 1 ||
+      options.estimatedMinutes! > MAX_ESTIMATE_MINUTES)
+  )
+    throw new Error(
+      "Enter an estimated time between 1 minute and 8,760 hours.",
+    );
+  if ("highPriority" in options && typeof options.highPriority !== "boolean")
+    throw new Error("Choose a valid priority.");
+  if (options.highPriority && parentId)
+    throw new Error("High priority is available only for top-level tasks.");
+}
+export function formatDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60),
+    remainder = minutes % 60;
+  return [hours ? `${hours} hr` : "", remainder ? `${remainder} min` : ""]
+    .filter(Boolean)
+    .join(" ");
+}
 export const TASK_RETENTION_MS = 12 * 60 * 60 * 1000;
 export const topicLabels = {
   school: "School",
@@ -13,6 +40,10 @@ export function sortTasks(tasks: Task[]) {
   return [...tasks].sort(
     (a, b) =>
       Number(!!a.completedAt) - Number(!!b.completedAt) ||
+      (!a.completedAt && !b.completedAt
+        ? Number(!!b.highPriority && !b.parentId) -
+          Number(!!a.highPriority && !a.parentId)
+        : 0) ||
       a.createdAt.localeCompare(b.createdAt) ||
       a.id.localeCompare(b.id),
   );
@@ -70,7 +101,10 @@ export function applyTaskCommand(
       if (!parent || parent.parentId || parent.topic !== command.topic)
         throw new Error("Choose a top-level parent in the same topic.");
     }
+    validateTaskOptions(command, command.parentId);
     task = {
+      estimatedMinutes: command.estimatedMinutes ?? null,
+      highPriority: command.highPriority ?? false,
       id: command.taskId,
       userId,
       title,
@@ -94,14 +128,22 @@ export function applyTaskCommand(
     } else if (command.action === "complete") {
       if (!childrenOf(tasks, task.id).length)
         transition(task, !!command.completed);
-    } else {
+    } else if (command.action === "options") {
+      if (!("estimatedMinutes" in command) && !("highPriority" in command))
+        throw new Error("Choose a task option to update.");
+      validateTaskOptions(command, task.parentId);
+      if ("estimatedMinutes" in command)
+        task.estimatedMinutes = command.estimatedMinutes;
+      if ("highPriority" in command) task.highPriority = command.highPriority;
+      touch(task);
+    } else if (command.action === "delete") {
       task.deletedAt = command.at;
       touch(task);
       for (const child of childrenOf(tasks, task.id)) {
         child.deletedAt = command.at;
         touch(child);
       }
-    }
+    } else throw new Error("Unknown task action.");
   }
   if (task.parentId) {
     const parent = tasks.find((t) => t.id === task!.parentId);

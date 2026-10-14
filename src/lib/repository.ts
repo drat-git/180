@@ -7,6 +7,7 @@ import {
   type EntryPatch,
   type JournalImage,
   type TaskCommand,
+  type TaskOptions,
   type TaskTopic,
   type PendingOperation,
 } from "./model";
@@ -29,7 +30,13 @@ export interface EntryRepository {
     topic: TaskTopic,
     title: string,
     parentId?: string,
+    options?: TaskOptions,
   ): Promise<string>;
+  updateTaskOptions(
+    userId: string,
+    taskId: string,
+    options: TaskOptions,
+  ): Promise<void>;
   renameTask(userId: string, taskId: string, title: string): Promise<void>;
   completeTask(
     userId: string,
@@ -176,16 +183,21 @@ export class LocalRepository implements EntryRepository {
     topic: TaskTopic,
     title: string,
     parentId?: string,
+    options: TaskOptions = {},
   ) {
     const taskId = createId();
     await this.mutateTask(userId, {
       taskId,
       action: "create",
+      ...options,
       topic,
       title: title.trim(),
       parentId: parentId ?? null,
     });
     return taskId;
+  }
+  updateTaskOptions(userId: string, taskId: string, options: TaskOptions) {
+    return this.mutateTask(userId, { taskId, action: "options", ...options });
   }
   renameTask(userId: string, taskId: string, title: string) {
     return this.mutateTask(userId, {

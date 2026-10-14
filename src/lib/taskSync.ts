@@ -12,6 +12,8 @@ export const taskFromWire = (t: WireTask): Task => ({
   topic: t.topic as Task["topic"],
   parentId: t.parent_id,
   title: t.title,
+  estimatedMinutes: t.estimated_minutes ?? null,
+  highPriority: t.high_priority ?? false,
   completedAt: t.completed_at ? new Date(t.completed_at).toISOString() : null,
   deletedAt: t.deleted_at ? new Date(t.deleted_at).toISOString() : null,
   revision: t.revision,

@@ -7,6 +7,7 @@ import {
   type TaskEvent,
   type TaskSelection,
   type TaskTopic,
+  type TaskOptions,
   type AntiItem,
   type AntiLog,
   type AntiEvent,
@@ -41,10 +42,12 @@ export function createDemoSeed(userId: string) {
     title: string,
     at: string,
     parent?: string,
+    options: TaskOptions = {},
   ) {
     const result = applyTaskCommand(tasks, userId, id(`create:${key}`), {
       taskId: id(key),
       action: "create",
+      ...options,
       topic,
       title,
       parentId: parent ? id(parent) : null,
@@ -69,7 +72,14 @@ export function createDemoSeed(userId: string) {
   const sunday = "2026-10-11T10:00:00-04:00";
   const monday = "2026-10-12T09:00:00-04:00";
   task("resume", "career", "Tailor resume for a software internship", sunday);
-  task("interview", "career", "Practice common interview questions", sunday);
+  task(
+    "interview",
+    "career",
+    "Practice common interview questions",
+    sunday,
+    undefined,
+    { highPriority: true, estimatedMinutes: 45 },
+  );
   task("project", "career", "Build a campus events project", sunday);
   for (const [key, title] of [
     ["screens", "Sketch main screens"],
@@ -84,9 +94,13 @@ export function createDemoSeed(userId: string) {
   complete("event-list", "2026-10-11T17:30:00-04:00");
   task("biology", "school", "Review biology lecture notes", monday);
   task("sociology", "school", "Read Chapter 4 for sociology", monday);
-  task("essay", "school", "Prepare history essay", monday);
+  task("essay", "school", "Prepare history essay", monday, undefined, {
+    highPriority: true,
+  });
   task("topic", "school", "Choose a topic", monday, "essay");
-  task("outline", "school", "Draft an outline", monday, "essay");
+  task("outline", "school", "Draft an outline", monday, "essay", {
+    estimatedMinutes: 20,
+  });
   task("draft", "school", "Write the first draft", monday, "essay");
   task("statistics", "school", "Finish statistics practice set", monday);
   complete("statistics", "2026-10-12T15:00:00-04:00");

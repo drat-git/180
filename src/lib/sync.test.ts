@@ -51,6 +51,8 @@ const taskWire = (t: Task) => ({
   user_id: t.userId,
   topic: t.topic,
   parent_id: t.parentId,
+  estimated_minutes: t.estimatedMinutes ?? null,
+  high_priority: t.highPriority ?? false,
   title: t.title,
   completed_at: t.completedAt,
   deleted_at: t.deletedAt,
@@ -391,6 +393,66 @@ it("task edits merge remote titles with local completion and preserve history af
   expect((await db.tasks.get(id))!.completedAt).toBe(timestamp);
   expect(await db.taskEvents.count()).toBe(1);
   expect(remoteEvents).toHaveLength(1);
+});
+it("merges independent task options and does not replay a lost acknowledgement over newer server metadata", async () => {
+  const id = await repository.createTask("owner", "school", "Physics");
+  const worker = engine();
+  await worker.run();
+  remoteTasks[0].highPriority = true; // Device B edits a different field.
+  await repository.updateTaskOptions("owner", id, { estimatedMinutes: 45 });
+  failAfterCommit = true;
+  await worker.run();
+  expect(worker.state).toBe("error");
+  remoteTasks[0].estimatedMinutes = 90; // A newer server edit wins after retry.
+  await worker.run();
+  expect(await db.tasks.get(id)).toMatchObject({
+    estimatedMinutes: 90,
+    highPriority: true,
+  });
+  expect(remoteTasks[0].estimatedMinutes).toBe(90);
+  expect(await db.outbox.count()).toBe(0);
+  expect(await db.taskEvents.count()).toBe(0);
+});
+it("overlays pending options on an in-flight creation acknowledgement", async () => {
+  const id = await repository.createTask("owner", "life", "Laundry");
+  let release!: (value: unknown) => void;
+  mock.rpc.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  const worker = engine();
+  const run = worker.run();
+  await vi.waitFor(() => expect(mock.rpc).toHaveBeenCalledTimes(1));
+  await repository.updateTaskOptions("owner", id, {
+    estimatedMinutes: 30,
+    highPriority: true,
+  });
+  const first = (await db.outbox.toArray())[0];
+  remoteTasks = applyTaskCommand(
+    [],
+    "owner",
+    first.operationId,
+    first.taskCommand!,
+  ).tasks;
+  receipts.add(first.operationId);
+  release({
+    data: { tasks: remoteTasks.map(taskWire), events: [] },
+    error: null,
+  });
+  await run;
+  expect(await db.tasks.get(id)).toMatchObject({
+    estimatedMinutes: 30,
+    highPriority: true,
+  });
+  expect(await db.outbox.count()).toBe(1);
+  await worker.run();
+  expect(remoteTasks[0]).toMatchObject({
+    estimatedMinutes: 30,
+    highPriority: true,
+  });
+  expect(await db.outbox.count()).toBe(0);
 });
 it("keeps a newer pending task rename over an in-flight acknowledgement", async () => {
   const id = await repository.createTask("owner", "career", "Resume");

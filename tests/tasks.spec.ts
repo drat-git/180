@@ -16,6 +16,10 @@ async function add(page: Page, topic: string, title: string) {
   await page
     .getByRole("button", { name: `Add ${topic} task`, exact: true })
     .click();
+  await page
+    .getByRole("dialog", { name: "Add task options" })
+    .getByRole("button", { name: "Add task", exact: true })
+    .click();
   await expect(
     page.getByRole("checkbox", { name: `Complete ${title}`, exact: true }),
   ).toBeVisible();
@@ -28,6 +32,10 @@ async function child(page: Page, parent: string, title: string) {
     .getByRole("textbox", { name: "New subtask", exact: true })
     .fill(title);
   await page.getByRole("button", { name: "Add subtask", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Add subtask options" })
+    .getByRole("button", { name: "Add subtask", exact: true })
+    .click();
   await expect(
     page.getByRole("checkbox", { name: `Complete ${title}`, exact: true }),
   ).toBeVisible();
@@ -80,6 +88,10 @@ test("task groups complete automatically, sort below active tasks, and reset the
     .getByRole("textbox", { name: "New subtask", exact: true })
     .fill("Solve problems");
   await page.getByRole("button", { name: "Add subtask", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Add subtask options" })
+    .getByRole("button", { name: "Add subtask", exact: true })
+    .click();
   await expect(
     page.getByRole("checkbox", { name: "Complete Physics", exact: true }),
   ).toBeDisabled();
@@ -334,6 +346,10 @@ test("representative task and daily-selection layouts fit desktop and phone", as
     .fill("Solve practice problems");
   await page.getByRole("button", { name: "Add subtask", exact: true }).click();
   await page
+    .getByRole("dialog", { name: "Add subtask options" })
+    .getByRole("button", { name: "Add subtask", exact: true })
+    .click();
+  await page
     .getByRole("checkbox", {
       name: "Complete Review lecture notes",
       exact: true,
@@ -550,6 +566,10 @@ test("a completed child preserves applicability after its unfinished parent is d
     .getByRole("textbox", { name: "New subtask", exact: true })
     .fill("Unfinished child");
   await page.getByRole("button", { name: "Add subtask", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Add subtask options" })
+    .getByRole("button", { name: "Add subtask", exact: true })
+    .click();
   await page
     .getByRole("checkbox", { name: "Complete Done child", exact: true })
     .check();

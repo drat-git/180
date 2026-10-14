@@ -10,6 +10,7 @@ const ref = process.env.SUPABASE_PROJECT_REF || "xlkmnczbuzmdfchoqqbr";
 for (const suite of [
   "daily_record",
   "tasks",
+  "task_options",
   "anti_rotting",
   "food",
   "push",

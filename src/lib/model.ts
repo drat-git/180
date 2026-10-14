@@ -83,7 +83,11 @@ export interface TaskSelection {
   title: string;
   children: { taskId: string; title: string }[];
 }
-export interface Task {
+export interface TaskOptions {
+  estimatedMinutes?: number | null;
+  highPriority?: boolean;
+}
+export interface Task extends TaskOptions {
   id: string;
   userId: string;
   topic: TaskTopic;
@@ -95,9 +99,9 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
 }
-export interface TaskCommand {
+export interface TaskCommand extends TaskOptions {
   taskId: string;
-  action: "create" | "rename" | "complete" | "delete";
+  action: "create" | "rename" | "complete" | "delete" | "options";
   title?: string;
   topic?: TaskTopic;
   parentId?: string | null;

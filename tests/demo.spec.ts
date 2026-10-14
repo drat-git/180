@@ -339,6 +339,10 @@ test("demo thresholds, breakfast choices and local-only visitor actions", async 
     .getByRole("button", { name: "Add life task", exact: true })
     .click();
   await page
+    .getByRole("dialog", { name: "Add task options" })
+    .getByRole("button", { name: "Add task", exact: true })
+    .click();
+  await page
     .getByRole("checkbox", { name: "Complete Try a visitor task", exact: true })
     .check();
   await nav(page, "Anti-rot").click();

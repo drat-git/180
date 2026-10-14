@@ -1,9 +1,22 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { BriefcaseBusiness, GraduationCap, House, Plus } from "lucide-react";
-import type { Task, TaskTopic } from "../lib/model";
+import {
+  BriefcaseBusiness,
+  GraduationCap,
+  House,
+  Plus,
+  Clock3,
+  Flag,
+} from "lucide-react";
+import type { Task, TaskTopic, TaskOptions } from "../lib/model";
 import { repository } from "../lib/repository";
-import { childrenOf, sortTasks, topicLabels } from "../lib/tasks";
+import {
+  childrenOf,
+  sortTasks,
+  topicLabels,
+  formatDuration,
+} from "../lib/tasks";
 import { useTasks } from "../lib/useTasks";
+import { TaskOptionsDialog } from "./TaskOptionsDialog";
 import { ChecklistBlock, Modal } from "./Controls";
 import { DisplayPreferencesProvider } from "../lib/displayPreferences";
 
@@ -14,42 +27,60 @@ function AddTask({
 }: {
   topic: TaskTopic;
   parentId?: string;
-  onAdd: (title: string) => Promise<boolean>;
+  onAdd: (title: string, options: TaskOptions) => Promise<boolean>;
 }) {
   const [title, setTitle] = useState("");
   const [saving, setSaving] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   return (
-    <form
-      className="task-add"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!title.trim() || saving) return;
-        setSaving(true);
-        void onAdd(title)
-          .then((saved) => {
-            if (saved) setTitle("");
-          })
-          .finally(() => setSaving(false));
-      }}
-    >
-      <input
-        aria-label={parentId ? "New subtask" : `New ${topic} task`}
-        placeholder={parentId ? "Add a subtask…" : "Add a task…"}
-        maxLength={500}
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        disabled={saving}
-      />
-      <button
-        type="submit"
-        className="task-add-button"
-        disabled={saving || !title.trim()}
-        aria-label={parentId ? "Add subtask" : `Add ${topic} task`}
+    <>
+      <form
+        className="task-add"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!title.trim() || saving) return;
+          setOptionsOpen(true);
+        }}
       >
-        <Plus size={16} />
-        <span>Add</span>
-      </button>
-    </form>
+        <input
+          aria-label={parentId ? "New subtask" : `New ${topic} task`}
+          placeholder={parentId ? "Add a subtask…" : "Add a task…"}
+          maxLength={500}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          disabled={saving}
+        />
+        <button
+          type="submit"
+          className="task-add-button"
+          disabled={saving || !title.trim()}
+          aria-label={parentId ? "Add subtask" : `Add ${topic} task`}
+        >
+          <Plus size={16} />
+          <span>Add</span>
+        </button>
+      </form>
+      {optionsOpen && (
+        <TaskOptionsDialog
+          title={parentId ? "Add subtask options" : "Add task options"}
+          taskTitle={title.trim()}
+          parentId={parentId}
+          busy={saving}
+          onClose={() => setOptionsOpen(false)}
+          onSave={(options) => {
+            setSaving(true);
+            void onAdd(title, options)
+              .then((saved) => {
+                if (saved) {
+                  setTitle("");
+                  setOptionsOpen(false);
+                }
+              })
+              .finally(() => setSaving(false));
+          }}
+        />
+      )}
+    </>
   );
 }
 
@@ -100,7 +131,7 @@ function TaskRow({
   const done = children.filter((t) => t.completedAt).length;
   return (
     <div
-      className={`task-row ${parent ? "is-parent" : task.parentId ? "is-child" : "is-standalone"} ${completed ? "is-complete" : ""}`}
+      className={`task-row ${parent ? "is-parent" : task.parentId ? "is-child" : "is-standalone"} ${completed ? "is-complete" : ""} ${task.highPriority && !task.parentId ? "is-high-priority" : ""}`}
       role="group"
       aria-label={`Task ${task.title}`}
       tabIndex={busy ? -1 : 0}
@@ -159,6 +190,22 @@ function TaskRow({
       />
       <div className="task-copy">
         <span className="task-title">{task.title}</span>
+        {(task.estimatedMinutes != null ||
+          (task.highPriority && !task.parentId)) && (
+          <span className="task-metadata">
+            {task.highPriority && !task.parentId && (
+              <span className="task-priority">
+                <Flag size={12} aria-hidden="true" /> High priority
+              </span>
+            )}
+            {task.estimatedMinutes != null && (
+              <span className="task-estimate">
+                <Clock3 size={12} aria-hidden="true" /> Est.{" "}
+                {formatDuration(task.estimatedMinutes)}
+              </span>
+            )}
+          </span>
+        )}
         {parent && (
           <span className="small task-parent-progress">
             {done} of {children.length} complete
@@ -193,6 +240,7 @@ export function DoStuff({
 }) {
   const { tasks, roots } = useTasks(userId);
   const [addingTo, setAddingTo] = useState<string | null>(null);
+  const [estimate, setEstimate] = useState<Task | null>(null);
   const [menu, setMenu] = useState<Task | null>(null);
   const [edit, setEdit] = useState<Task | null>(null);
   const [title, setTitle] = useState("");
@@ -299,13 +347,14 @@ export function DoStuff({
                           <AddTask
                             topic={topic}
                             parentId={task.id}
-                            onAdd={(value) =>
+                            onAdd={(value, options) =>
                               mutate(() =>
                                 repository.createTask(
                                   userId,
                                   topic,
                                   value,
                                   task.id,
+                                  options,
                                 ),
                               )
                             }
@@ -318,8 +367,16 @@ export function DoStuff({
             </ul>
             <AddTask
               topic={topic}
-              onAdd={(value) =>
-                mutate(() => repository.createTask(userId, topic, value))
+              onAdd={(value, options) =>
+                mutate(() =>
+                  repository.createTask(
+                    userId,
+                    topic,
+                    value,
+                    undefined,
+                    options,
+                  ),
+                )
               }
             />
           </ChecklistBlock>
@@ -330,10 +387,15 @@ export function DoStuff({
         stay with their parent.
       </p>
       {menu && (
-        <Modal title="Task options" onClose={() => setMenu(null)}>
+        <Modal
+          title="Task options"
+          className="task-dialog"
+          onClose={() => setMenu(null)}
+        >
           <p>{menu.title}</p>
-          <div className="dialog-actions">
+          <div className="dialog-actions task-menu-actions">
             <button
+              disabled={busy || blocked}
               onClick={() => {
                 setEdit(menu);
                 setTitle(menu.title);
@@ -342,6 +404,51 @@ export function DoStuff({
             >
               Edit
             </button>
+            <button
+              disabled={busy || blocked}
+              onClick={() => {
+                setEstimate(menu);
+                setMenu(null);
+              }}
+            >
+              {menu.estimatedMinutes != null
+                ? "Edit estimated time"
+                : "Add estimated time"}
+            </button>
+            {menu.estimatedMinutes != null && (
+              <button
+                disabled={busy || blocked}
+                onClick={() => {
+                  void mutate(() =>
+                    repository.updateTaskOptions(userId, menu.id, {
+                      estimatedMinutes: null,
+                    }),
+                  ).then((ok) => {
+                    if (ok) setMenu(null);
+                  });
+                }}
+              >
+                Remove estimated time
+              </button>
+            )}
+            {!menu.parentId && (
+              <button
+                disabled={busy || blocked}
+                onClick={() => {
+                  void mutate(() =>
+                    repository.updateTaskOptions(userId, menu.id, {
+                      highPriority: !menu.highPriority,
+                    }),
+                  ).then((ok) => {
+                    if (ok) setMenu(null);
+                  });
+                }}
+              >
+                {menu.highPriority
+                  ? "Remove high priority"
+                  : "Mark high priority"}
+              </button>
+            )}
             <button
               className="danger"
               onClick={() => {
@@ -353,6 +460,24 @@ export function DoStuff({
             </button>
           </div>
         </Modal>
+      )}
+      {estimate && (
+        <TaskOptionsDialog
+          title="Estimated time"
+          taskTitle={estimate.title}
+          parentId={estimate.parentId}
+          initial={estimate}
+          estimateOnly
+          busy={busy || blocked}
+          onClose={() => setEstimate(null)}
+          onSave={(options) => {
+            void mutate(() =>
+              repository.updateTaskOptions(userId, estimate.id, options),
+            ).then((ok) => {
+              if (ok) setEstimate(null);
+            });
+          }}
+        />
       )}
       {edit && (
         <Modal title="Edit task" onClose={() => setEdit(null)}>

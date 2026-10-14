@@ -128,13 +128,31 @@ describe("demo storage boundary", () => {
     });
     await seedDemo(userId, false, database);
     await seedDemo("local-demo:other", false, database);
+    const example = (await database.tasks.toArray()).find(
+      (t) =>
+        t.userId === userId &&
+        t.title === "Practice common interview questions",
+    )!;
+    expect(example).toMatchObject({ estimatedMinutes: 45, highPriority: true });
+    await repo.updateTaskOptions(userId, example.id, {
+      estimatedMinutes: 10,
+      highPriority: false,
+    });
     await repo.patchDay(userId, DEMO_TODAY, { journalText: "Visitor edit" });
     await seedDemo(userId, false, database);
+    expect(await database.tasks.get(example.id)).toMatchObject({
+      estimatedMinutes: 10,
+      highPriority: false,
+    });
     expect((await repo.getDay(userId, DEMO_TODAY))?.data.journalText).toBe(
       "Visitor edit",
     );
     const count = await database.tasks.count();
     await seedDemo(userId, true, database);
+    expect(await database.tasks.get(example.id)).toMatchObject({
+      estimatedMinutes: 45,
+      highPriority: true,
+    });
     expect(await database.tasks.count()).toBe(count);
     expect((await repo.getDay(userId, DEMO_TODAY))?.data).toEqual(emptyData());
     expect((await repo.getDay("owner", DEMO_TODAY))?.data.journalText).toBe(

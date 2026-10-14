@@ -6,6 +6,9 @@ import {
   childrenOf,
   TASK_RETENTION_MS,
   visibleRoots,
+  sortTasks,
+  formatDuration,
+  validateTaskOptions,
 } from "./tasks";
 import type { Task, TaskCommand } from "./model";
 const database = new AppDatabase("180-task-tests");
@@ -33,6 +36,91 @@ const root: Task = {
   createdAt: now,
   updatedAt: now,
 };
+it("formats durations and rejects invalid options or child priority", () => {
+  expect([45, 60, 90, 120].map(formatDuration)).toEqual([
+    "45 min",
+    "1 hr",
+    "1 hr 30 min",
+    "2 hr",
+  ]);
+  for (const estimatedMinutes of [0, -1, 1.5, 525601, NaN]) {
+    expect(() => validateTaskOptions({ estimatedMinutes })).toThrow();
+  }
+  expect(() => validateTaskOptions({ estimatedMinutes: 525600 })).not.toThrow();
+  expect(() => validateTaskOptions({ estimatedMinutes: null })).not.toThrow();
+  expect(() => validateTaskOptions({ highPriority: true }, "parent")).toThrow(
+    /top-level/,
+  );
+});
+it("sorts unfinished priority roots first while retaining creation order and completed tasks last", () => {
+  const tasks = [
+    { ...root, id: "a" }, // Legacy record without metadata.
+    { ...root, id: "b", highPriority: true },
+    { ...root, id: "c", highPriority: true },
+    { ...root, id: "d", highPriority: true, completedAt: now },
+  ];
+  expect(sortTasks(tasks).map((t) => t.id)).toEqual(["b", "c", "a", "d"]);
+  expect(tasks.map((t) => t.id)).toEqual(["a", "b", "c", "d"]);
+});
+it("patches only supplied metadata and preserves completion, history, and archive timing", async () => {
+  const id = await repo.createTask("owner", "school", "Read", undefined, {
+    estimatedMinutes: 45,
+    highPriority: true,
+  });
+  await repo.completeTask("owner", id, true);
+  const before = (await database.tasks.get(id))!;
+  await repo.updateTaskOptions("owner", id, { estimatedMinutes: 90 });
+  expect(await database.tasks.get(id)).toMatchObject({
+    estimatedMinutes: 90,
+    highPriority: true,
+    completedAt: before.completedAt,
+  });
+  await repo.updateTaskOptions("owner", id, { highPriority: false });
+  expect(await database.tasks.get(id)).toMatchObject({
+    estimatedMinutes: 90,
+    highPriority: false,
+    completedAt: before.completedAt,
+  });
+  await repo.updateTaskOptions("owner", id, { estimatedMinutes: null });
+  expect((await database.tasks.get(id))!.estimatedMinutes).toBeNull();
+  expect(await database.taskEvents.count()).toBe(1);
+  expect(
+    visibleRoots(
+      await database.tasks.toArray(),
+      Date.parse(before.completedAt!) + TASK_RETENTION_MS,
+    ),
+  ).toHaveLength(0);
+});
+it("stores child durations without changing parent completion and ignores options for tombstones", async () => {
+  const parent = await repo.createTask("owner", "school", "Essay");
+  const child = await repo.createTask("owner", "school", "Outline", parent, {
+    estimatedMinutes: 20,
+  });
+  await repo.completeTask("owner", child, true);
+  const before = (await database.tasks.get(parent))!.completedAt;
+  await repo.updateTaskOptions("owner", child, { estimatedMinutes: 30 });
+  expect((await database.tasks.get(parent))!.completedAt).toBe(before);
+  expect(await database.taskEvents.count()).toBe(2);
+  expect(() =>
+    applyTaskCommand(
+      [root],
+      "owner",
+      "invalid",
+      command("kid", "create", {
+        parentId: root.id,
+        topic: "school",
+        title: "Child",
+        highPriority: true,
+      }),
+    ),
+  ).toThrow(/top-level/);
+  await repo.deleteTask("owner", parent);
+  await repo.updateTaskOptions("owner", child, { estimatedMinutes: 60 });
+  expect(await database.tasks.get(child)).toMatchObject({
+    estimatedMinutes: 30,
+    deletedAt: expect.any(String),
+  });
+});
 function command(
   taskId: string,
   action: TaskCommand["action"],
