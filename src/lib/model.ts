@@ -17,7 +17,7 @@ export const breakfastLabels = {
   shake: "AM shake",
   meal: "Calorie dense meal",
 } as const;
-export const breakfastLabel = "AM Shake/Calorie-Dense Breakfast";
+export const breakfastLabel = "Breakfast";
 export function breakfastAnswerPatch(
   current: BreakfastAnswer,
   answer: boolean,

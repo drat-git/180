@@ -80,6 +80,9 @@ export function AMBreakfast({
       {status === false && (
         <Reason
           label={breakfastLabel}
+          preferenceKey={
+            mode.demo ? undefined : "AM Shake/Calorie-Dense Breakfast reason"
+          }
           value={data.amBreakfastReason}
           locked={locked}
           onAttempt={onAttempt}

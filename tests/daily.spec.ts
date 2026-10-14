@@ -556,13 +556,7 @@ test("blocks and text stay minimized through reloads, app reopening, and day cha
   await career
     .getByRole("button", { name: "Increase how many applications?" })
     .click();
-  for (const label of [
-    "AM Shake/Calorie-Dense Breakfast",
-    "Lunch",
-    "Dinner",
-    "PM Shake",
-    "Snack",
-  ])
+  for (const label of ["Breakfast", "Lunch", "Dinner", "PM Shake", "Snack"])
     await expect(
       food.getByRole("group", { name: label, exact: true }),
     ).toBeVisible();

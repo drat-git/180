@@ -1,6 +1,6 @@
 import { openPrivateApp } from "./private-fixture";
 import { test, expect, type Page } from "@playwright/test";
-const original = "AM Shake/Calorie-Dense Breakfast";
+const original = "Breakfast";
 const answer = (page: Page, label: string, value: string) =>
   page
     .getByRole("group", { name: label, exact: true })
