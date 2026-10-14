@@ -56,6 +56,10 @@ test("public entry, blank Day 3 and demo-only checklist defaults", async ({
   ).toBeVisible();
   await expect(page.locator(".day-title")).toContainText("Tuesday, October 13");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-completion-palette",
+    "forest-rust",
+  );
   await expect(
     page.getByRole("button", { name: "Maximize Career", exact: true }),
   ).toBeVisible();
@@ -125,16 +129,16 @@ test("past entries show varied samples, absent Sunday school and protected histo
   ).toBeVisible();
   await expect(
     page.getByLabel("Daily checklist progress", { exact: true }),
-  ).toHaveText("10/15 checks complete");
+  ).toHaveText("13/15 checks complete");
   await expect(page.getByLabel("Wake-up time", { exact: true })).toHaveValue(
-    "08:55",
+    "07:45",
   );
   await expect(
     page.getByLabel("Screen time hours", { exact: true }),
-  ).toHaveValue("4");
+  ).toHaveValue("2");
   await expect(
     page.getByLabel("Screen time minutes", { exact: true }),
-  ).toHaveValue("12");
+  ).toHaveValue("20");
   await expect(
     page.getByRole("status", { name: "How many applications?", exact: true }),
   ).toHaveText("4");
@@ -144,7 +148,11 @@ test("past entries show varied samples, absent Sunday school and protected histo
   );
   await expect(
     page.getByRole("textbox", { name: "Vaping use 1 description" }),
-  ).toHaveValue("Once while winding down after project work.");
+  ).toHaveCount(0);
+  await expect(answer(page, "Vaped?", "No")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(
     page.getByRole("group", { name: "Recorded school tasks" }),
   ).toContainText("Finish statistics practice set");
@@ -169,16 +177,27 @@ test("past entries show varied samples, absent Sunday school and protected histo
   ).toBeVisible();
   await expect(
     page.getByLabel("Daily checklist progress", { exact: true }),
-  ).toHaveText("12/13 checks complete");
+  ).toHaveText("9/13 checks complete");
   await expect(page.getByLabel("Wake-up time", { exact: true })).toHaveValue(
-    "07:45",
+    "08:55",
   );
   await expect(
     page.getByLabel("Screen time hours", { exact: true }),
-  ).toHaveValue("2");
+  ).toHaveValue("4");
   await expect(
     page.getByLabel("Screen time minutes", { exact: true }),
-  ).toHaveValue("20");
+  ).toHaveValue("12");
+  await expect(
+    page.getByRole("textbox", { name: "Wake-up time reason", exact: true }),
+  ).toHaveValue("Snoozed my alarm after staying up talking with a friend.");
+  await expect(
+    page.getByRole("textbox", { name: "Screen time reason", exact: true }),
+  ).toHaveValue(
+    "Kept checking feeds between classes and while waiting for replies.",
+  );
+  await expect(
+    page.getByRole("textbox", { name: "Vaping use 1 description" }),
+  ).toHaveValue("Once while winding down after project work.");
   await expect(
     page.getByRole("region", { name: "School", exact: true }),
   ).toBeHidden();
@@ -468,7 +487,7 @@ test.describe("demo outside Eastern time", () => {
     ).toBeHidden();
     await expect(
       page.getByLabel("Daily checklist progress", { exact: true }),
-    ).toHaveText("12/13 checks complete");
+    ).toHaveText("9/13 checks complete");
     await page.getByRole("button", { name: "Today", exact: true }).click();
     await nav(page, "Anti-rot").click();
     await page

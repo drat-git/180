@@ -106,12 +106,12 @@ describe("calendar scoring and month geometry", () => {
   it("matches seeded daily totals and distinguishes blank records from recorded zero", () => {
     const data = snapshot();
     expect(summary(data, "2026-10-11")).toMatchObject({
-      completed: 12,
+      completed: 9,
       total: 13,
-      band: 4,
+      band: 3,
       blocks: { School: { total: 0 } },
     });
-    expect(summary(data)).toMatchObject({ completed: 10, total: 15, band: 3 });
+    expect(summary(data)).toMatchObject({ completed: 13, total: 15, band: 4 });
     expect(summary(data, DEMO_TODAY)).toMatchObject({
       completed: 0,
       total: 15,
@@ -163,7 +163,7 @@ describe("calendar worked-on history", () => {
       "Watch a public lecture about space",
       "Practice guitar for 15 minutes",
     ]);
-    expect(day).toMatchObject({ completed: 10, total: 15 });
+    expect(day).toMatchObject({ completed: 13, total: 15 });
     expect(summary(data, DEMO_TODAY).antiRotting).toEqual([]);
   });
   it("uses retained Anti-rot snapshots and honors same-day undo while preserving work after a later-day reopening", () => {

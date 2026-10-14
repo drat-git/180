@@ -196,6 +196,10 @@ There is no privileged bootstrap endpoint, and no service-role key in the fronte
 
 - Recap refinement: only Life tasks and one-time Anti-rot activities retain status badges. One-time activities sort above reusable ones using their recorded historical type. A thin palette-matched divider separates Life from Anti-rot only when both groups appear. All **168 unit tests**, **30 relevant desktop/phone browser workflows**, the production build, and diff checks passed. Desktop/phone screenshots were inspected, and the open local preview was updated to the latest build.
 
+- Past-day header progress now uses the same completion bands and shared palette colors as calendar day bubbles. Today retains its neutral bubble. Four focused desktop/phone browser checks passed, comparing both demo days across Light/Dark and all three completion palettes, plus existing calendar surface behavior. Production build and diff checks passed; the updated Day 2 header was visually inspected and opened in the local preview.
+
+- Demo default refinement: swapped all General samples, including wake/screen reasons and vaping count/descriptions, between Days 1 and 2. Day 1 now totals 9/13 and Day 2 13/15. New demo visits and resets default to Dark with Forest & Rust completion colors; bootstrap and runtime defaults agree. Private preferences and records are unchanged, and visitor appearance choices still survive reloads. **43 focused unit tests** and **16 desktop/phone browser checks** passed across the main run and focused rerun, covering samples, calendar gradients/header parity, outside-Eastern dates, recap totals, palette reload/reset and private isolation. Production build and diff checks passed. The open preview was reset to these new defaults.
+
 
 ## Main-app calendar — October 14, 2026
 

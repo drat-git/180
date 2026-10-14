@@ -123,9 +123,14 @@ export function createDemoSeed(userId: string) {
   });
   const day1 = {
     ...emptyData(),
-    wakeTime: "07:45",
-    screenTimeMinutes: 140,
-    cannabisStatus: false,
+    wakeTime: "08:55",
+    wakeReason: "Snoozed my alarm after staying up talking with a friend.",
+    screenTimeMinutes: 252,
+    screenTimeReason:
+      "Kept checking feeds between classes and while waiting for replies.",
+    cannabisStatus: true,
+    cannabisCount: 1,
+    cannabisUseDescriptions: ["Once while winding down after project work."],
     applicationsStatus: true,
     applicationsCount: 2,
     careerTasksStatus: true,
@@ -151,14 +156,9 @@ export function createDemoSeed(userId: string) {
   };
   const day2 = {
     ...emptyData(),
-    wakeTime: "08:55",
-    wakeReason: "Snoozed my alarm after staying up talking with a friend.",
-    screenTimeMinutes: 252,
-    screenTimeReason:
-      "Kept checking feeds between classes and while waiting for replies.",
-    cannabisStatus: true,
-    cannabisCount: 1,
-    cannabisUseDescriptions: ["Once while winding down after project work."],
+    wakeTime: "07:45",
+    screenTimeMinutes: 140,
+    cannabisStatus: false,
     classAttendanceStatus: true,
     schoolTasksStatus: true,
     schoolTasksWorkedOn: [

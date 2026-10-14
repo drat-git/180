@@ -47,7 +47,7 @@
             ? demo.completionPalette
             : read("localStorage", "180:completion-palette"),
           ["classic", "forest-rust", "indigo-amber"],
-          "classic",
+          preview ? "forest-rust" : "classic",
         );
         const root = document.documentElement;
         Object.assign(root.dataset, {

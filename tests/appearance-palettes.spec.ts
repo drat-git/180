@@ -460,7 +460,7 @@ test("legacy and invalid stored choices restore before first render; all prefere
   ).toHaveAttribute("aria-pressed", "true");
 });
 
-test("demo palettes stay session-local, survive reload, reset to dark Classic and restore every private choice on exit", async ({
+test("demo palettes stay session-local, survive reload, reset to dark Forest & Rust and restore every private choice on exit", async ({
   page,
 }) => {
   await open(page);
@@ -472,7 +472,7 @@ test("demo palettes stay session-local, survive reload, reset to dark Classic an
     .getByRole("button", { name: "Sign out", exact: true })
     .click();
   await page.getByRole("button", { name: "Try the demo mode" }).click();
-  await expectPalettes(page, "dark", "classic", "classic", "classic");
+  await expectPalettes(page, "dark", "classic", "classic", "forest-rust");
   await expect(
     page.getByRole("heading", { name: "Day 3", exact: true }),
   ).toBeVisible();
@@ -480,7 +480,7 @@ test("demo palettes stay session-local, survive reload, reset to dark Classic an
   await choose(page, "Mode", "Light");
   await choose(page, "App theme", "Monochrome");
   await choose(page, "Anti-rot colors", "Sunset");
-  await choose(page, "Completion colors", "Forest & Rust");
+  await choose(page, "Completion colors", "Classic");
   await closeSpace(page);
   expect(
     await page.evaluate(() => [
@@ -490,12 +490,12 @@ test("demo palettes stay session-local, survive reload, reset to dark Classic an
     ]),
   ).toEqual(["blue-slate", "rosewood", "indigo-amber"]);
   await page.reload();
-  await expectPalettes(page, "light", "monochrome", "sunset", "forest-rust");
+  await expectPalettes(page, "light", "monochrome", "sunset", "classic");
   await page.getByRole("button", { name: "Reset demo", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Day 3", exact: true }),
   ).toBeVisible();
-  await expectPalettes(page, "dark", "classic", "classic", "classic");
+  await expectPalettes(page, "dark", "classic", "classic", "forest-rust");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expectPalettes(page, "light", "blue-slate", "rosewood", "indigo-amber");
 });

@@ -125,7 +125,7 @@ test("demo Life completions precede anti-rot activities in a headerless recap ac
       expect(colors.border).toBe(colors.activeBorder);
       await expect(
         page.getByLabel("Daily checklist progress", { exact: true }),
-      ).toHaveText("10/15 checks complete");
+      ).toHaveText("13/15 checks complete");
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,

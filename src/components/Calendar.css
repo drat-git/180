@@ -1,4 +1,29 @@
-/* Calendar surfaces follow Light/Dark; scores follow the completion palette. */
+/* Shared progress colors follow the completion palette in both views. */
+:root {
+  --calendar-score-0: var(--completion-incomplete);
+  --calendar-score-1: color-mix(
+    in srgb,
+    var(--completion-incomplete) 80%,
+    var(--completion-complete)
+  );
+  --calendar-score-2: color-mix(
+    in srgb,
+    var(--completion-incomplete) 60%,
+    var(--completion-complete)
+  );
+  --calendar-score-3: color-mix(
+    in srgb,
+    var(--completion-incomplete) 40%,
+    var(--completion-complete)
+  );
+  --calendar-score-4: color-mix(
+    in srgb,
+    var(--completion-incomplete) 20%,
+    var(--completion-complete)
+  );
+  --calendar-score-5: var(--completion-complete);
+}
+/* Calendar surfaces follow Light/Dark. */
 .history-calendar {
   color-scheme: light;
   color: var(--calendar-ink);
@@ -27,28 +52,6 @@
   --calendar-child-ink: #52614c;
   --calendar-action: #293f32;
   --calendar-action-hover: #3c5744;
-  --calendar-score-0: var(--completion-incomplete);
-  --calendar-score-1: color-mix(
-    in srgb,
-    var(--completion-incomplete) 80%,
-    var(--completion-complete)
-  );
-  --calendar-score-2: color-mix(
-    in srgb,
-    var(--completion-incomplete) 60%,
-    var(--completion-complete)
-  );
-  --calendar-score-3: color-mix(
-    in srgb,
-    var(--completion-incomplete) 40%,
-    var(--completion-complete)
-  );
-  --calendar-score-4: color-mix(
-    in srgb,
-    var(--completion-incomplete) 20%,
-    var(--completion-complete)
-  );
-  --calendar-score-5: var(--completion-complete);
 }
 .history-calendar .calendar-month,
 .history-calendar .calendar-preview {
@@ -156,25 +159,32 @@
   color: var(--calendar-ink);
   font-weight: 600;
 }
-.history-calendar [data-band="0"] {
+.history-calendar [data-band="0"],
+.day-progress[data-band="0"] {
   background: var(--calendar-score-0);
 }
-.history-calendar [data-band="1"] {
+.history-calendar [data-band="1"],
+.day-progress[data-band="1"] {
   background: var(--calendar-score-1);
 }
-.history-calendar [data-band="2"] {
+.history-calendar [data-band="2"],
+.day-progress[data-band="2"] {
   background: var(--calendar-score-2);
 }
-.history-calendar [data-band="3"] {
+.history-calendar [data-band="3"],
+.day-progress[data-band="3"] {
   background: var(--calendar-score-3);
 }
-.history-calendar [data-band="4"] {
+.history-calendar [data-band="4"],
+.day-progress[data-band="4"] {
   background: var(--calendar-score-4);
 }
-.history-calendar [data-band="5"] {
+.history-calendar [data-band="5"],
+.day-progress[data-band="5"] {
   background: var(--calendar-score-5);
 }
-.history-calendar [data-band] {
+.history-calendar [data-band],
+.day-progress[data-band] {
   color: #ffffff;
 }
 .history-calendar .calendar-date[aria-current="date"] .calendar-bubble {

@@ -20,6 +20,7 @@ import { SyncEngine, type SyncState } from "./lib/sync";
 import { useAuth } from "./lib/auth";
 import { DailyCheckIn } from "./components/DailyCheckIn";
 import { Calendar } from "./components/Calendar";
+import { completionBand } from "./lib/calendar";
 import { Appearance } from "./components/Appearance";
 import { NotificationSettings } from "./components/NotificationSettings";
 import { AntiRotting } from "./components/AntiRotting";
@@ -420,6 +421,14 @@ function CheckInApp({
                         <div
                           className="day-progress"
                           aria-label="Daily checklist progress"
+                          data-band={
+                            current
+                              ? undefined
+                              : (completionBand(
+                                  progress.completed,
+                                  progress.total,
+                                ) ?? undefined)
+                          }
                         >
                           <Check size={14} aria-hidden="true" />
                           <span>

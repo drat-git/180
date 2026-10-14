@@ -27,6 +27,7 @@ export const DEFAULT_APPEARANCE: AppearancePreferences = {
 export const DEMO_APPEARANCE: AppearancePreferences = {
   ...DEFAULT_APPEARANCE,
   mode: "dark",
+  completionPalette: "forest-rust",
 };
 export const APP_BACKGROUNDS = {
   classic: { light: "#f6f4ec", dark: "#292f2c" },

@@ -86,10 +86,29 @@ describe("demo policy and history", () => {
       );
     });
     expect(counts).toMatchObject([
-      { completed: 12, total: 13, blocks: { School: { total: 0 } } },
-      { completed: 10, total: 15 },
+      { completed: 9, total: 13, blocks: { School: { total: 0 } } },
+      { completed: 13, total: 15 },
       { completed: 0, total: 15 },
     ]);
+    expect(seed.entries[0].data).toMatchObject({
+      wakeTime: "08:55",
+      wakeReason: "Snoozed my alarm after staying up talking with a friend.",
+      screenTimeMinutes: 252,
+      screenTimeReason:
+        "Kept checking feeds between classes and while waiting for replies.",
+      cannabisStatus: true,
+      cannabisCount: 1,
+      cannabisUseDescriptions: ["Once while winding down after project work."],
+    });
+    expect(seed.entries[1].data).toMatchObject({
+      wakeTime: "07:45",
+      wakeReason: "",
+      screenTimeMinutes: 140,
+      screenTimeReason: "",
+      cannabisStatus: false,
+      cannabisCount: null,
+      cannabisUseDescriptions: [],
+    });
     expect(seed.entries[2].data).toEqual(emptyData());
     const visible = visibleRoots(seed.tasks, Date.parse(DEMO_NOW));
     expect(visible.filter((t) => t.topic === "school")).toHaveLength(3);

@@ -78,10 +78,10 @@ test("calendar previews exact progress and retained task work without writing re
   await dateButton(page, 11).click();
   await expect(
     preview(page).getByLabel("Calendar checklist progress"),
-  ).toHaveText("12 of 13 checks complete");
+  ).toHaveText("9 of 13 checks complete");
   await expect(
     dateButton(page, 11).locator(".calendar-bubble"),
-  ).toHaveAttribute("data-band", "4");
+  ).toHaveAttribute("data-band", "3");
   await expect(
     preview(page).getByLabel("Checklist category progress"),
   ).not.toContainText("School");
@@ -93,10 +93,10 @@ test("calendar previews exact progress and retained task work without writing re
   await dateButton(page, 12).click();
   await expect(
     preview(page).getByLabel("Calendar checklist progress"),
-  ).toHaveText("10 of 15 checks complete");
+  ).toHaveText("13 of 15 checks complete");
   await expect(
     dateButton(page, 12).locator(".calendar-bubble"),
-  ).toHaveAttribute("data-band", "3");
+  ).toHaveAttribute("data-band", "4");
   await expect(
     preview(page).getByRole("list", {
       name: "Activities worked on",
@@ -151,6 +151,47 @@ test("calendar previews exact progress and retained task work without writing re
   ).toBeVisible();
   await nav(page, "Calendar").click();
   await expect(dateButton(page, 11)).toHaveAttribute("aria-pressed", "true");
+});
+
+test("past-day header progress matches calendar colors while Today keeps its neutral bubble", async ({
+  page,
+}) => {
+  await openCalendar(page);
+  const progress = page.getByLabel("Daily checklist progress", { exact: true });
+  for (const mode of ["dark", "light"]) {
+    for (const palette of ["classic", "forest-rust", "indigo-amber"]) {
+      await page.evaluate(
+        ({ mode, palette }) => {
+          document.documentElement.dataset.theme = mode;
+          document.documentElement.dataset.completionPalette = palette;
+        },
+        { mode, palette },
+      );
+      for (const day of [11, 12]) {
+        await nav(page, "Calendar").click();
+        await dateButton(page, day).click();
+        const bubble = dateButton(page, day).locator(".calendar-bubble");
+        const color = await bubble.evaluate(
+          (element) => getComputedStyle(element).backgroundColor,
+        );
+        const band = await bubble.getAttribute("data-band");
+        await preview(page).getByRole("button", { name: "Open day" }).click();
+        await expect(progress).toHaveAttribute("data-band", band!);
+        await expect(progress).toHaveCSS("background-color", color);
+        await expect(progress).toHaveCSS("color", "rgb(255, 255, 255)");
+      }
+      await page.getByRole("button", { name: "Today", exact: true }).click();
+      await expect(progress).not.toHaveAttribute("data-band");
+    }
+  }
+  await page.evaluate(() => {
+    document.documentElement.dataset.theme = "dark";
+    document.documentElement.dataset.completionPalette = "classic";
+  });
+  await page.getByRole("button", { name: "Previous day", exact: true }).click();
+  await page.locator(".day-header").screenshot({
+    path: `test-results/past-day-progress-${test.info().project.name}.png`,
+  });
 });
 
 test("saved edits and Life checkoffs update the preview and survive offline reload and reset", async ({
@@ -422,7 +463,7 @@ test("calendar gradients follow completion choices in both modes without changin
         const bands = Array.from(
           root.querySelectorAll(".calendar-legend i[data-band]"),
         ).map((element) => rgba(getComputedStyle(element).backgroundColor));
-        const bubble = root.querySelector(".calendar-bubble[data-band='3']")!;
+        const bubble = root.querySelector(".calendar-bubble[data-band='4']")!;
         const empty = root.querySelector(".calendar-bubble:not([data-band])")!;
         return {
           bands,
@@ -449,12 +490,12 @@ test("calendar gradients follow completion choices in both modes without changin
             (luminance(color.slice(0, 3)) + 0.05),
         ).toBeGreaterThanOrEqual(4.5);
       }
-      expect(colors.bubble).toEqual(colors.bands[3]);
+      expect(colors.bubble).toEqual(colors.bands[4]);
       expect(colors.empty[3]).toBe(0);
       await expect(dateButton(page, 12)).toHaveAttribute("aria-label", label!);
       await expect(
         dateButton(page, 12).locator(".calendar-bubble"),
-      ).toHaveAttribute("data-band", "3");
+      ).toHaveAttribute("data-band", "4");
     }
   }
   expect(await storedRows(page)).toEqual(before);
