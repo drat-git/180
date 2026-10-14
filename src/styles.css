@@ -1822,10 +1822,12 @@ input[data-complete="false"]:focus {
   letter-spacing: 0.15px;
 }
 .task-row .subtask-button {
-  font-size: 10px;
-  gap: 3px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  justify-content: center;
   opacity: 0.78;
-  padding: 5px 1px;
+  padding: 6px;
 }
 .task-children {
   padding: 3px 0 0 18px;

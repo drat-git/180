@@ -13,6 +13,7 @@ import {
 } from "./model";
 import { applyAntiCommand } from "./antiRotting";
 import { applyTaskCommand } from "./tasks";
+import { taskDailyChange, taskDailyPatch } from "./taskDaily";
 import {
   clockForUser,
   isDemoUser,
@@ -49,13 +50,14 @@ export class LocalRepository implements EntryRepository {
   onChange: () => void = () => {};
   private unsavedAnti = new Map<string, PendingOperation>();
   private antiWrites: Promise<unknown> = Promise.resolve();
-  private unsavedTasks = new Map<string, PendingOperation>();
-  private taskWrites: Promise<unknown> = Promise.resolve();
+  // Keep failed entry and task writes in invocation order, including recovery.
+  private unsavedWrites = new Map<string, PendingOperation>();
+  private localWrites: Promise<unknown> = Promise.resolve();
   private unsaved = new Map<string, EntryPatch>();
   hasUnsaved(userId: string) {
     return (
       [...this.unsaved.keys()].some((key) => key.startsWith(userId + "|")) ||
-      [...this.unsavedTasks.values()].some((op) => op.userId === userId) ||
+      [...this.unsavedWrites.values()].some((op) => op.userId === userId) ||
       [...this.unsavedAnti.values()].some((op) => op.userId === userId)
     );
   }
@@ -63,11 +65,8 @@ export class LocalRepository implements EntryRepository {
     return this.unsaved.get(userId + "|" + date) ?? {};
   }
   async retryUnsaved(userId: string) {
-    await this.flushTaskWrites(userId);
+    await this.flushLocalWrites(userId);
     await this.flushAntiWrites(userId);
-    for (const key of [...this.unsaved.keys()])
-      if (key.startsWith(userId + "|"))
-        await this.patchDay(userId, key.slice(userId.length + 1), {});
   }
   constructor(public database: AppDatabase = db) {}
   private async enqueue(operation: PendingOperation) {
@@ -78,8 +77,8 @@ export class LocalRepository implements EntryRepository {
     if (!isDemoUser(userId)) throw new Error("Only demo drafts can be reset.");
     for (const key of this.unsaved.keys())
       if (key.startsWith(userId + "|")) this.unsaved.delete(key);
-    for (const [key, op] of this.unsavedTasks)
-      if (op.userId === userId) this.unsavedTasks.delete(key);
+    for (const [key, op] of this.unsavedWrites)
+      if (op.userId === userId) this.unsavedWrites.delete(key);
     for (const [key, op] of this.unsavedAnti)
       if (op.userId === userId) this.unsavedAnti.delete(key);
   }
@@ -89,72 +88,86 @@ export class LocalRepository implements EntryRepository {
   async patchDay(userId: string, date: string, patch: EntryPatch) {
     const now = clockForUser(userId).toISOString();
     const key = userId + "|" + date;
-    patch = { ...this.unsaved.get(key), ...patch };
-    this.unsaved.set(key, patch);
-    await this.database.transaction(
-      "rw",
-      this.database.entries,
-      this.database.outbox,
-      async () => {
-        const entry = await this.getDay(userId, date);
-        await this.database.entries.put({
-          ...entry,
-          userId,
-          logicalDate: date,
-          data: { ...emptyData(), ...entry?.data, ...patch },
-          revision: entry?.revision ?? 0,
-          createdAt: entry?.createdAt ?? now,
-          updatedAt: now,
-        });
-        await this.enqueue({
-          operationId: createId(),
-          userId,
-          logicalDate: date,
-          kind: "entry",
-          patch,
-          createdAt: now,
-        });
-      },
-    );
-    const remaining = { ...this.unsaved.get(key) };
-    for (const field of Object.keys(patch) as (keyof EntryPatch)[])
-      if (remaining[field] === patch[field]) delete remaining[field];
-    if (Object.keys(remaining).length) this.unsaved.set(key, remaining);
-    else this.unsaved.delete(key);
-    this.onChange();
+    this.unsaved.set(key, { ...this.unsaved.get(key), ...patch });
+    const operationId = createId();
+    this.unsavedWrites.set(operationId, {
+      operationId,
+      userId,
+      logicalDate: date,
+      kind: "entry",
+      patch,
+      createdAt: now,
+    });
+    await this.flushLocalWrites(userId);
   }
-  private flushTaskWrites(userId: string) {
-    const run = this.taskWrites
+  private flushLocalWrites(userId: string) {
+    const run = this.localWrites
       .catch(() => {})
       .then(async () => {
-        for (const op of this.unsavedTasks.values()) {
+        for (const op of this.unsavedWrites.values()) {
           if (op.userId !== userId) continue;
           await this.database.transaction(
             "rw",
             this.database.tasks,
             this.database.taskEvents,
+            this.database.entries,
             this.database.outbox,
             async () => {
-              const before = await this.database.tasks
-                .where("userId")
-                .equals(userId)
-                .toArray();
-              const { tasks, events } = applyTaskCommand(
-                before,
-                userId,
-                op.operationId,
-                op.taskCommand!,
-              );
-              await this.database.tasks.bulkPut(tasks);
-              await this.database.taskEvents.bulkPut(events);
+              let patch = op.patch;
+              if (op.kind === "task") {
+                const before = await this.database.tasks
+                  .where("userId")
+                  .equals(userId)
+                  .toArray();
+                const { tasks, events } = applyTaskCommand(
+                  before,
+                  userId,
+                  op.operationId,
+                  op.taskCommand!,
+                );
+                op.taskDailyChange = taskDailyChange(
+                  tasks,
+                  events,
+                  op.taskCommand!,
+                );
+                await this.database.tasks.bulkPut(tasks);
+                await this.database.taskEvents.bulkPut(events);
+              }
+              if (patch || op.taskDailyChange) {
+                const entry = await this.getDay(userId, op.logicalDate);
+                const data = { ...emptyData(), ...entry?.data };
+                patch ??= taskDailyPatch(
+                  data,
+                  op.taskDailyChange!,
+                  op.operationId,
+                );
+                if (op.kind === "entry" || Object.keys(patch).length)
+                  await this.database.entries.put({
+                    userId,
+                    logicalDate: op.logicalDate,
+                    data: { ...data, ...patch },
+                    revision: entry?.revision ?? 0,
+                    createdAt: entry?.createdAt ?? op.createdAt,
+                    updatedAt: op.createdAt,
+                  });
+              }
               await this.enqueue(op);
             },
           );
-          this.unsavedTasks.delete(op.operationId);
+          this.unsavedWrites.delete(op.operationId);
+          if (op.kind === "entry") {
+            const key = userId + "|" + op.logicalDate;
+            const remaining = { ...this.unsaved.get(key) };
+            for (const field of Object.keys(op.patch!) as (keyof EntryPatch)[])
+              if (remaining[field] === op.patch![field])
+                delete remaining[field];
+            if (Object.keys(remaining).length) this.unsaved.set(key, remaining);
+            else this.unsaved.delete(key);
+          }
           this.onChange();
         }
       });
-    this.taskWrites = run;
+    this.localWrites = run;
     return run;
   }
   private mutateTask(
@@ -163,7 +176,7 @@ export class LocalRepository implements EntryRepository {
   ) {
     const now = clockForUser(userId);
     const operationId = createId();
-    this.unsavedTasks.set(operationId, {
+    this.unsavedWrites.set(operationId, {
       operationId,
       userId,
       logicalDate: recordedDateForUser(userId, now),
@@ -176,7 +189,7 @@ export class LocalRepository implements EntryRepository {
         timezone: timezoneForUser(userId),
       },
     });
-    return this.flushTaskWrites(userId);
+    return this.flushLocalWrites(userId);
   }
   async createTask(
     userId: string,
@@ -210,6 +223,7 @@ export class LocalRepository implements EntryRepository {
     return this.mutateTask(userId, {
       taskId,
       action: "complete",
+      recordDaily: true,
       completed: complete,
     });
   }

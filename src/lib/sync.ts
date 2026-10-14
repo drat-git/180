@@ -5,23 +5,10 @@ import { pushAnti, pullAnti } from "./antiSync";
 import { pushTask, pullTasks } from "./taskSync";
 import { logicalDate } from "./dates";
 import { isDemoUser } from "./appMode";
-import {
-  emptyData,
-  type DailyData,
-  type DailyEntry,
-  type JournalImage,
-  type PendingOperation,
-} from "./model";
+import { reconcileEntry, type WireEntry } from "./entrySync";
+import { type JournalImage, type PendingOperation } from "./model";
 export type SyncState =
   "local" | "syncing" | "synced" | "offline" | "auth" | "error";
-type WireEntry = {
-  user_id: string;
-  logical_date: string;
-  data: unknown;
-  revision: number;
-  created_at: string;
-  updated_at: string;
-};
 type WireImage = {
   id: string;
   user_id: string;
@@ -33,14 +20,6 @@ type WireImage = {
   created_at: string;
   updated_at: string;
 };
-const entryFromWire = (e: WireEntry): DailyEntry => ({
-  userId: e.user_id,
-  logicalDate: e.logical_date,
-  data: { ...emptyData(), ...(e.data as DailyData) },
-  revision: e.revision,
-  createdAt: e.created_at,
-  updatedAt: e.updated_at,
-});
 const imageFromWire = (i: WireImage): JournalImage => ({
   id: i.id,
   userId: i.user_id,
@@ -104,16 +83,7 @@ export class SyncEngine {
   private async acknowledged(op: PendingOperation, server?: WireEntry) {
     await db.transaction("rw", db.entries, db.outbox, async () => {
       if (op.id !== undefined) await db.outbox.delete(op.id);
-      if (server) {
-        const data = entryFromWire(server);
-        const pending = await db.outbox
-          .where("[userId+logicalDate]")
-          .equals([this.userId, op.logicalDate])
-          .sortBy("id");
-        for (const p of pending)
-          if (p.kind === "entry") Object.assign(data.data, p.patch);
-        await db.entries.put(data);
-      }
+      if (server) await reconcileEntry(server);
     });
   }
   async run() {
@@ -140,6 +110,8 @@ export class SyncEngine {
           .where("userId")
           .equals(this.userId)
           .sortBy("id");
+        const blockedDays = new Set<string>();
+        const deferred = new Set<string>();
         for (const op of queue) {
           if (this.stopped) return;
           // Travel can temporarily put a recorded date ahead of local today.
@@ -148,8 +120,17 @@ export class SyncEngine {
             op.kind !== "task" &&
             op.kind !== "anti-rotting" &&
             op.logicalDate > logicalDate()
-          )
+          ) {
+            if (op.kind === "entry") blockedDays.add(op.logicalDate);
+            deferred.add(op.operationId);
             continue;
+          }
+          // A later completion must not overtake an earlier manual correction
+          // to the same day while travel temporarily makes that entry inaccessible.
+          if (op.taskDailyChange && blockedDays.has(op.logicalDate)) {
+            deferred.add(op.operationId);
+            continue;
+          }
           await this.push(op);
         }
         await this.pull();
@@ -162,9 +143,10 @@ export class SyncEngine {
         if (
           queue.some(
             (op) =>
-              op.kind === "task" ||
-              op.kind === "anti-rotting" ||
-              op.logicalDate <= logicalDate(),
+              !deferred.has(op.operationId) &&
+              (op.kind === "task" ||
+                op.kind === "anti-rotting" ||
+                op.logicalDate <= logicalDate()),
           )
         )
           this.schedule(600);
@@ -308,16 +290,7 @@ export class SyncEngine {
         .in("logical_date", dates);
       if (error) throw error;
       await db.transaction("rw", db.entries, db.outbox, async () => {
-        for (const wire of data ?? []) {
-          const entry = entryFromWire(wire);
-          const pending = await db.outbox
-            .where("[userId+logicalDate]")
-            .equals([this.userId, entry.logicalDate])
-            .sortBy("id");
-          for (const op of pending)
-            if (op.kind === "entry") Object.assign(entry.data, op.patch);
-          await db.entries.put(entry);
-        }
+        for (const wire of data ?? []) await reconcileEntry(wire);
       });
     }
     for (const wire of images ?? []) {

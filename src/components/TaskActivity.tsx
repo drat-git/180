@@ -46,22 +46,32 @@ export function TaskActivity({
     change(
       existing
         ? selections.filter((s) => s.taskId !== task.id)
-        : [...selections, { taskId: task.id, title: task.title, children: [] }],
+        : [
+            ...selections,
+            { taskId: task.id, title: task.title, manual: true, children: [] },
+          ],
     );
   }
   function toggleChild(parent: TaskSelection, child: Task) {
     const selected = parent.children.some((c) => c.taskId === child.id);
     change(
-      selections.map((s) =>
-        s.taskId !== parent.taskId
-          ? s
-          : {
-              ...s,
-              children: selected
-                ? s.children.filter((c) => c.taskId !== child.id)
-                : [...s.children, { taskId: child.id, title: child.title }],
-            },
-      ),
+      selections
+        .map((s) =>
+          s.taskId !== parent.taskId
+            ? s
+            : {
+                ...s,
+                children: selected
+                  ? s.children.filter((c) => c.taskId !== child.id)
+                  : [
+                      ...s.children,
+                      { taskId: child.id, title: child.title, manual: true },
+                    ],
+              },
+        )
+        .filter(
+          (s) => s.manual !== false || !!s.automatic || s.children.length > 0,
+        ),
     );
   }
   return (

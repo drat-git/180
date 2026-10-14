@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 import type { Json, Tables } from "./database.types";
 import type { PendingOperation, Task, TaskEvent } from "./model";
 import { applyTaskCommand } from "./tasks";
+import { reconcileEntry, type WireEntry } from "./entrySync";
 
 type WireTask = Tables<"tasks">;
 type WireEvent = Tables<"task_events">;
@@ -39,43 +40,55 @@ async function merge(
   remoteTasks: WireTask[],
   remoteEvents: WireEvent[],
   acknowledged?: PendingOperation,
+  entry?: WireEntry | null,
 ) {
-  await db.transaction("rw", db.tasks, db.taskEvents, db.outbox, async () => {
-    if (acknowledged) {
-      await db.outbox.delete(acknowledged.id!);
-      await db.taskEvents
-        .where("operationId")
-        .equals(acknowledged.operationId)
-        .and((e) => e.userId === userId)
-        .delete();
-      if (
-        acknowledged.taskCommand?.action === "create" &&
-        !remoteTasks.some((t) => t.id === acknowledged.taskCommand!.taskId)
-      ) {
-        await db.tasks
-          .where("id")
-          .equals(acknowledged.taskCommand.taskId)
-          .and((t) => t.userId === userId)
+  await db.transaction(
+    "rw",
+    db.tasks,
+    db.taskEvents,
+    db.entries,
+    db.outbox,
+    async () => {
+      if (acknowledged) {
+        await db.outbox.delete(acknowledged.id!);
+        await db.taskEvents
+          .where("operationId")
+          .equals(acknowledged.operationId)
+          .and((e) => e.userId === userId)
           .delete();
+        if (
+          acknowledged.taskCommand?.action === "create" &&
+          !remoteTasks.some((t) => t.id === acknowledged.taskCommand!.taskId)
+        ) {
+          await db.tasks
+            .where("id")
+            .equals(acknowledged.taskCommand.taskId)
+            .and((t) => t.userId === userId)
+            .delete();
+        }
       }
-    }
-    await db.tasks.bulkPut(remoteTasks.map(taskFromWire));
-    await db.taskEvents.bulkPut(remoteEvents.map(eventFromWire));
-    let tasks = await db.tasks.where("userId").equals(userId).toArray();
-    const pending = await db.outbox.where("userId").equals(userId).sortBy("id");
-    for (const op of pending) {
-      if (op.kind !== "task") continue;
-      const result = applyTaskCommand(
-        tasks,
-        userId,
-        op.operationId,
-        op.taskCommand!,
-      );
-      tasks = result.tasks;
-      await db.taskEvents.bulkPut(result.events);
-    }
-    await db.tasks.bulkPut(tasks);
-  });
+      await db.tasks.bulkPut(remoteTasks.map(taskFromWire));
+      await db.taskEvents.bulkPut(remoteEvents.map(eventFromWire));
+      let tasks = await db.tasks.where("userId").equals(userId).toArray();
+      const pending = await db.outbox
+        .where("userId")
+        .equals(userId)
+        .sortBy("id");
+      for (const op of pending) {
+        if (op.kind !== "task") continue;
+        const result = applyTaskCommand(
+          tasks,
+          userId,
+          op.operationId,
+          op.taskCommand!,
+        );
+        tasks = result.tasks;
+        await db.taskEvents.bulkPut(result.events);
+      }
+      await db.tasks.bulkPut(tasks);
+      if (entry) await reconcileEntry(entry);
+    },
+  );
 }
 export async function pushTask(userId: string, op: PendingOperation) {
   const { data, error } = await supabase.rpc("apply_task_operation", {
@@ -83,8 +96,23 @@ export async function pushTask(userId: string, op: PendingOperation) {
     p_command: op.taskCommand as unknown as Json,
   });
   if (error) throw error;
-  const result = data as unknown as { tasks: WireTask[]; events: WireEvent[] };
-  await merge(userId, result.tasks, result.events, op);
+  const result = data as unknown as {
+    tasks: WireTask[];
+    events: WireEvent[];
+    entry?: WireEntry | null;
+  };
+  const entry =
+    result.entry === null && op.taskDailyChange
+      ? {
+          user_id: userId,
+          logical_date: op.logicalDate,
+          data: {},
+          revision: 0,
+          created_at: op.createdAt,
+          updated_at: op.createdAt,
+        }
+      : result.entry;
+  await merge(userId, result.tasks, result.events, op, entry);
 }
 export async function pullTasks(userId: string) {
   async function rows(table: "tasks" | "task_events") {

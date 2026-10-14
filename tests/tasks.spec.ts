@@ -150,7 +150,10 @@ test("daily parent/child selections remain readable after archive, offline reloa
     .getByRole("checkbox", { name: "Complete Read notes", exact: true })
     .check();
   await today(page);
-  await answer(page, "school", "Yes").click();
+  await expect(answer(page, "school", "Yes")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await page.getByRole("button", { name: "Choose school tasks" }).click();
   const picker = page.getByRole("group", {
     name: "School tasks worked on",
@@ -388,7 +391,10 @@ test("representative task and daily-selection layouts fit desktop and phone", as
     fullPage: true,
   });
   await today(page);
-  await answer(page, "school", "Yes").click();
+  await expect(answer(page, "school", "Yes")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await page.getByRole("button", { name: "Choose school tasks" }).click();
   const picker = page.getByRole("group", {
     name: "School tasks worked on",
@@ -404,7 +410,10 @@ test("representative task and daily-selection layouts fit desktop and phone", as
     })
     .check();
   await page.getByRole("button", { name: "Choose school tasks" }).click();
-  await answer(page, "career", "Yes").click();
+  await expect(answer(page, "career", "Yes")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await page.getByRole("button", { name: "Choose career tasks" }).click();
   await page
     .getByRole("group", { name: "Career tasks worked on", exact: true })
@@ -474,7 +483,7 @@ test("yesterday's completion remains selectable but never creates today's questi
   await expect(question(page)).toBeVisible(); // Friday's actual completion is preserved.
 });
 
-test("completion keeps today's unanswered question after archive and survives later navigation", async ({
+test("completion keeps today's recorded work after archive and survives later navigation", async ({
   page,
 }) => {
   await preview(page, "2026-10-09T03:00:00-04:00");
@@ -491,7 +500,7 @@ test("completion keeps today's unanswered question after archive and survives la
   await expect(question(page, "career")).toBeVisible();
   await expect(
     page.getByLabel("Daily checklist progress", { exact: true }),
-  ).toHaveText("0/14 checks complete");
+  ).toHaveText("1/14 checks complete");
   await page.clock.fastForward("11:00:00");
   await page.getByRole("button", { name: "Today", exact: true }).click();
   await expect(question(page, "career")).toHaveCount(0);

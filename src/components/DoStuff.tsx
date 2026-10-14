@@ -219,8 +219,7 @@ function TaskRow({
           aria-label={`Add subtask to ${task.title}`}
           onClick={onSubtask}
         >
-          <Plus size={13} />
-          <span>Subtask</span>
+          <Plus size={18} aria-hidden="true" />
         </button>
       )}
     </div>

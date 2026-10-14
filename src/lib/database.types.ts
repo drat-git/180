@@ -437,6 +437,19 @@ export type Database = {
         Args: { p_private?: string; p_public?: string };
         Returns: Json;
       };
+      task_daily_patch: {
+        Args: {
+          child_id: string;
+          child_title: string;
+          completed: boolean;
+          data: Json;
+          operation: string;
+          root: string;
+          root_title: string;
+          topic: string;
+        };
+        Returns: Json;
+      };
       valid_daily_data: { Args: { value: Json }; Returns: boolean };
       valid_daily_data_v1: { Args: { value: Json }; Returns: boolean };
     };

@@ -78,10 +78,21 @@ export type DailyData = Record<`${BinaryKey}Status`, Answer> &
   };
 export type TaskTopic = "school" | "career" | "life";
 export type ActivityTopic = "school" | "career";
-export interface TaskSelection {
+export interface SelectionProvenance {
+  // Missing provenance on legacy selections means independent manual work.
+  manual?: boolean;
+  automatic?: string;
+}
+export interface TaskSelection extends SelectionProvenance {
   taskId: string;
   title: string;
-  children: { taskId: string; title: string }[];
+  children: ({ taskId: string; title: string } & SelectionProvenance)[];
+}
+export interface TaskDailyChange {
+  topic: ActivityTopic;
+  parent: { taskId: string; title: string };
+  child?: { taskId: string; title: string };
+  completed: boolean;
 }
 export interface TaskOptions {
   estimatedMinutes?: number | null;
@@ -100,6 +111,7 @@ export interface Task extends TaskOptions {
   updatedAt: string;
 }
 export interface TaskCommand extends TaskOptions {
+  recordDaily?: boolean;
   taskId: string;
   action: "create" | "rename" | "complete" | "delete" | "options";
   title?: string;
@@ -211,6 +223,7 @@ export interface PendingOperation {
   logicalDate: string;
   kind: "entry" | "photo-add" | "photo-delete" | "task" | "anti-rotting";
   taskCommand?: TaskCommand;
+  taskDailyChange?: TaskDailyChange;
   antiCommand?: AntiCommand;
   patch?: EntryPatch;
   imageId?: string;

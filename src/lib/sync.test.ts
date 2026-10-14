@@ -4,6 +4,7 @@ import { applyAntiCommand, antiRecap } from "./antiRotting";
 import type { AntiCommand, AntiItem, AntiLog, AntiEvent } from "./model";
 import { applyTaskCommand } from "./tasks";
 import { emptyData } from "./model";
+import { taskDailyChange, taskDailyPatch } from "./taskDaily";
 import { taskActivityVisibility } from "./taskActivityVisibility";
 import type { Task, TaskCommand, TaskEvent } from "./model";
 import { repository } from "./repository";
@@ -143,6 +144,22 @@ beforeEach(async () => {
           );
           remoteTasks = result.tasks;
           remoteEvents.push(...result.events);
+          const change = taskDailyChange(
+            result.tasks,
+            result.events,
+            args.p_command!,
+          );
+          if (change && args.p_command!.logicalDate === remote.logical_date) {
+            Object.assign(
+              remote.data,
+              taskDailyPatch(
+                { ...emptyData(), ...remote.data },
+                change,
+                args.p_operation,
+              ),
+            );
+            remote.revision++;
+          }
           receipts.add(args.p_operation);
         }
         if (failAfterCommit) {
@@ -151,6 +168,11 @@ beforeEach(async () => {
         }
         return {
           data: {
+            entry:
+              args.p_command!.recordDaily &&
+              args.p_command!.action === "complete"
+                ? structuredClone(remote)
+                : undefined,
             tasks: remoteTasks.map(taskWire),
             events: remoteEvents
               .filter((e) => e.operationId === args.p_operation)
@@ -212,6 +234,7 @@ beforeEach(async () => {
   });
 });
 afterEach(() => {
+  vi.useRealTimers();
   for (const engine of engines) engine.stop();
   engines = [];
 });
@@ -657,5 +680,178 @@ it("syncs Creatine answers and preserves its hidden reason across acknowledgemen
   expect(data.creatineStatus).toBe(true);
   expect(data.creatineReason).toBe("Forgot");
   expect(data.meal1Reason).toBe("Device B groceries");
+  expect(await db.outbox.count()).toBe(0);
+});
+
+function completionClock() {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-09T16:00:00Z"));
+}
+it("merges another device's daily work with offline completion, and a lost receipt never resurrects manual removal", async () => {
+  completionClock();
+  const id = await repository.createTask("owner", "school", "Read");
+  const worker = engine();
+  await worker.run();
+  remote.data.schoolTasksWorkedOn = [
+    { taskId: "device-b", title: "Device B work", children: [] },
+  ];
+  await repository.completeTask("owner", id, true);
+  failAfterCommit = true;
+  await worker.run();
+  expect(worker.state).toBe("error");
+  expect(remote.data.schoolTasksWorkedOn).toHaveLength(2);
+  // Another device deliberately removes these selections after the commit.
+  remote.data.schoolTasksWorkedOn = [];
+  remote.data.schoolTasksStatus = null;
+  remote.revision++;
+  await worker.run();
+  expect(
+    (await db.entries.get(["owner", mock.today]))!.data.schoolTasksWorkedOn,
+  ).toEqual([]);
+  expect(remoteEvents).toHaveLength(1);
+  expect(await db.outbox.count()).toBe(0);
+});
+it("replays completion then a pending manual removal over an in-flight daily acknowledgement", async () => {
+  completionClock();
+  const id = await repository.createTask("owner", "school", "Read");
+  const worker = engine();
+  await worker.run();
+  await repository.patchDay("owner", mock.today, { journalText: "First" });
+  let release!: (value: unknown) => void;
+  mock.rpc.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  const run = worker.run();
+  await vi.waitFor(() => expect(release).toBeDefined());
+  await repository.completeTask("owner", id, true);
+  await repository.patchDay("owner", mock.today, {
+    schoolTasksStatus: null,
+    schoolTasksWorkedOn: [],
+  });
+  release({ data: structuredClone(remote), error: null });
+  await run;
+  expect(
+    (await db.entries.get(["owner", mock.today]))!.data.schoolTasksWorkedOn,
+  ).toEqual([]);
+  expect(await db.outbox.count()).toBe(2);
+  await worker.run();
+  expect(remote.data.schoolTasksWorkedOn).toEqual([]);
+  expect(remote.data.schoolTasksStatus).toBeNull();
+  await worker.run(); // History pulls cannot record it again.
+  expect(
+    (await db.entries.get(["owner", mock.today]))!.data.schoolTasksWorkedOn,
+  ).toEqual([]);
+});
+it("replays manual work then a pending completion over an in-flight task acknowledgement", async () => {
+  completionClock();
+  const id = await repository.createTask("owner", "career", "Resume");
+  let release!: (value: unknown) => void;
+  mock.rpc.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  const worker = engine();
+  const run = worker.run();
+  await vi.waitFor(() => expect(release).toBeDefined());
+  await repository.patchDay("owner", mock.today, {
+    careerTasksWorkedOn: [{ taskId: "manual", title: "Other", children: [] }],
+  });
+  await repository.completeTask("owner", id, true);
+  const first = (await db.outbox.toArray())[0];
+  remoteTasks = applyTaskCommand(
+    [],
+    "owner",
+    first.operationId,
+    first.taskCommand!,
+  ).tasks;
+  receipts.add(first.operationId);
+  release({
+    data: {
+      tasks: remoteTasks.map(taskWire),
+      events: [],
+      entry: structuredClone(remote),
+    },
+    error: null,
+  });
+  await run;
+  const data = (await db.entries.get(["owner", mock.today]))!.data;
+  expect(data.careerTasksWorkedOn.map((s) => s.taskId)).toEqual(["manual", id]);
+  expect(data.careerTasksStatus).toBe(true);
+  await worker.run();
+  expect(remote.data.careerTasksWorkedOn).toHaveLength(2);
+  await repository.completeTask("owner", id, false);
+  await worker.run();
+  expect(
+    (await db.entries.get(["owner", mock.today]))!.data.careerTasksWorkedOn,
+  ).toEqual([{ taskId: "manual", title: "Other", children: [] }]);
+});
+it("removes rejected speculative daily work after another device deletes its task", async () => {
+  completionClock();
+  const id = await repository.createTask("owner", "school", "Deleted remotely");
+  const worker = engine();
+  await worker.run();
+  await repository.completeTask("owner", id, true);
+  remoteTasks[0].deletedAt = new Date().toISOString();
+  await worker.run();
+  expect(
+    (await db.entries.get(["owner", mock.today]))!.data.schoolTasksWorkedOn,
+  ).toEqual([]);
+  expect(await db.taskEvents.count()).toBe(0);
+});
+
+it("clears a rejected speculative completion even when the server has no daily row", async () => {
+  completionClock();
+  const id = await repository.createTask("owner", "school", "Removed");
+  const worker = engine();
+  await worker.run();
+  await repository.completeTask("owner", id, true);
+  remoteTasks[0].deletedAt = new Date().toISOString();
+  mock.rpc.mockResolvedValueOnce({
+    data: { tasks: remoteTasks.map(taskWire), events: [], entry: null },
+    error: null,
+  });
+  await worker.run();
+  expect(
+    (await db.entries.get(["owner", mock.today]))!.data.schoolTasksStatus,
+  ).toBeNull();
+  expect(
+    (await db.entries.get(["owner", mock.today]))!.data.schoolTasksWorkedOn,
+  ).toEqual([]);
+  expect(await db.taskEvents.count()).toBe(0);
+});
+
+it("does not let a completion overtake an older manual daily patch temporarily blocked by travel", async () => {
+  completionClock();
+  mock.today = "2026-10-10";
+  remote.logical_date = mock.today;
+  const id = await repository.createTask("owner", "school", "Study");
+  const worker = engine();
+  await worker.run();
+  await repository.patchDay("owner", mock.today, {
+    schoolTasksStatus: null,
+    schoolTasksWorkedOn: [],
+  });
+  await repository.completeTask("owner", id, true);
+  mock.today = "2026-10-09";
+  mock.rpc.mockClear();
+  await worker.run();
+  expect(mock.rpc).not.toHaveBeenCalled();
+  expect(await db.outbox.count()).toBe(2);
+  expect(
+    (await db.entries.get(["owner", "2026-10-10"]))!.data.schoolTasksStatus,
+  ).toBe(true);
+  mock.today = "2026-10-10";
+  await worker.run();
+  expect(mock.rpc.mock.calls.map(([name]) => name)).toEqual([
+    "apply_entry_patch",
+    "apply_task_operation",
+  ]);
+  expect(remote.data.schoolTasksStatus).toBe(true);
+  expect(remote.data.schoolTasksWorkedOn).toHaveLength(1);
   expect(await db.outbox.count()).toBe(0);
 });
