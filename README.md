@@ -117,7 +117,13 @@ Use **Today / To-do / Anti-rot** to switch between the daily record and persiste
 
 New or reset demo visits include priority-only, duration-only subtask, and combined examples. Existing demo visits keep their edits until manually reset.
 
-Calendar/analytics screens, weight, OCR, nutrition metrics, workout details, and social features are deferred.
+## Demo calendar
+
+The demo's **Calendar** tab shows a Sunday-first month view with date bubbles colored by completed/applicable checklist percentage: bruised plum at 0%, rose below 25%, amber below 50%, olive below 75%, green below 100%, and deep green at 100%. Blank records stay unfilled; today has a separate outline. The calendar and its day preview have a fixed palette independent of app appearance settings.
+
+Select a date to see its exact checklist total, category counts, and one continuous list of tasks and Anti-rot activities worked on. The list fills left to right, then top to bottom, without topic headers; subtasks stay attached to their parent. School and Career combine affirmative daily selections with check-off history; Life uses check-off history. Anti-rot uses saved activity logs and completion/reopening history, including today, and does not change checklist totals. Same-day undo removes a check-off contribution, while later-day undo preserves earlier history and manual selections remain independent. Saved titles and parent/child relationships are used rather than the current visible To-do list. When a child-only historical event has no captured parent title, the preview groups it as Subtasks instead of inventing a past name. **Open day** opens the existing daily record with its editing protections. Calendar reads are account-specific, offline, and read-only, and saved demo edits update the view automatically. Reset restores the original two past samples and blank Day 3. The private app has no Calendar tab yet.
+
+Private calendar/analytics screens, weight, OCR, nutrition metrics, workout details, and social features are deferred.
 
 ## Tests
 

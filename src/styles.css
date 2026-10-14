@@ -2359,10 +2359,6 @@ input[data-complete="false"]:focus {
   gap: 16px;
   align-items: center;
 }
-.demo-calendar {
-  padding: 48px 20px;
-  color: var(--ink-72776a);
-}
 @media (max-width: 360px) {
   [data-demo] .screen-nav button {
     padding-inline: 5px;

@@ -19,6 +19,7 @@ import { repository } from "./lib/repository";
 import { SyncEngine, type SyncState } from "./lib/sync";
 import { useAuth } from "./lib/auth";
 import { DailyCheckIn } from "./components/DailyCheckIn";
+import { Calendar } from "./components/Calendar";
 import { Appearance } from "./components/Appearance";
 import { NotificationSettings } from "./components/NotificationSettings";
 import { AntiRotting } from "./components/AntiRotting";
@@ -121,6 +122,16 @@ function CheckInApp({
       setDate(target);
       window.scrollTo({ top: 0, behavior: "instant" });
     }
+  };
+  const openCalendarDay = (target: string) => {
+    if (saving || repository.hasUnsaved(userId)) {
+      setSaveError("Finish saving your edit before opening another day.");
+      return;
+    }
+    if (!canNavigate(target, today, mode.startDate)) return;
+    setDate(target);
+    setScreen("today");
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
   useEffect(() => {
     const openToday = () => {
@@ -346,8 +357,13 @@ function CheckInApp({
           )}
         </nav>
         {mode.demo && (
-          <div hidden={screen !== "calendar"} className="demo-calendar">
-            <p>Interactive calendar view coming soon!</p>
+          <div hidden={screen !== "calendar"}>
+            <Calendar
+              userId={userId}
+              today={today}
+              mode={mode}
+              onOpenDay={openCalendarDay}
+            />
           </div>
         )}
         <div hidden={screen !== "tasks"}>

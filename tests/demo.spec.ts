@@ -102,7 +102,7 @@ test("public entry, blank Day 3 and demo-only checklist defaults", async ({
   });
   await nav(page, "Calendar").click();
   await expect(
-    page.getByText("Interactive calendar view coming soon!", { exact: true }),
+    page.getByRole("heading", { name: "October 2026", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Daily checklist", exact: true }),
