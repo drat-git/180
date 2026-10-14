@@ -2551,7 +2551,6 @@ input[data-complete="false"]:focus {
   --app-shadow: #00000020;
   --app-overlay: #00000080;
   --app-translucent-card: #ffffffb8;
-  --app-history-ink: #565656;
   --app-icon-tint: #e4e4e4;
   --priority-background: #e2e2e2;
   --priority-ink: #303030;
@@ -2578,7 +2577,6 @@ input[data-complete="false"]:focus {
   --app-shadow: #00000050;
   --app-overlay: #00000099;
   --app-translucent-card: #333333b8;
-  --app-history-ink: #c7c7c7;
   --app-icon-tint: #414141;
   --priority-background: #464646;
   --priority-ink: #e7e7e7;
@@ -2605,7 +2603,6 @@ input[data-complete="false"]:focus {
   --app-shadow: #203d6020;
   --app-overlay: #172b4980;
   --app-translucent-card: #fbfdffb8;
-  --app-history-ink: #546c8b;
   --app-icon-tint: #e0e9f7;
   --priority-background: #dde7fc;
   --priority-ink: #274b89;
@@ -2632,7 +2629,6 @@ input[data-complete="false"]:focus {
   --app-shadow: #101b2e60;
   --app-overlay: #101b2e99;
   --app-translucent-card: #2b394bb8;
-  --app-history-ink: #b7cbea;
   --app-icon-tint: #3b4e68;
   --priority-background: #35496c;
   --priority-ink: #d6e4ff;
