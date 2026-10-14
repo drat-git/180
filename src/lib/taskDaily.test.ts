@@ -103,9 +103,9 @@ afterEach(async () => {
   ]);
   repo = new LocalRepository(database);
 });
-function clock(date = "2026-10-10T01:59:00-04:00") {
+function clock(date = new Date(2026, 9, 10, 1, 59)) {
   vi.useFakeTimers({ toFake: ["Date"] });
-  vi.setSystemTime(new Date(date));
+  vi.setSystemTime(date);
 }
 it.each(["school", "career"] as const)(
   "records %s work atomically on the actual logical day, preserving reasons",
@@ -141,7 +141,7 @@ it("final-child completion selects only that day's children; later undo never re
   await repo.completeTask("owner", a, true);
   const yesterday = (await repo.getDay("owner", "2026-10-09"))!.data;
   expect((await database.tasks.get(parent))!.completedAt).toBeNull();
-  vi.setSystemTime(new Date("2026-10-10T02:01:00-04:00"));
+  vi.setSystemTime(new Date(2026, 9, 10, 2, 1));
   await repo.completeTask("owner", b, true);
   const today = (await repo.getDay("owner", "2026-10-10"))!.data;
   expect(today.schoolTasksWorkedOn).toHaveLength(1);
@@ -169,7 +169,7 @@ it("deletion-induced parent completion, creation, options, rename and Life creat
   const a = await repo.createTask("owner", "school", "Old", p);
   const b = await repo.createTask("owner", "school", "Delete", p);
   await repo.completeTask("owner", a, true);
-  vi.setSystemTime(new Date("2026-10-10T03:00:00-04:00"));
+  vi.setSystemTime(new Date(2026, 9, 10, 3));
   await repo.deleteTask("owner", b);
   expect((await database.tasks.get(p))!.completedAt).not.toBeNull();
   await repo.renameTask("owner", p, "New title");
@@ -200,7 +200,7 @@ it("rolls back daily/task/history/outbox together and retries failed completion 
   expect(await database.taskEvents.count()).toBe(0);
   expect(await database.outbox.count()).toBe(0);
   put.mockRestore();
-  vi.setSystemTime(new Date("2026-10-10T02:01:00-04:00")); // Recovery keeps the original operation day.
+  vi.setSystemTime(new Date(2026, 9, 10, 2, 1)); // Recovery keeps the original operation day.
   await repo.patchDay("owner", "2026-10-09", {
     schoolTasksStatus: null,
     schoolTasksWorkedOn: [],
@@ -220,7 +220,7 @@ it("rolls back daily/task/history/outbox together and retries failed completion 
   ).toEqual([]);
 });
 it("uses the frozen demo clock and never writes demo work to the private account/outbox", async () => {
-  clock("2026-11-01T10:00:00Z");
+  clock(new Date("2026-11-01T10:00:00Z"));
   const id = await repo.createTask("local-demo:test", "career", "Practice");
   await repo.completeTask("local-demo:test", id, true);
   const entry = (await repo.getDay("local-demo:test", DEMO_TODAY))!;

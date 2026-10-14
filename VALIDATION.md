@@ -9,6 +9,7 @@ This is a dated record of implementation checks. Earlier sections describe the a
 - All **170 unit/component/persistence/sync tests passed**, and TypeScript checks and the production build passed. The existing bundle-size and service-worker option deprecation warnings remain.
 - Captured and inspected six screenshots from the live public demo using synthetic samples: four Classic Dark, one Blue Slate Light, and one Monochrome Dark mobile view. All used Forest & Rust completion colors and Classic Anti-rot colors.
 - Checked documentation formatting and local links. The new GitHub Actions workflow runs unit tests and a production build without private backend credentials; browser and hosted database suites remain separate checks.
+- The first CI run identified four task-daily fixtures that assumed the host used Eastern time. Their private-app test clocks now use local calendar constructors, matching the app's device-local day boundary on both Eastern and UTC hosts.
 - This change updates repository presentation and CI; application behavior and database configuration are unchanged.
 
 ## Initial daily app — October 9, 2026
