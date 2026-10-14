@@ -18,6 +18,32 @@ const answer = (
   page
     .getByRole("group", { name: label, exact: true })
     .getByRole("button", { name: value, exact: true });
+test("renamed applications label retains its existing minimized reason preference", async ({
+  page,
+}) => {
+  await preview(page);
+  await answer(page, "Applied to jobs or internships", "No").click();
+  const reason = page.getByRole("textbox", {
+    name: "Applied to jobs or internships reason",
+    exact: true,
+  });
+  await reason.fill("Existing application reason");
+  await expect(page.locator(".save-state")).toContainText("Sign in to sync");
+  await page.evaluate(() => {
+    localStorage.setItem(
+      "180:display:local-preview:text:Applied to jobs or internships? reason",
+      "minimized",
+    );
+  });
+  await page.reload();
+  await expect(reason).toHaveCount(0);
+  await page.getByRole("button", { name: "View reason", exact: true }).click();
+  await expect(reason).toHaveValue("Existing application reason");
+  await expect(
+    page.getByRole("group", { name: "Used cannabis?", exact: true }),
+  ).toBeVisible();
+});
+
 test("answer icons use cyan and magenta, with cannabis colors following completion", async ({
   page,
 }) => {

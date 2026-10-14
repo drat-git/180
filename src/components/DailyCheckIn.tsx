@@ -256,7 +256,13 @@ export function DailyCheckIn({
                 }}
               />
             )}
-            {reason(key, label, `${field.label} reason`)}
+            {reason(
+              key,
+              label,
+              "reasonPreferenceKey" in field
+                ? field.reasonPreferenceKey
+                : `${field.label} reason`,
+            )}
           </div>
         );
       });

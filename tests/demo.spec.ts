@@ -330,6 +330,10 @@ test("demo thresholds, breakfast choices and local-only visitor actions", async 
     page.getByRole("textbox", { name: "Screen time reason" }),
   ).toBeVisible();
   await answer(page, "Vaped", "No").click();
+  await expect(answer(page, "Vaped", "No")).toHaveCSS(
+    "background-color",
+    "rgb(53, 123, 96)",
+  );
   const completeColor = await answer(page, "Vaped", "No").evaluate(
     (el) => getComputedStyle(el).backgroundColor,
   );
@@ -339,7 +343,7 @@ test("demo thresholds, breakfast choices and local-only visitor actions", async 
   );
   await expect(answer(page, "Vaped", "Yes")).toHaveCSS(
     "background-color",
-    "rgb(151, 85, 121)",
+    "rgb(178, 84, 76)",
   );
   expect(
     await answer(page, "Vaped", "Yes").evaluate(

@@ -48,6 +48,7 @@ export const binaryFields = [
   {
     key: "applications",
     label: "Applied to jobs or internships",
+    reasonPreferenceKey: "Applied to jobs or internships? reason",
     count: true,
   },
 ] as const;
