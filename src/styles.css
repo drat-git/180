@@ -951,6 +951,9 @@ dialog::backdrop {
   margin-top: 16px;
   font-size: 11px;
 }
+.login-switch + .login-switch {
+  margin-inline-start: 20px;
+}
 .login-divider {
   height: 1px;
   background: var(--border);
