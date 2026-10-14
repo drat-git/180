@@ -14,7 +14,7 @@ Open the [live app](https://180-vlfh.vercel.app) and choose **Try the demo mode*
 
 - Browse two populated sample days using the arrows or **Calendar**.
 - Edit the daily checklist, add a task or subtask, and try an **Anti-rot** activity.
-- Change the appearance through the settings button. Use **Reset demo** to restore the samples.
+- Change the appearance through the settings button, or try **Send demo notification** on a supported device—no account needed. Use **Reset demo** to restore the samples.
 
 The demo uses synthetic data and a fixed three-day timeline. Your edits stay in your browser and are separate from the private account; demo mode never uploads them. The cloud-backed app currently supports a single owner, rather than public account registration.
 

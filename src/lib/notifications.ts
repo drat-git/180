@@ -38,6 +38,28 @@ export function notificationSupport() {
     return "Notifications are blocked. Allow them for 180 in your device’s notification settings.";
   return "";
 }
+export function demoNotificationSupport() {
+  const ios =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (
+    ios &&
+    !matchMedia("(display-mode: standalone)").matches &&
+    !(navigator as Navigator & { standalone?: boolean }).standalone
+  )
+    return "On iPhone, use Share → Add to Home Screen, then try the notification from that app.";
+  if (
+    !window.isSecureContext ||
+    !("serviceWorker" in navigator) ||
+    !("Notification" in window) ||
+    !("ServiceWorkerRegistration" in window) ||
+    typeof ServiceWorkerRegistration.prototype.showNotification !== "function"
+  )
+    return "This browser can’t show device notifications. Try the demo in a supported browser or installed app.";
+  if (Notification.permission === "denied")
+    return "Notifications are blocked. Allow them for 180 in your device’s notification settings.";
+  return "";
+}
 async function request(
   action: string,
   id: string,
@@ -199,14 +221,55 @@ export function useNotifications(userId: string, preview: boolean) {
       setBusy(false);
     }
   }
+  async function sendDemoTest() {
+    if (busy || !preview) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const support = demoNotificationSupport();
+      if (support) throw new Error(support);
+      // Request permission directly from the button gesture, before any await.
+      const permission =
+        Notification.permission === "granted"
+          ? "granted"
+          : await Notification.requestPermission();
+      if (permission !== "granted")
+        throw new Error(
+          "No notification was sent. Allow notifications to try the demo reminder.",
+        );
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration?.active)
+        throw new Error(
+          "The app is still getting ready for notifications. Refresh and try again.",
+        );
+      await registration.showNotification("180 demo reminder", {
+        body: "Take a moment to record your day. This is a demo notification.",
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        tag: "180-demo-checklist",
+        data: { url: "/?view=today" },
+      });
+      setMessage("Demo notification sent. Check your device’s notifications.");
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Couldn’t show the demo notification. Please try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   return {
     config,
     busy,
     error,
     message,
     change,
+    sendDemoTest,
     retry: () => setRefreshKey((key) => key + 1),
-    support: preview ? "" : notificationSupport(),
+    support: preview ? demoNotificationSupport() : notificationSupport(),
   };
 }
 export async function disableInstallation() {

@@ -7,7 +7,8 @@ export function NotificationSettings({
   controller: ReturnType<typeof useNotifications>;
   preview: boolean;
 }) {
-  const { config, busy, error, message, change, retry, support } = controller;
+  const { config, busy, error, message, change, sendDemoTest, retry, support } =
+    controller;
   const [time, setTime] = useState(config?.time ?? "21:00");
   useEffect(() => {
     if (config) setTime(config.time);
@@ -16,10 +17,26 @@ export function NotificationSettings({
     <section className="settings-section" aria-labelledby="notifications-title">
       <h3 id="notifications-title">Daily reminders</h3>
       {preview ? (
-        <p className="small">
-          Sign in to your private account in the installed app to enable daily
-          notifications.
-        </p>
+        <>
+          <p className="small">
+            Try a reminder on this device—no account needed. Your browser will
+            ask for notification permission.
+          </p>
+          {support && <p className="small">{support}</p>}
+          <div className="notification-controls">
+            <button
+              className="primary"
+              disabled={busy || !!support}
+              onClick={() => void sendDemoTest()}
+            >
+              {busy ? "Sending…" : "Send demo notification"}
+            </button>
+          </div>
+          <p className="small">
+            This sends one test notification. Sign in to enable scheduled daily
+            reminders.
+          </p>
+        </>
       ) : (
         <>
           <p className="small">
