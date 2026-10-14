@@ -257,14 +257,14 @@ test("saved edits and Life checkoffs update the preview and survive offline relo
   ).not.toHaveAttribute("data-band");
 });
 
-test("calendar colors and focus stay fixed across app themes and narrow layouts", async ({
+test("calendar follows light and dark mode while score colors ignore palettes", async ({
   page,
 }) => {
   await openCalendar(page);
   await dateButton(page, 12).click();
   await expect(dateButton(page, 12)).toHaveCSS(
     "box-shadow",
-    "rgb(83, 111, 91) 0px 0px 0px 2px inset",
+    "rgb(168, 187, 147) 0px 0px 0px 2px inset",
   );
   async function appearance() {
     return calendar(page).evaluate((root) => {
@@ -289,6 +289,13 @@ test("calendar colors and focus stay fixed across app themes and narrow layouts"
     });
   }
   const dark = await appearance();
+  await expect(calendar(page).locator(".calendar-month")).toHaveCSS(
+    "background-color",
+    "rgb(37, 46, 40)",
+  );
+  const bubble = await dateButton(page, 12)
+    .locator(".calendar-bubble")
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
   await page
     .getByRole("button", { name: "Account and app information" })
     .click();
@@ -296,15 +303,41 @@ test("calendar colors and focus stay fixed across app themes and narrow layouts"
     .getByRole("dialog", { name: "Your space" })
     .getByRole("button", { name: "Light", exact: true })
     .click();
-  // Palette attributes may be introduced independently of the calendar.
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(calendar(page).locator(".calendar-month")).toHaveCSS(
+    "background-color",
+    "rgb(247, 244, 236)",
+  );
+  await expect(dateButton(page, 12)).toHaveCSS(
+    "box-shadow",
+    "rgb(83, 111, 91) 0px 0px 0px 2px inset",
+  );
+  await expect(dateButton(page, 12).locator(".calendar-bubble")).toHaveCSS(
+    "background-color",
+    bubble,
+  );
+  const light = await appearance();
+  // App color palettes do not alter the calendar's own Light/Dark palettes.
   await page.evaluate(() => {
     const root = document.documentElement.dataset;
     root.appPalette = "blue-slate";
     root.antiPalette = "rosewood";
     root.completionPalette = "indigo-amber";
   });
+  expect(await appearance()).toEqual(light);
+  await page
+    .getByRole("button", { name: "Account and app information" })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Your space" })
+    .getByRole("button", { name: "Dark", exact: true })
+    .click();
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(dateButton(page, 12)).toHaveCSS(
+    "box-shadow",
+    "rgb(168, 187, 147) 0px 0px 0px 2px inset",
+  );
   expect(await appearance()).toEqual(dark);
   await dateButton(page, 11).focus();
   await page.keyboard.press("Enter");

@@ -1,7 +1,7 @@
-/* Calendar surfaces, controls and marks intentionally ignore app theme tokens. */
+/* Calendar follows Light/Dark mode but keeps its own palette and score colors. */
 .history-calendar {
   color-scheme: light;
-  color: #29392f;
+  color: var(--calendar-ink);
   font-family:
     Inter,
     -apple-system,
@@ -12,6 +12,21 @@
   line-height: 1.5;
   max-width: 780px;
   margin: 28px auto 0;
+  --calendar-ink: #29392f;
+  --calendar-surface: #f7f4ec;
+  --calendar-line: #deddd0;
+  --calendar-muted: #657260;
+  --calendar-button: #fffdf7;
+  --calendar-button-line: #d6d8ca;
+  --calendar-hover: #eaeadd;
+  --calendar-focus: #395b45;
+  --calendar-selected: #536f5b;
+  --calendar-legend-ink: #596754;
+  --calendar-empty-line: #a9af9e;
+  --calendar-child-line: #cfd4c4;
+  --calendar-child-ink: #52614c;
+  --calendar-action: #293f32;
+  --calendar-action-hover: #3c5744;
   --calendar-plum: #70405d;
   --calendar-rose: #a74e65;
   --calendar-amber: #d9ab58;
@@ -21,8 +36,8 @@
 }
 .history-calendar .calendar-month,
 .history-calendar .calendar-preview {
-  background: #f7f4ec;
-  border: 1px solid #deddd0;
+  background: var(--calendar-surface);
+  border: 1px solid var(--calendar-line);
   border-radius: 18px;
   padding: 24px;
 }
@@ -31,7 +46,7 @@
 }
 .history-calendar h1,
 .history-calendar h2 {
-  color: #29392f;
+  color: var(--calendar-ink);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 28px;
   font-weight: 400;
@@ -47,7 +62,7 @@
   font-weight: 600;
 }
 .history-calendar .calendar-eyebrow {
-  color: #657260;
+  color: var(--calendar-muted);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 1.5px;
@@ -61,9 +76,9 @@
   flex-wrap: wrap;
 }
 .history-calendar button {
-  color: #29392f;
-  background: #fffdf7;
-  border: 1px solid #d6d8ca;
+  color: var(--calendar-ink);
+  background: var(--calendar-button);
+  border: 1px solid var(--calendar-button-line);
   border-radius: 10px;
   font: inherit;
   font-weight: 500;
@@ -76,13 +91,13 @@
   box-shadow: none;
 }
 .history-calendar button:hover:not(:disabled) {
-  background: #eaeadd;
+  background: var(--calendar-hover);
 }
 .history-calendar button:disabled {
   opacity: 0.45;
 }
 .history-calendar button:focus-visible {
-  outline: 2px solid #395b45;
+  outline: 2px solid var(--calendar-focus);
   outline-offset: 3px;
 }
 .history-calendar .calendar-navigation {
@@ -100,7 +115,7 @@
 }
 .history-calendar .calendar-weekday {
   text-align: center;
-  color: #657260;
+  color: var(--calendar-muted);
   font-size: 12px;
   padding-bottom: 8px;
 }
@@ -122,7 +137,7 @@
   justify-content: center;
   border-radius: 50%;
   background: transparent;
-  color: #29392f;
+  color: var(--calendar-ink);
   font-weight: 600;
 }
 .history-calendar [data-band="0"] {
@@ -150,12 +165,12 @@
   color: #fffdf7;
 }
 .history-calendar .calendar-date[aria-current="date"] .calendar-bubble {
-  outline: 1px solid #29392f;
+  outline: 1px solid var(--calendar-ink);
   outline-offset: 2px;
 }
 .history-calendar .calendar-date[data-selected] {
-  box-shadow: inset 0 0 0 2px #536f5b;
-  background: #eaeadd;
+  box-shadow: inset 0 0 0 2px var(--calendar-selected);
+  background: var(--calendar-hover);
 }
 .history-calendar .calendar-date[data-outside] {
   opacity: 0.45;
@@ -164,10 +179,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px 14px;
-  border-top: 1px solid #deddd0;
+  border-top: 1px solid var(--calendar-line);
   margin-top: 20px;
   padding-top: 16px;
-  color: #596754;
+  color: var(--calendar-legend-ink);
   font-size: 11px;
 }
 .history-calendar .calendar-legend > span {
@@ -183,18 +198,18 @@
 }
 .history-calendar .calendar-empty-swatch {
   background: transparent;
-  border: 1px solid #a9af9e;
+  border: 1px solid var(--calendar-empty-line);
 }
 .history-calendar .calendar-total {
   margin-top: 12px;
 }
 .history-calendar .calendar-open {
-  background: #293f32;
+  background: var(--calendar-action);
   color: #fffdf7;
-  border-color: #293f32;
+  border-color: var(--calendar-action);
 }
 .history-calendar .calendar-open:hover {
-  background: #3c5744;
+  background: var(--calendar-action-hover);
 }
 .history-calendar .calendar-blocks {
   display: flex;
@@ -202,8 +217,8 @@
   gap: 10px 24px;
   margin: 20px 0 0;
   padding: 16px 0;
-  border-top: 1px solid #deddd0;
-  border-bottom: 1px solid #deddd0;
+  border-top: 1px solid var(--calendar-line);
+  border-bottom: 1px solid var(--calendar-line);
 }
 .history-calendar .calendar-blocks > div {
   display: flex;
@@ -211,7 +226,7 @@
   gap: 8px;
 }
 .history-calendar dt {
-  color: #657260;
+  color: var(--calendar-muted);
   font-size: 12px;
 }
 .history-calendar dd {
@@ -242,18 +257,18 @@
 }
 .history-calendar .calendar-work li ul {
   margin: 8px 0 0 5px;
-  border-left: 1px solid #cfd4c4;
+  border-left: 1px solid var(--calendar-child-line);
   padding-left: 12px;
-  color: #52614c;
+  color: var(--calendar-child-ink);
 }
 .history-calendar .calendar-empty {
-  color: #657260;
+  color: var(--calendar-muted);
   font-size: 12px;
   margin-top: 6px;
 }
 .history-calendar .calendar-message {
   padding: 32px 0;
-  color: #657260;
+  color: var(--calendar-muted);
 }
 .history-calendar .calendar-message button {
   margin-top: 12px;
@@ -285,4 +300,23 @@
   .history-calendar .calendar-grid {
     column-gap: 1px;
   }
+}
+
+:root[data-theme="dark"] .history-calendar {
+  color-scheme: dark;
+  --calendar-ink: #e8ede5;
+  --calendar-surface: #252e28;
+  --calendar-line: #475145;
+  --calendar-muted: #bbc4b3;
+  --calendar-button: #303b32;
+  --calendar-button-line: #596752;
+  --calendar-hover: #3a483b;
+  --calendar-focus: #bacb9f;
+  --calendar-selected: #a8bb93;
+  --calendar-legend-ink: #bbc4b3;
+  --calendar-empty-line: #8b9b7d;
+  --calendar-child-line: #58674f;
+  --calendar-child-ink: #c3cdb6;
+  --calendar-action: #416248;
+  --calendar-action-hover: #4b765b;
 }
