@@ -1,4 +1,4 @@
-/* Calendar follows Light/Dark mode but keeps its own palette and score colors. */
+/* Calendar surfaces follow Light/Dark; scores follow the completion palette. */
 .history-calendar {
   color-scheme: light;
   color: var(--calendar-ink);
@@ -27,12 +27,28 @@
   --calendar-child-ink: #52614c;
   --calendar-action: #293f32;
   --calendar-action-hover: #3c5744;
-  --calendar-plum: #70405d;
-  --calendar-rose: #a74e65;
-  --calendar-amber: #d9ab58;
-  --calendar-olive: #a5a557;
-  --calendar-green: #51845d;
-  --calendar-full: #285d40;
+  --calendar-score-0: var(--completion-incomplete);
+  --calendar-score-1: color-mix(
+    in srgb,
+    var(--completion-incomplete) 80%,
+    var(--completion-complete)
+  );
+  --calendar-score-2: color-mix(
+    in srgb,
+    var(--completion-incomplete) 60%,
+    var(--completion-complete)
+  );
+  --calendar-score-3: color-mix(
+    in srgb,
+    var(--completion-incomplete) 40%,
+    var(--completion-complete)
+  );
+  --calendar-score-4: color-mix(
+    in srgb,
+    var(--completion-incomplete) 20%,
+    var(--completion-complete)
+  );
+  --calendar-score-5: var(--completion-complete);
 }
 .history-calendar .calendar-month,
 .history-calendar .calendar-preview {
@@ -141,28 +157,25 @@
   font-weight: 600;
 }
 .history-calendar [data-band="0"] {
-  background: var(--calendar-plum);
-  color: #fffdf7;
+  background: var(--calendar-score-0);
 }
 .history-calendar [data-band="1"] {
-  background: var(--calendar-rose);
-  color: #fffdf7;
+  background: var(--calendar-score-1);
 }
 .history-calendar [data-band="2"] {
-  background: var(--calendar-amber);
-  color: #29392f;
+  background: var(--calendar-score-2);
 }
 .history-calendar [data-band="3"] {
-  background: var(--calendar-olive);
-  color: #29392f;
+  background: var(--calendar-score-3);
 }
 .history-calendar [data-band="4"] {
-  background: var(--calendar-green);
-  color: #fffdf7;
+  background: var(--calendar-score-4);
 }
 .history-calendar [data-band="5"] {
-  background: var(--calendar-full);
-  color: #fffdf7;
+  background: var(--calendar-score-5);
+}
+.history-calendar [data-band] {
+  color: #ffffff;
 }
 .history-calendar .calendar-date[aria-current="date"] .calendar-bubble {
   outline: 1px solid var(--calendar-ink);

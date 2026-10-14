@@ -257,7 +257,7 @@ test("saved edits and Life checkoffs update the preview and survive offline relo
   ).not.toHaveAttribute("data-band");
 });
 
-test("calendar follows light and dark mode while score colors ignore palettes", async ({
+test("calendar surfaces follow light and dark mode independently of app palettes", async ({
   page,
 }) => {
   await openCalendar(page);
@@ -273,7 +273,6 @@ test("calendar follows light and dark mode while score colors ignore palettes", 
         ".calendar-preview",
         ".calendar-open",
         ".calendar-date[data-selected]",
-        ".calendar-bubble[data-band='3']",
         ".calendar-legend",
       ];
       return selectors.map((selector) => {
@@ -313,17 +312,16 @@ test("calendar follows light and dark mode while score colors ignore palettes", 
     "box-shadow",
     "rgb(83, 111, 91) 0px 0px 0px 2px inset",
   );
-  await expect(dateButton(page, 12).locator(".calendar-bubble")).toHaveCSS(
+  await expect(dateButton(page, 12).locator(".calendar-bubble")).not.toHaveCSS(
     "background-color",
     bubble,
   );
   const light = await appearance();
-  // App color palettes do not alter the calendar's own Light/Dark palettes.
+  // App and Anti-rot palettes do not alter the calendar's surfaces or scores.
   await page.evaluate(() => {
     const root = document.documentElement.dataset;
     root.appPalette = "blue-slate";
     root.antiPalette = "rosewood";
-    root.completionPalette = "indigo-amber";
   });
   expect(await appearance()).toEqual(light);
   await page
@@ -350,6 +348,118 @@ test("calendar follows light and dark mode while score colors ignore palettes", 
   ).toBe(true);
   await page.screenshot({
     path: `test-results/calendar-narrow-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+});
+
+test("calendar gradients follow completion choices in both modes without changing records", async ({
+  page,
+}) => {
+  await openCalendar(page);
+  await dateButton(page, 12).click();
+  const before = await storedRows(page);
+  const label = await dateButton(page, 12).getAttribute("aria-label");
+  const palettes = [
+    {
+      name: "Classic",
+      light: ["9a5a82", "187d95"],
+      dark: ["975579", "287f94"],
+    },
+    {
+      name: "Forest & Rust",
+      light: ["b34f46", "2d7557"],
+      dark: ["b2544c", "357b60"],
+    },
+    {
+      name: "Indigo & Amber",
+      light: ["5357ad", "a1651e"],
+      dark: ["6064b5", "9b6520"],
+    },
+  ];
+  const channels = (hex: string) =>
+    hex.match(/../g)!.map((n) => parseInt(n, 16));
+  const luminance = (rgb: number[]) =>
+    rgb.reduce((sum, value, i) => {
+      const n = value / 255;
+      return (
+        sum +
+        (n <= 0.04045 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4) *
+          [0.2126, 0.7152, 0.0722][i]
+      );
+    }, 0);
+  for (const mode of ["light", "dark"] as const) {
+    for (const palette of palettes) {
+      await page
+        .getByRole("button", { name: "Account and app information" })
+        .click();
+      const settings = page.getByRole("dialog", {
+        name: "Your space",
+        exact: true,
+      });
+      await settings
+        .getByRole("group", { name: "Mode", exact: true })
+        .getByRole("button", {
+          name: mode === "light" ? "Light" : "Dark",
+          exact: true,
+        })
+        .click();
+      await settings
+        .getByRole("group", { name: "Completion colors", exact: true })
+        .getByRole("button", { name: palette.name, exact: true })
+        .click();
+      await settings
+        .getByRole("button", { name: "Close dialog", exact: true })
+        .click();
+      const colors = await calendar(page).evaluate((root) => {
+        // Normalize both rgb() and color-mix() computed values to actual pixels.
+        const context = document.createElement("canvas").getContext("2d")!;
+        const rgba = (color: string) => {
+          context.clearRect(0, 0, 1, 1);
+          context.fillStyle = color;
+          context.fillRect(0, 0, 1, 1);
+          return Array.from(context.getImageData(0, 0, 1, 1).data);
+        };
+        const bands = Array.from(
+          root.querySelectorAll(".calendar-legend i[data-band]"),
+        ).map((element) => rgba(getComputedStyle(element).backgroundColor));
+        const bubble = root.querySelector(".calendar-bubble[data-band='3']")!;
+        const empty = root.querySelector(".calendar-bubble:not([data-band])")!;
+        return {
+          bands,
+          bubble: rgba(getComputedStyle(bubble).backgroundColor),
+          text: rgba(getComputedStyle(bubble).color),
+          empty: rgba(getComputedStyle(empty).backgroundColor),
+        };
+      });
+      const [low, high] = palette[mode].map(channels);
+      expect(colors.bands).toHaveLength(6);
+      for (const [band, color] of colors.bands.entries()) {
+        const fraction = band / 5;
+        color.slice(0, 3).forEach((channel, i) => {
+          expect(
+            Math.abs(
+              channel -
+                Math.round(low[i] * (1 - fraction) + high[i] * fraction),
+            ),
+          ).toBeLessThanOrEqual(1);
+        });
+        expect(color[3]).toBe(255);
+        expect(
+          (luminance(colors.text.slice(0, 3)) + 0.05) /
+            (luminance(color.slice(0, 3)) + 0.05),
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+      expect(colors.bubble).toEqual(colors.bands[3]);
+      expect(colors.empty[3]).toBe(0);
+      await expect(dateButton(page, 12)).toHaveAttribute("aria-label", label!);
+      await expect(
+        dateButton(page, 12).locator(".calendar-bubble"),
+      ).toHaveAttribute("data-band", "3");
+    }
+  }
+  expect(await storedRows(page)).toEqual(before);
+  await page.screenshot({
+    path: `test-results/calendar-completion-palette-${test.info().project.name}.png`,
     fullPage: true,
   });
 });

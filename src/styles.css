@@ -2900,17 +2900,17 @@ input[data-complete="false"]:focus {
   --completion-on-color: #ffffff;
 }
 :root[data-completion-palette="indigo-amber"] {
-  --completion-complete: #5357ad;
-  --completion-incomplete: #a1651e;
-  --completion-complete-border: #5357ad;
-  --completion-incomplete-border: #a1651e;
+  --completion-complete: #a1651e;
+  --completion-incomplete: #5357ad;
+  --completion-complete-border: #a1651e;
+  --completion-incomplete-border: #5357ad;
   --completion-on-color: #ffffff;
 }
 :root[data-completion-palette="indigo-amber"][data-theme="dark"] {
-  --completion-complete: #6064b5;
-  --completion-incomplete: #9b6520;
-  --completion-complete-border: #a4a8f4;
-  --completion-incomplete-border: #dfab63;
+  --completion-complete: #9b6520;
+  --completion-incomplete: #6064b5;
+  --completion-complete-border: #dfab63;
+  --completion-incomplete-border: #a4a8f4;
   --completion-on-color: #ffffff;
 }
 
@@ -3033,8 +3033,8 @@ input[data-complete="false"]:focus {
   --swatch-b: #b34f46;
 }
 .appearance-swatch[data-layer="completionPalette"][data-swatch="indigo-amber"] {
-  --swatch-a: #5357ad;
-  --swatch-b: #a1651e;
+  --swatch-a: #a1651e;
+  --swatch-b: #5357ad;
 }
 
 .checklist-block:is(

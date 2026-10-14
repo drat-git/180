@@ -219,8 +219,8 @@ test("all 54 combinations resolve independent layers, neutral unanswered control
       ["357b60", "b2544c"],
     ],
     "indigo-amber": [
-      ["5357ad", "a1651e"],
-      ["6064b5", "9b6520"],
+      ["a1651e", "5357ad"],
+      ["9b6520", "6064b5"],
     ],
   };
   const luminance = (c: string) =>
