@@ -30,7 +30,11 @@ import { Login } from "./components/Login";
 import { Modal } from "./components/Controls";
 import { DEMO_SESSION_KEY, modeForUser, todayForUser } from "./lib/appMode";
 import { clearDemoDisplayPreferences, demoSession, seedDemo } from "./lib/demo";
-import { applyTheme, restorePrivateTheme } from "./lib/theme";
+import {
+  restoreDemoAppearance,
+  resetDemoAppearance,
+  restorePrivateTheme,
+} from "./lib/theme";
 function CheckInApp({
   userId,
   email,
@@ -573,7 +577,7 @@ function DemoPreview({ onExit }: { onExit: () => void }) {
   const [attempt, setAttempt] = useState(0);
   const retryReset = useRef(false);
   useEffect(() => {
-    applyTheme("dark");
+    restoreDemoAppearance();
     return restorePrivateTheme;
   }, []);
   useEffect(() => {
@@ -585,9 +589,10 @@ function DemoPreview({ onExit }: { onExit: () => void }) {
         if (reset) {
           repository.discardDemoUnsaved(userId);
           clearDemoDisplayPreferences(userId);
+          resetDemoAppearance();
           retryReset.current = false;
         }
-        applyTheme("dark");
+        restoreDemoAppearance();
         setError("");
         setReady(true);
       })
@@ -657,7 +662,7 @@ export default function App() {
         onPreview={() => {
           sessionStorage.setItem("180-preview", "true");
           sessionStorage.removeItem(DEMO_SESSION_KEY);
-          applyTheme("dark");
+          resetDemoAppearance();
           setPreview(true);
           auth.setRecovery(false);
         }}
@@ -672,6 +677,8 @@ export default function App() {
         onExit={() => {
           sessionStorage.removeItem("180-preview");
           sessionStorage.removeItem(DEMO_SESSION_KEY);
+          resetDemoAppearance();
+          restorePrivateTheme();
           setPreview(false);
         }}
       />

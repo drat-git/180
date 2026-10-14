@@ -8,17 +8,63 @@
     />
     <meta name="theme-color" content="#f6f4ec" />
     <script>
-      try {
-        const theme =
-          sessionStorage.getItem("180-preview") === "true" ||
-          localStorage.getItem("180:theme") === "dark"
-            ? "dark"
-            : "light";
-        document.documentElement.dataset.theme = theme;
-        document.documentElement.style.colorScheme = theme;
+      // Synchronous restoration precedes CSS/app rendering, including offline reloads.
+      (() => {
+        const read = (store, key) => {
+          try {
+            return window[store].getItem(key);
+          } catch {
+            return null;
+          }
+        };
+        const preview = read("sessionStorage", "180-preview") === "true";
+        let demo = {};
+        try {
+          demo =
+            JSON.parse(
+              read("sessionStorage", "180:demo-appearance") || "null",
+            ) || {};
+        } catch {}
+        const pick = (value, choices, fallback) =>
+          choices.includes(value) ? value : fallback;
+        const mode = pick(
+          preview ? demo.mode : read("localStorage", "180:theme"),
+          ["light", "dark"],
+          preview ? "dark" : "light",
+        );
+        const app = pick(
+          preview ? demo.appPalette : read("localStorage", "180:app-palette"),
+          ["classic", "monochrome", "blue-slate"],
+          "classic",
+        );
+        const anti = pick(
+          preview ? demo.antiPalette : read("localStorage", "180:anti-palette"),
+          ["classic", "sunset", "rosewood"],
+          "classic",
+        );
+        const completion = pick(
+          preview
+            ? demo.completionPalette
+            : read("localStorage", "180:completion-palette"),
+          ["classic", "forest-rust", "indigo-amber"],
+          "classic",
+        );
+        const root = document.documentElement;
+        Object.assign(root.dataset, {
+          theme: mode,
+          appPalette: app,
+          antiPalette: anti,
+          completionPalette: completion,
+        });
+        root.style.colorScheme = mode;
+        const backgrounds = {
+          classic: { light: "#f6f4ec", dark: "#292f2c" },
+          monochrome: { light: "#f5f5f5", dark: "#272727" },
+          "blue-slate": { light: "#edf2f8", dark: "#202b39" },
+        };
         document.querySelector('meta[name="theme-color"]').content =
-          theme === "dark" ? "#292f2c" : "#f6f4ec";
-      } catch {}
+          backgrounds[app][mode];
+      })();
     </script>
     <meta name="description" content="A truthful record of each day." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

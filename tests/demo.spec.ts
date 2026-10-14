@@ -518,7 +518,8 @@ test("demo theme, reset and uploaded photos cannot alter the private app", async
   ).toBeNull();
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  // Demo appearance is session-specific and now survives reloads.
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.getByLabel("Add journal photo", { exact: true }).setInputFiles({
     name: "sample.png",
     mimeType: "image/png",
