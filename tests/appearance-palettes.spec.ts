@@ -381,7 +381,7 @@ for (const [app, anti, completion] of [
       .getByRole("button", { name: "Show daily checklist", exact: true })
       .click();
     const recap = page.getByRole("list", {
-      name: "Anti Rotting recap",
+      name: "Daily activity recap",
       exact: true,
     });
     await expect(recap).toContainText("Read a chapter");

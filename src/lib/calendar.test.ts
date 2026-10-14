@@ -116,8 +116,8 @@ describe("calendar worked-on history", () => {
     lecture.manual = true;
     const day = summary(data);
     expect(day.antiRotting.map((activity) => activity.title)).toEqual([
-      "Practice guitar for 15 minutes",
       "Watch a public lecture about space",
+      "Practice guitar for 15 minutes",
     ]);
     expect(day).toMatchObject({ completed: 10, total: 15 });
     expect(summary(data, DEMO_TODAY).antiRotting).toEqual([]);

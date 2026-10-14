@@ -105,3 +105,27 @@ it("keeps non-collapsible blocks accessible despite an old minimized preference"
     screen.queryByRole("button", { name: /Minimize|Maximize/ }),
   ).toBeNull();
 });
+
+it("removes the entire header while keeping an accessible, always-visible block", () => {
+  localStorage.setItem("180:display:owner:block:anti-recap", "minimized");
+  render(
+    <DisplayPreferencesProvider userId="owner">
+      <ChecklistBlock
+        title="Anti Rotting"
+        ariaLabel="Daily activity recap"
+        preferenceKey="anti-recap"
+        showHeader={false}
+        icon={<span>Recap icon</span>}
+      >
+        <span>Completed errands</span>
+      </ChecklistBlock>
+    </DisplayPreferencesProvider>,
+  );
+  const block = screen.getByRole("region", { name: "Daily activity recap" });
+  expect(block).toHaveAttribute("data-block", "Anti Rotting");
+  expect(block.querySelector(".block-heading")).toBeNull();
+  expect(screen.queryByRole("heading")).toBeNull();
+  expect(screen.queryByRole("button")).toBeNull();
+  expect(screen.queryByText("Recap icon")).toBeNull();
+  expect(screen.getByText("Completed errands")).toBeVisible();
+});

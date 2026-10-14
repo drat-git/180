@@ -207,11 +207,11 @@ test("past-day recap appears at 2 AM, is read-only, and survives rename and dele
     .getByLabel("Daily checklist progress", { exact: true })
     .textContent();
   await expect(
-    page.getByRole("list", { name: "Anti Rotting recap", exact: true }),
+    page.getByRole("list", { name: "Daily activity recap", exact: true }),
   ).toHaveCount(0);
   await page.clock.fastForward("01:00:01");
   const recap = page.getByRole("list", {
-    name: "Anti Rotting recap",
+    name: "Daily activity recap",
     exact: true,
   });
   await expect(recap).toBeVisible();
@@ -221,7 +221,8 @@ test("past-day recap appears at 2 AM, is read-only, and survives rename and dele
     }),
   ).toHaveCount(0);
   await expect(recap.getByText("Read a book", { exact: true })).toBeVisible();
-  await expect(recap.getByText("Worked on", { exact: true })).toHaveCount(1);
+  await expect(recap.getByText("Worked on", { exact: true })).toHaveCount(0);
+  await expect(recap.locator(".recap-anti-start")).toHaveCount(0);
   await expect(recap.getByText("Completed", { exact: true })).toHaveCount(1);
   await expect(recap.getByRole("checkbox")).toHaveCount(0);
   await expect(recap.getByRole("button")).toHaveCount(0);
@@ -281,7 +282,7 @@ test("same-day completion undo gives worked-on recap only for manually logged it
   await page.clock.fastForward("01:00:01");
   await page.getByRole("button", { name: "Show daily checklist" }).click();
   const recap = page.getByRole("list", {
-    name: "Anti Rotting recap",
+    name: "Daily activity recap",
     exact: true,
   });
   await expect(recap.getByText("Manual work", { exact: true })).toBeVisible();
@@ -319,7 +320,7 @@ test("deleted ideas retain historical logs and notes can be edited", async ({
   await page.clock.fastForward("01:00:01");
   await page.getByRole("button", { name: "Show daily checklist" }).click();
   const recap = page.getByRole("list", {
-    name: "Anti Rotting recap",
+    name: "Daily activity recap",
     exact: true,
   });
   await expect(

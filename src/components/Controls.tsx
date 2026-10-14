@@ -18,6 +18,8 @@ export function ChecklistBlock({
   preferenceKey,
   progress,
   collapsible = true,
+  showHeader = true,
+  ariaLabel = title,
   children,
 }: {
   title: string;
@@ -25,56 +27,60 @@ export function ChecklistBlock({
   preferenceKey?: string;
   progress?: ChecklistCount;
   collapsible?: boolean;
+  showHeader?: boolean;
+  ariaLabel?: string;
   children: ReactNode;
 }) {
   const [minimized, setMinimized] = useMinimized(
     `block:${preferenceKey ?? title}`,
   );
   const contentId = useId();
-  const collapsed = collapsible && minimized;
+  const collapsed = showHeader && collapsible && minimized;
   return (
     <section
       className="checklist-block"
-      aria-label={title}
+      aria-label={ariaLabel}
       data-block={title}
       data-minimized={collapsed}
     >
-      <div className="block-heading">
-        <div className="block-title">
-          {icon && (
-            <span className="block-icon" aria-hidden="true">
-              {icon}
-            </span>
-          )}
-          <div className="block-title-text">
-            <h3>{title}</h3>
-            {progress && (
-              <span
-                className="block-progress"
-                aria-label={`${title} checklist progress`}
-              >
-                {progress.completed}/{progress.total} complete
+      {showHeader && (
+        <div className="block-heading">
+          <div className="block-title">
+            {icon && (
+              <span className="block-icon" aria-hidden="true">
+                {icon}
               </span>
             )}
+            <div className="block-title-text">
+              <h3>{title}</h3>
+              {progress && (
+                <span
+                  className="block-progress"
+                  aria-label={`${title} checklist progress`}
+                >
+                  {progress.completed}/{progress.total} complete
+                </span>
+              )}
+            </div>
           </div>
+          {collapsible && (
+            <button
+              type="button"
+              className="block-toggle"
+              aria-expanded={!minimized}
+              aria-controls={contentId}
+              aria-label={minimized ? `Maximize ${title}` : `Minimize ${title}`}
+              onClick={() => setMinimized(!minimized)}
+            >
+              {minimized ? (
+                <ChevronDown size={18} aria-hidden="true" />
+              ) : (
+                <ChevronUp size={18} aria-hidden="true" />
+              )}
+            </button>
+          )}
         </div>
-        {collapsible && (
-          <button
-            type="button"
-            className="block-toggle"
-            aria-expanded={!minimized}
-            aria-controls={contentId}
-            aria-label={minimized ? `Maximize ${title}` : `Minimize ${title}`}
-            onClick={() => setMinimized(!minimized)}
-          >
-            {minimized ? (
-              <ChevronDown size={18} aria-hidden="true" />
-            ) : (
-              <ChevronUp size={18} aria-hidden="true" />
-            )}
-          </button>
-        )}
-      </div>
+      )}
       <div id={contentId} hidden={collapsed}>
         {children}
       </div>

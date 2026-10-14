@@ -144,3 +144,39 @@ it("invalid titles and oversized notes are rejected before changing data", () =>
   ).toThrow();
   expect(f.state.items[0].title).toBe("Documentary");
 });
+
+it("orders one-time recap items before reusable ones using their historical types", () => {
+  const reusable = fixture("reusable");
+  reusable.run({
+    action: "edit",
+    title: "A reusable activity",
+    notes: "",
+    itemType: "reusable",
+  });
+  reusable.run({ action: "log", logged: true });
+  const oneTime = fixture("one-time");
+  oneTime.run({ action: "complete", completed: true });
+  oneTime.run({
+    action: "edit",
+    title: "Renamed and reusable now",
+    itemType: "reusable",
+    at: "2026-10-11T16:00:00.000Z",
+    logicalDate: "2026-10-11",
+  });
+  const rows = antiRecap(
+    [
+      ...reusable.state.logs.map((log) => ({
+        ...log,
+        id: "reusable",
+        itemId: "reusable",
+      })),
+      ...oneTime.state.logs,
+    ],
+    oneTime.state.events,
+    date,
+  );
+  expect(rows.map((row) => [row.title, row.itemType])).toEqual([
+    ["Documentary", "one-time"],
+    ["A reusable activity", "reusable"],
+  ]);
+});

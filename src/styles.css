@@ -1604,7 +1604,8 @@ dialog::backdrop {
 .anti-add {
   margin-top: 12px;
 }
-.anti-recap li {
+.anti-recap li,
+.anti-recap .recap-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1614,6 +1615,27 @@ dialog::backdrop {
   padding: 10px 0;
 }
 .anti-recap li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.anti-recap .life-recap-group {
+  display: block;
+}
+.anti-recap > .recap-anti-start {
+  border-top: 1px solid var(--anti-border);
+  margin-top: 8px;
+  padding-top: 16px;
+}
+.life-recap-children {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0 0 0 16px;
+  border-left: 1px solid var(--anti-border);
+}
+.life-recap-children li {
+  padding: 6px 0;
+}
+.recap-row > div {
   min-width: 0;
   overflow-wrap: anywhere;
 }

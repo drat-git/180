@@ -8,6 +8,8 @@ import { useAntiRotting } from "../lib/useAntiRotting";
 import { antiRecap, logActive } from "../lib/antiRotting";
 import { ChecklistBlock, Modal } from "./Controls";
 import { useMinimized } from "../lib/displayPreferences";
+import { useTasks } from "../lib/useTasks";
+import { completedLifeTasksForDay } from "../lib/lifeRecap";
 
 function ActivityRow({
   item,
@@ -375,25 +377,64 @@ export function AntiRottingRecap({
   today: string;
 }) {
   const { logs, events } = useAntiRotting(userId);
+  const { tasks, events: taskEvents } = useTasks(userId);
+  const life = completedLifeTasksForDay(userId, date, tasks, taskEvents);
   const rows = antiRecap(logs, events, date);
-  if (date >= today || !rows.length) return null;
+  if (date >= today || (!life.length && !rows.length)) return null;
   return (
     <ChecklistBlock
       title="Anti Rotting"
+      ariaLabel="Daily activity recap"
       preferenceKey="anti-recap"
       collapsible={false}
-      icon={<Compass size={18} />}
+      showHeader={false}
     >
-      <ul className="anti-recap" aria-label="Anti Rotting recap">
-        {rows.map((row) => (
-          <li key={row.itemId}>
+      <ul className="anti-recap" aria-label="Daily activity recap">
+        {life.map((group) => (
+          <li key={`life:${group.taskId}`} className="life-recap-group">
+            <div className="recap-row">
+              <div>
+                <span>{group.title}</span>
+              </div>
+              {group.completed && (
+                <span className="anti-status completed">Completed</span>
+              )}
+            </div>
+            {group.children.length > 0 && (
+              <ul
+                className="life-recap-children"
+                aria-label={`Completed subtasks of ${group.title}`}
+              >
+                {group.children.map((child) => (
+                  <li key={child.taskId}>
+                    <div>
+                      <span>{child.title}</span>
+                    </div>
+                    <span className="anti-status completed">Completed</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+        {rows.map((row, index) => (
+          <li
+            key={`anti:${row.itemId}`}
+            className={
+              life.length > 0 && index === 0 ? "recap-anti-start" : undefined
+            }
+          >
             <div>
               <span>{row.title}</span>
               {row.notes && <p className="small">{row.notes}</p>}
             </div>
-            <span className={`anti-status ${row.completed ? "completed" : ""}`}>
-              {row.completed ? "Completed" : "Worked on"}
-            </span>
+            {row.itemType === "one-time" && (
+              <span
+                className={`anti-status ${row.completed ? "completed" : ""}`}
+              >
+                {row.completed ? "Completed" : "Worked on"}
+              </span>
+            )}
           </li>
         ))}
       </ul>

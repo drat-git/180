@@ -22,7 +22,13 @@ export function visibleAntiItems(items: AntiItem[], now: number) {
 export function antiRecap(logs: AntiLog[], events: AntiEvent[], date: string) {
   const rows = new Map<
     string,
-    { itemId: string; title: string; notes: string; completed: boolean }
+    {
+      itemId: string;
+      title: string;
+      notes: string;
+      itemType: AntiItem["itemType"];
+      completed: boolean;
+    }
   >();
   for (const log of logs)
     if (log.logicalDate === date && logActive(log))
@@ -30,6 +36,7 @@ export function antiRecap(logs: AntiLog[], events: AntiEvent[], date: string) {
         itemId: log.itemId,
         title: log.title,
         notes: log.notes,
+        itemType: log.itemType,
         completed: false,
       });
   const last = new Map<string, AntiEvent>();
@@ -46,11 +53,14 @@ export function antiRecap(logs: AntiLog[], events: AntiEvent[], date: string) {
         itemId: event.itemId,
         title: event.title,
         notes: event.notes,
+        itemType: event.itemType,
         completed: true,
       });
   return [...rows.values()].sort(
     (a, b) =>
-      a.title.localeCompare(b.title) || a.itemId.localeCompare(b.itemId),
+      Number(a.itemType === "reusable") - Number(b.itemType === "reusable") ||
+      a.title.localeCompare(b.title) ||
+      a.itemId.localeCompare(b.itemId),
   );
 }
 export function applyAntiCommand(

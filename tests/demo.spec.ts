@@ -149,8 +149,16 @@ test("past entries show varied samples, absent Sunday school and protected histo
     page.getByRole("group", { name: "Recorded school tasks" }),
   ).toContainText("Finish statistics practice set");
   await expect(
-    page.getByRole("list", { name: "Anti Rotting recap" }),
+    page.getByRole("list", { name: "Daily activity recap" }),
   ).toContainText("Completed");
+  const recap = page.getByRole("region", {
+    name: "Daily activity recap",
+    exact: true,
+  });
+  await expect(recap.getByRole("heading")).toHaveCount(0);
+  await expect(recap.locator(".anti-recap > li").first()).toContainText(
+    "Return library books",
+  );
   await page.screenshot({
     path: `test-results/demo-day-two-${test.info().project.name}.png`,
     fullPage: true,
