@@ -225,7 +225,7 @@ function CheckInApp({
                 : pending
                   ? "Saved locally"
                   : state === "synced"
-                    ? "All changes synced"
+                    ? "synced"
                     : "Saved locally";
   return (
     <div
