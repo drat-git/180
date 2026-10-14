@@ -354,7 +354,114 @@ test("calendar follows light and dark mode while score colors ignore palettes", 
   });
 });
 
-test("private navigation remains unchanged", async ({ page }) => {
+test("main calendar uses private records and rules, preserves protected history and works offline", async ({
+  page,
+  context,
+}) => {
+  await page.clock.install({ time: new Date("2026-10-14T12:00:00-04:00") });
   await openPrivateApp(page);
-  await expect(nav(page, "Calendar")).toHaveCount(0);
+  await page.getByLabel("Wake-up time", { exact: true }).fill("09:10");
+  await page
+    .getByRole("group", { name: "Used cannabis?", exact: true })
+    .getByRole("button", { name: "Yes", exact: true })
+    .click();
+  await page
+    .getByRole("textbox", { name: "Daily journal", exact: true })
+    .fill("Main account journal");
+  await expect(page.locator(".save-state")).toHaveText("Sign in to sync");
+  const before = await storedRows(page);
+  await nav(page, "Calendar").click();
+  await expect(
+    preview(page).getByLabel("Calendar checklist progress"),
+  ).toHaveText("2 of 14 checks complete");
+  await expect(dateButton(page, 8)).toBeDisabled();
+  await expect(dateButton(page, 9)).toBeEnabled();
+  await expect(dateButton(page, 15)).toBeDisabled();
+  await expect(preview(page)).not.toContainText("Return library books");
+  await dateButton(page, 9).click();
+  await expect(preview(page)).toContainText("DAY 1");
+  await expect(
+    preview(page).getByLabel("Calendar checklist progress"),
+  ).toHaveText("0 of 13 checks complete");
+  await preview(page).getByRole("button", { name: "Open day" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Day 1", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("This past entry is protected.", { exact: true }),
+  ).toBeVisible();
+  await nav(page, "Calendar").click();
+  await expect(dateButton(page, 9)).toHaveAttribute("aria-pressed", "true");
+  expect(await storedRows(page)).toEqual(before);
+  await calendar(page)
+    .getByRole("button", { name: "Today", exact: true })
+    .click();
+  await expect(
+    preview(page).getByLabel("Calendar checklist progress"),
+  ).toHaveText("2 of 14 checks complete");
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await context.setOffline(true);
+  await page.reload();
+  await expect(
+    page.getByRole("textbox", { name: "Daily journal", exact: true }),
+  ).toHaveValue("Main account journal");
+  await nav(page, "Calendar").click();
+  await expect(
+    preview(page).getByLabel("Calendar checklist progress"),
+  ).toHaveText("2 of 14 checks complete");
+  await page.setViewportSize({ width: 320, height: 780 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `test-results/main-calendar-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+});
+
+test("main calendar follows the real 2 AM rollover across month boundaries", async ({
+  page,
+}) => {
+  // Fall-back Sunday repeats 1 AM; the day changes after the second 1:59 AM.
+  await page.clock.install({ time: new Date("2026-11-01T01:59:50-05:00") });
+  await openPrivateApp(page);
+  await page.getByLabel("Wake-up time", { exact: true }).fill("09:10");
+  await expect(page.locator(".save-state")).toHaveText("Sign in to sync");
+  await nav(page, "Calendar").click();
+  await expect(
+    calendar(page).getByRole("heading", { name: "October 2026", exact: true }),
+  ).toBeVisible();
+  await expect(preview(page)).toContainText("DAY 23 · IN PROGRESS");
+  await expect(
+    calendar(page).getByRole("button", { name: "Next month" }),
+  ).toBeDisabled();
+  await page.clock.fastForward("00:00:15");
+  await expect(preview(page)).toContainText("DAY 23 · DAILY RECORD");
+  await expect(
+    calendar(page).getByRole("button", { name: "Next month" }),
+  ).toBeEnabled();
+  await calendar(page)
+    .getByRole("button", { name: "Today", exact: true })
+    .click();
+  await expect(
+    calendar(page).getByRole("heading", { name: "November 2026", exact: true }),
+  ).toBeVisible();
+  await expect(preview(page)).toContainText("DAY 24 · IN PROGRESS");
+  await expect(
+    preview(page).getByLabel("Calendar checklist progress"),
+  ).toHaveText("0 of 13 checks complete");
+  await calendar(page).getByRole("button", { name: "Previous month" }).click();
+  await dateButton(page, 31).click();
+  await expect(
+    preview(page).getByLabel("Calendar checklist progress"),
+  ).toHaveText("1 of 13 checks complete");
+  await preview(page).getByRole("button", { name: "Open day" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Day 23", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".yesterday-note")).toBeVisible();
 });

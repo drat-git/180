@@ -32,8 +32,13 @@ export function Calendar({
   mode: AppMode;
   onOpenDay: (date: string) => void;
 }) {
-  const [month, setMonth] = useState(() => today.slice(0, 7));
-  const [selected, setSelected] = useState(today);
+  const [viewedMonth, setMonth] = useState(() => today.slice(0, 7));
+  const [selectedDate, setSelected] = useState(today);
+  // Retain history at rollover; moving the local clock backward must not leave
+  // the calendar on an inaccessible future date or month.
+  const month =
+    viewedMonth > today.slice(0, 7) ? today.slice(0, 7) : viewedMonth;
+  const selected = selectedDate > today ? today : selectedDate;
   const [attempt, setAttempt] = useState(0);
   const result = useLiveQuery(async () => {
     try {

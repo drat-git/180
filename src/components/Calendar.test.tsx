@@ -3,11 +3,68 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Calendar } from "./Calendar";
 import { db } from "../lib/db";
 import { seedDemo } from "../lib/demo";
-import { DEMO_MODE, DEMO_TODAY } from "../lib/appMode";
+import { DEMO_MODE, DEMO_TODAY, PRIVATE_MODE } from "../lib/appMode";
+import { emptyData, type DailyEntry } from "../lib/model";
 
 afterEach(async () => {
   vi.restoreAllMocks();
   await Promise.all(db.tables.map((table) => table.clear()));
+});
+
+it("reacts to private cached records and clock changes without queuing cloud writes", async () => {
+  const userId = "calendar-private-owner";
+  const entry: DailyEntry = {
+    userId,
+    logicalDate: "2026-10-14",
+    data: emptyData(),
+    revision: 1,
+    createdAt: "2026-10-14T12:00:00Z",
+    updatedAt: "2026-10-14T12:00:00Z",
+  };
+  await db.entries.put(entry);
+  const view = render(
+    <Calendar
+      userId={userId}
+      today={entry.logicalDate}
+      mode={PRIVATE_MODE}
+      onOpenDay={vi.fn()}
+    />,
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByLabelText("Calendar checklist progress"),
+    ).toHaveTextContent("0 of 14 checks complete"),
+  );
+  await db.entries.put({
+    ...entry,
+    revision: 2,
+    data: {
+      ...entry.data,
+      wakeTime: "09:10",
+      cannabisStatus: true,
+      cannabisCount: 2,
+    },
+  });
+  await waitFor(() =>
+    expect(
+      screen.getByLabelText("Calendar checklist progress"),
+    ).toHaveTextContent("2 of 14 checks complete"),
+  );
+  view.rerender(
+    <Calendar
+      userId={userId}
+      today="2026-10-13"
+      mode={PRIVATE_MODE}
+      onOpenDay={vi.fn()}
+    />,
+  );
+  expect(
+    screen.getByRole("button", { name: /^Wednesday, October 14, 2026,/ }),
+  ).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: /^Tuesday, October 13, 2026,/ }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(await db.outbox.count()).toBe(0);
 });
 
 it("shows a retryable read error rather than false zero scores and recovers without writing", async () => {

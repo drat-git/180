@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEMO_MODE, DEMO_TODAY } from "./appMode";
+import { DEMO_MODE, DEMO_TODAY, PRIVATE_MODE } from "./appMode";
 import {
   calendarDaySummary,
   completionBand,
@@ -28,6 +28,50 @@ const summary = (data: CalendarSnapshot, date = "2026-10-12") =>
   calendarDaySummary(data, userId, date, DEMO_TODAY, DEMO_MODE);
 
 describe("calendar scoring and month geometry", () => {
+  it("uses private thresholds and the historical Food/Creatine cutoffs", () => {
+    const owner = "calendar-owner";
+    const data: CalendarSnapshot = {
+      entries: [],
+      tasks: [],
+      events: [],
+      images: [],
+      antiLogs: [],
+      antiEvents: [],
+    };
+    for (const date of ["2026-10-11", "2026-10-12", "2026-10-13"]) {
+      data.entries.push({
+        userId: owner,
+        logicalDate: date,
+        data: {
+          ...emptyData(),
+          wakeTime: "09:10",
+          cannabisStatus: true,
+          cannabisCount: 2,
+          amBreakfast: { status: true, choice: "meal" },
+          creatineStatus: true,
+        },
+        revision: 1,
+        createdAt: `${date}T12:00:00Z`,
+        updatedAt: `${date}T12:00:00Z`,
+      });
+    }
+    expect(
+      data.entries.map((entry) => {
+        const day = calendarDaySummary(
+          data,
+          owner,
+          entry.logicalDate,
+          "2026-10-14",
+          PRIVATE_MODE,
+        );
+        return { completed: day.completed, total: day.total };
+      }),
+    ).toEqual([
+      { completed: 2, total: 12 },
+      { completed: 3, total: 13 },
+      { completed: 4, total: 14 },
+    ]);
+  });
   it.each([
     [0, 100, 0],
     [1, 100, 1],

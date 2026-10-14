@@ -11,6 +11,7 @@ test("separate tabs preserve drafts and settings clearly select soft dark mode",
     "Today",
     "To-do",
     "Anti-rot",
+    "Calendar",
   ]);
   await expect(
     page.getByRole("heading", { name: "Daily checklist", exact: true }),

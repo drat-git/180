@@ -351,25 +351,21 @@ function CheckInApp({
           >
             Anti-rot
           </button>
-          {mode.demo && (
-            <button
-              aria-pressed={screen === "calendar"}
-              onClick={() => switchScreen("calendar")}
-            >
-              Calendar
-            </button>
-          )}
+          <button
+            aria-pressed={screen === "calendar"}
+            onClick={() => switchScreen("calendar")}
+          >
+            Calendar
+          </button>
         </nav>
-        {mode.demo && (
-          <div hidden={screen !== "calendar"}>
-            <Calendar
-              userId={userId}
-              today={today}
-              mode={mode}
-              onOpenDay={openCalendarDay}
-            />
-          </div>
-        )}
+        <div hidden={screen !== "calendar"}>
+          <Calendar
+            userId={userId}
+            today={today}
+            mode={mode}
+            onOpenDay={openCalendarDay}
+          />
+        </div>
         <div hidden={screen !== "tasks"}>
           <DoStuff
             userId={userId}

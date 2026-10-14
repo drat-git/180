@@ -502,7 +502,7 @@ test("demo theme, reset and uploaded photos cannot alter the private app", async
   await expect(
     page.getByRole("heading", { name: "Day 5", exact: true }),
   ).toBeVisible();
-  await expect(nav(page, "Calendar")).toHaveCount(0);
+  await expect(nav(page, "Calendar")).toBeVisible();
   await expect(answer(page, "Used cannabis?", "Yes")).toBeVisible();
   await expect(answer(page, "AM posture exercises", "Yes")).toBeVisible();
   await page
@@ -555,5 +555,5 @@ test("demo theme, reset and uploaded photos cannot alter the private app", async
   await expect(answer(page, "Lifted", "Yes")).toBeVisible();
   await expect(answer(page, "Creatine", "Yes")).toBeVisible();
   await expect(answer(page, "PM Shake", "Yes")).toBeVisible();
-  await expect(nav(page, "Calendar")).toHaveCount(0);
+  await expect(nav(page, "Calendar")).toBeVisible();
 });

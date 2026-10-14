@@ -2368,7 +2368,7 @@ input[data-complete="false"]:focus {
   align-items: center;
 }
 @media (max-width: 360px) {
-  [data-demo] .screen-nav button {
+  .screen-nav button {
     padding-inline: 5px;
   }
 }
