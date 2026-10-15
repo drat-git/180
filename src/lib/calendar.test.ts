@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DEMO_MODE, DEMO_TODAY, PRIVATE_MODE } from "./appMode";
 import {
   calendarDaySummary,
+  calendarDueTasks,
   completionBand,
   completionPercent,
   monthDates,
@@ -10,7 +11,7 @@ import {
 } from "./calendar";
 import { createDemoSeed } from "./demo";
 import { applyAntiCommand } from "./antiRotting";
-import { emptyData, type TaskEvent } from "./model";
+import { emptyData, type Task, type TaskEvent } from "./model";
 
 const userId = "local-demo:calendar-tests";
 function snapshot(): CalendarSnapshot {
@@ -26,6 +27,46 @@ function snapshot(): CalendarSnapshot {
 }
 const summary = (data: CalendarSnapshot, date = "2026-10-12") =>
   calendarDaySummary(data, userId, date, DEMO_TODAY, DEMO_MODE);
+
+it("groups only the owner's unfinished root deadlines by their local calendar date and task ordering", () => {
+  const task = (id: string, options: Partial<Task> = {}): Task => ({
+    id,
+    userId,
+    topic: "life",
+    parentId: null,
+    title: id,
+    completedAt: null,
+    deletedAt: null,
+    revision: 1,
+    createdAt: "2026-10-13T12:00:00Z",
+    updatedAt: "2026-10-13T12:00:00Z",
+    deadline: { date: "2026-11-01" },
+    ...options,
+  });
+  const rows = [
+    task("date-only"),
+    task("timed", { deadline: { at: "2026-11-02T00:00:00.000Z" } }),
+    task("priority", { highPriority: true }),
+    task("completed", { completedAt: "2026-10-13T13:00:00Z" }),
+    task("deleted", { deletedAt: "2026-10-13T13:00:00Z" }),
+    task("subtask", { parentId: "priority" }),
+    task("other-account", { userId: "someone-else" }),
+    task("undated", { deadline: null }),
+  ];
+  const eastern = calendarDueTasks(rows, userId, "America/New_York");
+  expect([...eastern.keys()]).toEqual(["2026-11-01"]);
+  expect(eastern.get("2026-11-01")!.map((item) => item.id)).toEqual([
+    "priority",
+    "timed",
+    "date-only",
+  ]);
+  const tokyo = calendarDueTasks(rows, userId, "Asia/Tokyo");
+  expect(tokyo.get("2026-11-01")!.map((item) => item.id)).toEqual([
+    "priority",
+    "date-only",
+  ]);
+  expect(tokyo.get("2026-11-02")!.map((item) => item.id)).toEqual(["timed"]);
+});
 
 describe("calendar scoring and month geometry", () => {
   it("uses private thresholds and the historical Food/Creatine cutoffs", () => {

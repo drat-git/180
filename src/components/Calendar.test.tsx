@@ -4,7 +4,7 @@ import { Calendar } from "./Calendar";
 import { db } from "../lib/db";
 import { seedDemo } from "../lib/demo";
 import { DEMO_MODE, DEMO_TODAY, PRIVATE_MODE } from "../lib/appMode";
-import { emptyData, type DailyEntry } from "../lib/model";
+import { emptyData, type DailyEntry, type Task } from "../lib/model";
 
 afterEach(async () => {
   vi.restoreAllMocks();
@@ -98,4 +98,75 @@ it("shows a retryable read error rather than false zero scores and recovers with
     ).toHaveTextContent("No entries recorded"),
   );
   expect(await db.entries.toArray()).toEqual(before);
+});
+
+it("updates future markers and previews as deadlines change without creating daily entries", async () => {
+  const userId = "local-demo:calendar-deadlines";
+  const task: Task = {
+    id: "essay",
+    userId,
+    title: "Write essay",
+    topic: "school",
+    parentId: null,
+    completedAt: null,
+    deletedAt: null,
+    revision: 1,
+    createdAt: "2026-10-13T12:00:00Z",
+    updatedAt: "2026-10-13T12:00:00Z",
+    deadline: { date: "2026-11-03" },
+    highPriority: true,
+    estimatedMinutes: 90,
+  };
+  await db.tasks.put(task);
+  const onOpenDay = vi.fn();
+  render(
+    <Calendar
+      userId={userId}
+      today={DEMO_TODAY}
+      mode={DEMO_MODE}
+      onOpenDay={onOpenDay}
+    />,
+  );
+  const next = await screen.findByRole("button", { name: "Next month" });
+  await waitFor(() => expect(next).toBeEnabled());
+  fireEvent.click(next);
+  const marker = screen.getByRole("button", {
+    name: /^Tuesday, November 3, 2026, 1 task due/,
+  });
+  expect(marker).toBeEnabled();
+  expect(screen.getByRole("region", { name: "Day preview" })).toHaveTextContent(
+    "School to-do",
+  );
+  expect(screen.getByRole("region", { name: "Day preview" })).toHaveTextContent(
+    "Est. 1 hr 30 min",
+  );
+  expect(screen.getByRole("img", { name: "High priority" })).toBeVisible();
+  expect(
+    screen.queryByRole("button", { name: "Open day" }),
+  ).not.toBeInTheDocument();
+  await db.tasks.update(task.id, { deadline: { date: "2026-11-04" } });
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("button", {
+        name: /^Tuesday, November 3, 2026, 1 task due/,
+      }),
+    ).not.toBeInTheDocument(),
+  );
+  // An edited deadline moves its marker and returns the stale selection to Today.
+  expect(
+    screen.getByRole("button", { name: /^Tuesday, October 13, 2026,/ }),
+  ).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(next);
+  await waitFor(() =>
+    expect(
+      screen.getByRole("region", { name: "Day preview" }),
+    ).toHaveTextContent("Write essay"),
+  );
+  await db.tasks.update(task.id, { completedAt: "2026-10-13T13:00:00Z" });
+  await waitFor(() => expect(next).toBeDisabled());
+  expect(screen.queryByText("UPCOMING DEADLINES")).not.toBeInTheDocument();
+  expect(onOpenDay).not.toHaveBeenCalled();
+  expect(await db.entries.count()).toBe(0);
+  expect(await db.taskEvents.count()).toBe(0);
+  expect(await db.outbox.count()).toBe(0);
 });

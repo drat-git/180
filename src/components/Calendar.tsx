@@ -1,12 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpRight,
+  CalendarClock,
+  Clock3,
+  Flag,
+} from "lucide-react";
 import { db } from "../lib/db";
-import { type AppMode } from "../lib/appMode";
+import { timezoneForUser, type AppMode } from "../lib/appMode";
+import { childrenOf, formatDuration, topicLabels } from "../lib/tasks";
 import { canNavigate, dateLabel, dayNumber } from "../lib/dates";
 import {
   CALENDAR_BANDS,
   calendarDaySummary,
+  calendarDueTasks,
   monthDates,
   shiftMonth,
 } from "../lib/calendar";
@@ -34,11 +43,17 @@ export function Calendar({
 }) {
   const [viewedMonth, setMonth] = useState(() => today.slice(0, 7));
   const [selectedDate, setSelected] = useState(today);
-  // Retain history at rollover; moving the local clock backward must not leave
-  // the calendar on an inaccessible future date or month.
-  const month =
-    viewedMonth > today.slice(0, 7) ? today.slice(0, 7) : viewedMonth;
-  const selected = selectedDate > today ? today : selectedDate;
+  const [timezone, setTimezone] = useState(() => timezoneForUser(userId));
+  useEffect(() => {
+    const update = () => setTimezone(timezoneForUser(userId));
+    update();
+    window.addEventListener("focus", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      window.removeEventListener("focus", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, [userId]);
   const [attempt, setAttempt] = useState(0);
   const result = useLiveQuery(async () => {
     try {
@@ -70,6 +85,25 @@ export function Calendar({
       return { snapshot: null, error: "Could not load your calendar." };
     }
   }, [userId, attempt]);
+  const dueByDate = useMemo(
+    () => calendarDueTasks(result?.snapshot?.tasks ?? [], userId, timezone),
+    [result, userId, timezone],
+  );
+  const firstMonth = mode.startDate.slice(0, 7);
+  const lastMonth = [...dueByDate.keys()].reduce(
+    (last, date) => (date.slice(0, 7) > last ? date.slice(0, 7) : last),
+    today.slice(0, 7),
+  );
+  // Return to Today if a selected future date loses its last deadline (or the
+  // local clock moves back). Future previews never create future daily records.
+  const unavailableSelection =
+    selectedDate > today && !dueByDate.has(selectedDate);
+  const selected = unavailableSelection ? today : selectedDate;
+  const month = unavailableSelection
+    ? today.slice(0, 7)
+    : viewedMonth > lastMonth
+      ? lastMonth
+      : viewedMonth;
   const dates = useMemo(() => monthDates(month), [month]);
   const summaries = useMemo(() => {
     const snapshot = result?.snapshot;
@@ -102,16 +136,26 @@ export function Calendar({
         (a, b) => a.title.localeCompare(b.title) || a.key.localeCompare(b.key),
       )
     : [];
-  const firstMonth = mode.startDate.slice(0, 7);
-  const lastMonth = today.slice(0, 7);
   function moveMonth(delta: number) {
     const next = shiftMonth(month, delta);
     if (next < firstMonth || next > lastMonth) return;
     setMonth(next);
-    setSelected(next === firstMonth ? mode.startDate : `${next}-01`);
+    setSelected(
+      next > today.slice(0, 7)
+        ? ([...dueByDate.keys()]
+            .filter((date) => date.startsWith(next))
+            .sort()[0] ?? today)
+        : next === firstMonth
+          ? mode.startDate
+          : `${next}-01`,
+    );
   }
   function selectDay(date: string) {
-    if (!canNavigate(date, today, mode.startDate)) return;
+    if (
+      !canNavigate(date, today, mode.startDate) &&
+      !(date > today && dueByDate.has(date))
+    )
+      return;
     setMonth(date.slice(0, 7));
     setSelected(date);
   }
@@ -169,10 +213,15 @@ export function Calendar({
               ))}
               {dates.map((date) => {
                 const day = summaries?.get(date);
-                const enabled = canNavigate(date, today, mode.startDate);
-                const description = day?.recorded
-                  ? `${day.completed} of ${day.total} checks complete, ${day.percentage}%`
-                  : "No entries recorded";
+                const dueCount =
+                  date > today ? (dueByDate.get(date)?.length ?? 0) : 0;
+                const enabled =
+                  canNavigate(date, today, mode.startDate) || dueCount > 0;
+                const description = dueCount
+                  ? `${dueCount} ${dueCount === 1 ? "task" : "tasks"} due`
+                  : day?.recorded
+                    ? `${day.completed} of ${day.total} checks complete, ${day.percentage}%`
+                    : "No entries recorded";
                 return (
                   <button
                     type="button"
@@ -191,6 +240,13 @@ export function Calendar({
                       data-band={day?.band ?? undefined}
                     >
                       {Number(date.slice(-2))}
+                      {dueCount > 0 && (
+                        <CalendarClock
+                          className="calendar-due-marker"
+                          size={17}
+                          aria-hidden="true"
+                        />
+                      )}
                     </span>
                   </button>
                 );
@@ -210,10 +266,76 @@ export function Calendar({
                 <i className="calendar-empty-swatch" aria-hidden="true" />
                 No entries
               </span>
+              {[...dueByDate.keys()].some((date) => date > today) && (
+                <span>
+                  <CalendarClock size={13} aria-hidden="true" /> Tasks due
+                </span>
+              )}
             </div>
           </>
         )}
       </div>
+      {selected > today && result?.snapshot && !result.error && (
+        <section className="calendar-preview" aria-label="Day preview">
+          <div
+            className="calendar-preview-heading"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <div>
+              <p className="calendar-eyebrow">UPCOMING DEADLINES</p>
+              <h2>
+                {dateLabel(selected)}
+                {selected.slice(0, 4) !== today.slice(0, 4)
+                  ? `, ${selected.slice(0, 4)}`
+                  : ""}
+              </h2>
+              <p className="calendar-total">
+                {dueByDate.get(selected)?.length}{" "}
+                {dueByDate.get(selected)?.length === 1 ? "task" : "tasks"} due
+              </p>
+            </div>
+          </div>
+          <ul className="calendar-due-tasks" aria-label="Tasks due">
+            {dueByDate.get(selected)?.map((task) => {
+              const children = childrenOf(result.snapshot!.tasks, task.id);
+              return (
+                <li key={task.id}>
+                  <p className="calendar-due-title">
+                    {task.highPriority && (
+                      <Flag size={14} role="img" aria-label="High priority" />
+                    )}
+                    <strong>{task.title}</strong>
+                  </p>
+                  <p className="calendar-due-list">
+                    {topicLabels[task.topic]} to-do
+                  </p>
+                  <div className="calendar-due-metadata">
+                    {task.estimatedMinutes != null && (
+                      <span>
+                        <Clock3 size={13} aria-hidden="true" /> Est.{" "}
+                        {formatDuration(task.estimatedMinutes)}
+                      </span>
+                    )}
+                    <span>
+                      <CalendarClock size={13} aria-hidden="true" />
+                      {task.deadline?.at
+                        ? `Due at ${new Intl.DateTimeFormat("en-US", { timeZone: timezone, hour: "numeric", minute: "2-digit" }).format(Date.parse(task.deadline.at))} · ${timezone}`
+                        : "Due by end of day"}
+                    </span>
+                  </div>
+                  {children.length > 0 && (
+                    <p className="calendar-due-list">
+                      {children.filter((child) => child.completedAt).length} of{" "}
+                      {children.length} subtasks complete
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
       {summary && !result?.error && (
         <section className="calendar-preview" aria-label="Day preview">
           <div className="calendar-preview-heading">

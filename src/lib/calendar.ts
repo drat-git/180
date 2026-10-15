@@ -13,6 +13,8 @@ import {
   type AntiEvent,
 } from "./model";
 import { antiRecap } from "./antiRotting";
+import { deadlineInput } from "./taskDeadlines";
+import { sortTasks } from "./tasks";
 import {
   latestTaskEvent,
   retainedTaskEvents,
@@ -61,6 +63,31 @@ export function monthDates(month: string): string[] {
     { length: dateOrdinal(last) - dateOrdinal(start) + 1 },
     (_, index) => addDays(start, index),
   );
+}
+
+export function calendarDueTasks(
+  tasks: Task[],
+  userId: string,
+  timezone: string,
+) {
+  const days = new Map<string, Task[]>();
+  for (const task of sortTasks(
+    tasks.filter(
+      (task) =>
+        task.userId === userId &&
+        !task.parentId &&
+        !task.deletedAt &&
+        !task.completedAt &&
+        task.deadline,
+    ),
+    timezone,
+  )) {
+    const date = deadlineInput(task.deadline, timezone).date;
+    const group = days.get(date) ?? [];
+    group.push(task);
+    days.set(date, group);
+  }
+  return days;
 }
 
 export interface CalendarWorkedTask {

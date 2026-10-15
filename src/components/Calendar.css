@@ -148,6 +148,7 @@
   font-variant-numeric: tabular-nums;
 }
 .history-calendar .calendar-bubble {
+  position: relative;
   width: 38px;
   height: 38px;
   max-width: 100%;
@@ -158,6 +159,58 @@
   background: transparent;
   color: var(--calendar-ink);
   font-weight: 600;
+}
+.history-calendar .calendar-due-marker {
+  position: absolute;
+  right: -3px;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  padding: 1px;
+  box-sizing: content-box;
+  border-radius: 50%;
+  background: var(--calendar-surface);
+  color: var(--calendar-ink);
+}
+.history-calendar .calendar-due-tasks {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+}
+.history-calendar .calendar-due-tasks > li {
+  padding: 16px 0;
+  border-top: 1px solid var(--calendar-line);
+  overflow-wrap: anywhere;
+}
+.history-calendar .calendar-due-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.history-calendar .calendar-due-title svg {
+  flex-shrink: 0;
+  color: var(--calendar-muted);
+}
+.history-calendar .calendar-due-list {
+  color: var(--calendar-muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.history-calendar .calendar-due-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 10px;
+  color: var(--calendar-muted);
+  font-size: 12px;
+}
+.history-calendar .calendar-due-metadata > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.history-calendar .calendar-due-metadata svg {
+  flex-shrink: 0;
 }
 .history-calendar [data-band="0"],
 .day-progress[data-band="0"] {

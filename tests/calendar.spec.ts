@@ -13,6 +13,175 @@ const dateButton = (page: Page, day: number) =>
   calendar(page).getByRole("button", {
     name: new RegExp(`^\\w+, October ${day}, 2026,`),
   });
+
+for (const mode of ["demo", "private"] as const) {
+  test(`${mode} future deadlines mark dates and preview task details across months offline`, async ({
+    page,
+    context,
+  }) => {
+    if (mode === "demo") await openCalendar(page);
+    else {
+      await page.clock.install({ time: new Date("2026-10-15T12:00:00-04:00") });
+      await openPrivateApp(page);
+    }
+    await nav(page, "To-do").click();
+    async function addDue(
+      topic: string,
+      title: string,
+      date: string,
+      time?: string,
+      priority = false,
+    ) {
+      await page
+        .getByRole("textbox", { name: `New ${topic} task`, exact: true })
+        .fill(title);
+      await page
+        .getByRole("button", { name: `Add ${topic} task`, exact: true })
+        .click();
+      const options = page.getByRole("dialog", {
+        name: "Add task options",
+        exact: true,
+      });
+      await options
+        .getByRole("checkbox", { name: "Include a due date", exact: true })
+        .check();
+      await options.getByLabel("Due date", { exact: true }).fill(date);
+      if (time) {
+        await options
+          .getByRole("checkbox", { name: "Include a time", exact: true })
+          .check();
+        await options.getByLabel("Due time", { exact: true }).fill(time);
+      }
+      if (priority) {
+        await options
+          .getByRole("checkbox", { name: "High priority", exact: true })
+          .check();
+        await options
+          .getByRole("checkbox", { name: "Include an estimated time" })
+          .check();
+        await options
+          .getByRole("spinbutton", { name: "Estimated hours" })
+          .fill("1");
+        await options
+          .getByRole("spinbutton", { name: "Estimated minutes" })
+          .fill("30");
+      }
+      await options
+        .getByRole("button", { name: "Add task", exact: true })
+        .click();
+      await expect(options).not.toBeVisible();
+    }
+    await addDue(
+      "school",
+      "Submit research essay",
+      "2026-10-20",
+      undefined,
+      true,
+    );
+    await addDue(
+      "career",
+      "Send internship application",
+      "2026-10-20",
+      "17:00",
+    );
+    await addDue("life", "Renew library membership", "2026-11-03");
+    const before = await storedRows(page);
+    await nav(page, "Calendar").click();
+    await expect(dateButton(page, 20)).toHaveAccessibleName(/2 tasks due$/);
+    await expect(
+      dateButton(page, 20).locator(".calendar-due-marker"),
+    ).toBeVisible();
+    await expect(dateButton(page, 21)).toBeDisabled();
+    await dateButton(page, 20).focus();
+    await page.keyboard.press("Enter");
+    const due = preview(page).getByRole("list", {
+      name: "Tasks due",
+      exact: true,
+    });
+    await expect(due.locator(":scope > li")).toHaveCount(2);
+    await expect(due.locator("strong")).toHaveText([
+      "Submit research essay",
+      "Send internship application",
+    ]);
+    await expect(due).toContainText("School to-do");
+    await expect(due).toContainText("Career to-do");
+    await expect(due).toContainText("Est. 1 hr 30 min");
+    await expect(due).toContainText("Due by end of day");
+    await expect(due).toContainText("Due at 5:00 PM · America/New_York");
+    await expect(due.getByRole("img", { name: "High priority" })).toHaveCount(
+      1,
+    );
+    await expect(
+      preview(page).getByRole("button", { name: "Open day" }),
+    ).toHaveCount(0);
+    await expect(
+      preview(page).getByLabel("Calendar checklist progress"),
+    ).toHaveCount(0);
+    if (test.info().project.name === "phone")
+      await page.setViewportSize({ width: 320, height: 780 });
+    const markerLayout = await dateButton(page, 20).evaluate((button) => {
+      const bubble = button.querySelector(".calendar-bubble")!;
+      const range = document.createRange();
+      range.selectNodeContents(bubble.firstChild!);
+      const number = range.getBoundingClientRect();
+      const marker = bubble.querySelector("svg")!.getBoundingClientRect();
+      return {
+        numberBottom: number.bottom,
+        markerTop: marker.top,
+        markerBottom: marker.bottom,
+        buttonBottom: button.getBoundingClientRect().bottom,
+      };
+    });
+    expect(markerLayout.markerTop).toBeGreaterThanOrEqual(
+      markerLayout.numberBottom,
+    );
+    expect(markerLayout.markerBottom).toBeLessThanOrEqual(
+      markerLayout.buttonBottom,
+    );
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: `test-results/calendar-deadlines-${mode}-${test.info().project.name}.png`,
+      fullPage: true,
+    });
+    await calendar(page).getByRole("button", { name: "Next month" }).click();
+    await expect(
+      calendar(page).getByRole("heading", {
+        name: "November 2026",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      calendar(page).getByRole("button", {
+        name: /^Tuesday, November 3, 2026, 1 task due/,
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(preview(page)).toContainText("Renew library membership");
+    await expect(preview(page)).toContainText("Life to-do");
+    await expect(
+      calendar(page).getByRole("button", { name: "Next month" }),
+    ).toBeDisabled();
+    await calendar(page)
+      .getByRole("button", { name: "Today", exact: true })
+      .click();
+    await expect(
+      preview(page).getByLabel("Calendar checklist progress"),
+    ).toBeVisible();
+    expect(await storedRows(page)).toEqual(before);
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    await context.setOffline(true);
+    await page.reload();
+    await nav(page, "Calendar").click();
+    await dateButton(page, 20).click();
+    await expect(preview(page)).toContainText("Send internship application");
+    await expect(dateButton(page, 20)).toHaveAccessibleName(/2 tasks due$/);
+  });
+}
 async function openCalendar(page: Page) {
   await page.goto("/");
   await page
