@@ -1,7 +1,5 @@
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
-  ArrowDown,
-  ArrowUp,
   BookOpen,
   BriefcaseBusiness,
   Check,
@@ -42,6 +40,7 @@ import { addDays } from "../lib/dates";
 import { createId } from "../lib/model";
 import { ChecklistBlock, Modal } from "./Controls";
 import { ChecklistItemInput } from "./ChecklistItemInput";
+import { ReorderHandle } from "./ReorderHandle";
 import "./Customization.css";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -167,40 +166,6 @@ function IconSelect({
         ))}
       </select>
     </Field>
-  );
-}
-function OrderButtons({
-  label,
-  first,
-  last,
-  onMove,
-}: {
-  label: string;
-  first: boolean;
-  last: boolean;
-  onMove: (direction: -1 | 1) => void;
-}) {
-  return (
-    <>
-      <button
-        className="customization-small-button"
-        type="button"
-        aria-label={`Move ${label} up`}
-        disabled={first}
-        onClick={() => onMove(-1)}
-      >
-        <ArrowUp size={14} />
-      </button>
-      <button
-        className="customization-small-button"
-        type="button"
-        aria-label={`Move ${label} down`}
-        disabled={last}
-        onClick={() => onMove(1)}
-      >
-        <ArrowDown size={14} />
-      </button>
-    </>
   );
 }
 function reordered<T extends { id: string; order: number }>(
@@ -1219,6 +1184,14 @@ export function CustomizationEditor({
   onClose,
 }: CustomizationEditorProps) {
   const [draft, setDraft] = useState(() => copy(initialDraft ?? configuration));
+  const reorderSnapshot = useRef<Configuration | null>(null);
+  const startReorder = () => {
+    reorderSnapshot.current = draft;
+  };
+  const endReorder = (cancelled: boolean) => {
+    if (cancelled && reorderSnapshot.current) setDraft(reorderSnapshot.current);
+    reorderSnapshot.current = null;
+  };
   const [previewDate, setPreviewDate] = useState(today);
   const [previewAnswers, setPreviewAnswers] = useState<ItemAnswers>({});
   const [busy, setBusy] = useState(false),
@@ -1349,6 +1322,7 @@ export function CustomizationEditor({
             return (
               <section
                 className="customization-section"
+                data-reorder-card="block"
                 aria-label={`Edit ${block.title}`}
                 key={block.id}
               >
@@ -1358,10 +1332,12 @@ export function CustomizationEditor({
                     {block.title || "Untitled block"}
                   </h3>
                   <div className="customization-toolbar">
-                    <OrderButtons
+                    <ReorderHandle
                       label={block.title || "block"}
                       first={blockIndex === 0}
                       last={blockIndex === blocks.length - 1}
+                      onStart={startReorder}
+                      onEnd={endReorder}
                       onMove={(direction) =>
                         setDraft((value) => ({
                           ...value,
@@ -1424,18 +1400,25 @@ export function CustomizationEditor({
                 </details>
                 <div className="customization-item-list">
                   {items.map((item, itemIndex) => (
-                    <details className="customization-section" key={item.id}>
-                      <summary>
-                        {item.label || "Untitled item"}{" "}
-                        <span className="customization-muted">
-                          · {KINDS.find(([value]) => value === item.kind)?.[1]}
+                    <details
+                      className="customization-section"
+                      data-reorder-card="item"
+                      key={item.id}
+                    >
+                      <summary className="customization-item-summary">
+                        <span>
+                          {item.label || "Untitled item"}{" "}
+                          <span className="customization-muted">
+                            ·{" "}
+                            {KINDS.find(([value]) => value === item.kind)?.[1]}
+                          </span>
                         </span>
-                      </summary>
-                      <div className="customization-toolbar">
-                        <OrderButtons
+                        <ReorderHandle
                           label={item.label || "item"}
                           first={itemIndex === 0}
                           last={itemIndex === items.length - 1}
+                          onStart={startReorder}
+                          onEnd={endReorder}
                           onMove={(direction) =>
                             setDraft((value) => {
                               const group = reordered(
@@ -1457,6 +1440,8 @@ export function CustomizationEditor({
                             })
                           }
                         />
+                      </summary>
+                      <div className="customization-toolbar">
                         <button
                           type="button"
                           className="customization-small-button"
@@ -1754,6 +1739,7 @@ export function ManageTodoLists({
   const [lists, setLists] = useState(() =>
     copy(initialLists ?? configuration.lists),
   );
+  const reorderSnapshot = useRef<TodoListDefinition[] | null>(null);
   const [listDraft, setListDraft] = useState<TodoListDefinition | null>(null);
   const [connection, setConnection] = useState<ChecklistItem | null>(null);
   const [busy, setBusy] = useState(false),
@@ -1870,19 +1856,33 @@ export function ManageTodoLists({
         </section>
       )}
       {active.map((list, index) => (
-        <section className="customization-section" key={list.id}>
+        <section
+          className="customization-section"
+          data-reorder-card="list"
+          key={list.id}
+        >
           <div className="customization-row">
             <h3 className="customization-item-label">
               <CustomizationIcon name={list.icon} />
               {list.title}
             </h3>
             <div className="customization-toolbar">
-              <OrderButtons
+              <ReorderHandle
                 label={`${list.title} list`}
-                first={index === 0 || busy}
-                last={index === active.length - 1 || busy}
+                first={index === 0}
+                last={index === active.length - 1}
+                disabled={busy}
+                onStart={() => {
+                  reorderSnapshot.current = lists;
+                }}
+                onEnd={(cancelled, moved) => {
+                  if (cancelled && reorderSnapshot.current)
+                    setLists(reorderSnapshot.current);
+                  else if (moved) void saveLists(lists);
+                  reorderSnapshot.current = null;
+                }}
                 onMove={(direction) =>
-                  void saveLists(reordered(lists, list.id, direction))
+                  setLists((current) => reordered(current, list.id, direction))
                 }
               />
               <button

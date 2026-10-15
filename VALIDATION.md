@@ -4,6 +4,11 @@
 
 This is a dated record of implementation checks. Earlier sections describe the app at the time of each check; they are not the current feature list or a guarantee of checks on every revision. Current screenshots are in [`docs/images`](docs/images); `artifacts/` contains earlier visual checks.
 
+## Hold-to-drag reorder handles — October 15, 2026
+
+- Replaced both reorder arrows with one three-line handle on checklist blocks, items, and To-do lists. A short hold activates a lightly highlighted, slightly smaller card; dragging changes its position and scrolls the editor at its edges. Collapsed items keep their handle visible. To-do order saves on drop; cancelling restores the original order. Keyboard users can pick up with Space/Enter, move with arrow keys, drop, or cancel with Escape.
+- Production build, TypeScript, 15 focused component/integration tests, and eight desktop/phone browser workflows passed. Browser checks cover actual mouse/touch dragging, edge scrolling, quick taps, cancellation, keyboard focus, stable identities, and order surviving publication or reload. Active-card screenshots were visually inspected on both layouts. No persistence schema changed; changes remain local.
+
 ## Checklist and To-do list customization — October 15, 2026
 
 - Replaced fixed daily rendering and scoring with shared typed definitions, schedules, conditional follow-ups, and one evaluator for daily entries, editor previews, and calendar totals. Both original templates retain their existing controls, counters, breakfast requirements, optional notes, display preferences, and historical cutovers. Settings now include block/item editing and immediate To-do list management, with separately dated daily connections.

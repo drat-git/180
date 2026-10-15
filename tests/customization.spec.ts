@@ -271,9 +271,14 @@ test("items can duplicate, move between blocks and reorder without reusing ident
     .getByRole("combobox", { name: "Block", exact: true })
     .selectOption("general");
   item = await newQuestion(block, "Practice", "Write", "text");
-  await item
-    .getByRole("button", { name: "Move Write up", exact: true })
-    .click();
+  const itemHandle = item.getByRole("button", {
+    name: "Reorder Write",
+    exact: true,
+  });
+  await itemHandle.focus();
+  await page.keyboard.press("Space");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Space");
   await block
     .getByRole("textbox", { name: "Block title", exact: true })
     .fill("Creativity");
@@ -282,8 +287,11 @@ test("items can duplicate, move between blocks and reorder without reusing ident
     exact: true,
   });
   await renamed
-    .getByRole("button", { name: "Move Creativity up", exact: true })
-    .click();
+    .getByRole("button", { name: "Reorder Creativity", exact: true })
+    .focus();
+  await page.keyboard.press("Space");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Space");
   await publish(editor);
   const creativity = page.getByRole("region", {
     name: "Creativity",

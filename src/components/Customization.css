@@ -95,6 +95,64 @@
   justify-content: center;
   gap: 4px;
 }
+.customization-dialog .customization-reorder-handle {
+  width: 40px;
+  min-height: 40px;
+  flex: 0 0 40px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.customization-dialog .customization-reorder-handle[aria-pressed="true"] {
+  cursor: grabbing;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.customization-dialog [data-reorder-card] {
+  transform-origin: top center;
+  transition:
+    scale 140ms ease,
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+}
+.customization-dialog .is-reordering {
+  position: relative;
+  z-index: 3;
+  translate: 0 var(--reorder-offset, 0px);
+  scale: 0.98;
+  background: color-mix(in srgb, var(--accent) 9%, var(--paper));
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink-293c34) 14%, transparent);
+}
+.customization-section > .customization-item-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  list-style: none;
+}
+.customization-item-summary::-webkit-details-marker {
+  display: none;
+}
+.customization-item-summary > span:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.customization-item-summary > span:first-child::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 7px;
+}
+details[open] > .customization-item-summary > span:first-child::before {
+  content: "▾";
+}
+@media (prefers-reduced-motion: reduce) {
+  .customization-dialog [data-reorder-card] {
+    transition: none;
+  }
+}
 .customization-dialog .customization-danger {
   color: var(--incomplete);
 }
@@ -189,7 +247,7 @@
   padding: 16px 26px;
   border-top: 1px solid var(--border);
   background: var(--paper);
-  z-index: 1;
+  z-index: 4;
 }
 .customization-save .dialog-actions {
   margin-top: 10px;
