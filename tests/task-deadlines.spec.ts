@@ -139,13 +139,11 @@ test("demo root deadlines work across topics, sort after priority, edit and clea
     "17:00",
   );
   await edit.getByLabel("Due date", { exact: true }).fill("2026-10-20");
-  await edit.getByRole("button", { name: "Cancel", exact: true }).click();
+  await edit.getByRole("button", { name: "Back", exact: true }).click();
   await expect(row(page, "Essay due today")).toContainText(
     "Due today · 5:00 PM",
   );
-  await (
-    await menu(page, "Essay due today")
-  )
+  await dialog(page, "Task options")
     .getByRole("button", { name: "Edit due date", exact: true })
     .click();
   await edit
@@ -160,6 +158,9 @@ test("demo root deadlines work across topics, sort after priority, edit and clea
   await (
     await menu(page, "Essay due today")
   )
+    .getByRole("button", { name: "Edit due date", exact: true })
+    .click();
+  await edit
     .getByRole("button", { name: "Remove due date", exact: true })
     .click();
   await expect(row(page, "Essay due today").locator(".task-due")).toHaveCount(

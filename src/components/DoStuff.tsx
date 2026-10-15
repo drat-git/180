@@ -430,7 +430,7 @@ export function DoStuff({
                 setMenu(null);
               }}
             >
-              Edit
+              Edit text
             </button>
             <button
               disabled={busy || blocked}
@@ -443,22 +443,6 @@ export function DoStuff({
                 ? "Edit estimated time"
                 : "Add estimated time"}
             </button>
-            {menu.estimatedMinutes != null && (
-              <button
-                disabled={busy || blocked}
-                onClick={() => {
-                  void mutate(() =>
-                    repository.updateTaskOptions(userId, menu.id, {
-                      estimatedMinutes: null,
-                    }),
-                  ).then((ok) => {
-                    if (ok) setMenu(null);
-                  });
-                }}
-              >
-                Remove estimated time
-              </button>
-            )}
             {!menu.parentId && (
               <>
                 <button
@@ -470,22 +454,6 @@ export function DoStuff({
                 >
                   {menu.deadline ? "Edit due date" : "Add due date"}
                 </button>
-                {menu.deadline && (
-                  <button
-                    disabled={busy || blocked}
-                    onClick={() => {
-                      void mutate(() =>
-                        repository.updateTaskOptions(userId, menu.id, {
-                          deadline: null,
-                        }),
-                      ).then((ok) => {
-                        if (ok) setMenu(null);
-                      });
-                    }}
-                  >
-                    Remove due date
-                  </button>
-                )}
                 <button
                   disabled={busy || blocked}
                   onClick={() => {
@@ -525,6 +493,27 @@ export function DoStuff({
           estimateOnly
           busy={busy || blocked}
           onClose={() => setEstimate(null)}
+          onBack={() => {
+            setMenu(
+              tasks.find(
+                (task) => task.id === estimate.id && !task.deletedAt,
+              ) ?? null,
+            );
+            setEstimate(null);
+          }}
+          onRemove={
+            estimate.estimatedMinutes != null
+              ? () => {
+                  void mutate(() =>
+                    repository.updateTaskOptions(userId, estimate.id, {
+                      estimatedMinutes: null,
+                    }),
+                  ).then((ok) => {
+                    if (ok) setEstimate(null);
+                  });
+                }
+              : undefined
+          }
           onSave={(options) => {
             void mutate(() =>
               repository.updateTaskOptions(userId, estimate.id, options),
@@ -543,6 +532,26 @@ export function DoStuff({
           timezone={timezone}
           busy={busy || blocked}
           onClose={() => setDue(null)}
+          onBack={() => {
+            setMenu(
+              tasks.find((task) => task.id === due.id && !task.deletedAt) ??
+                null,
+            );
+            setDue(null);
+          }}
+          onRemove={
+            due.deadline
+              ? () => {
+                  void mutate(() =>
+                    repository.updateTaskOptions(userId, due.id, {
+                      deadline: null,
+                    }),
+                  ).then((ok) => {
+                    if (ok) setDue(null);
+                  });
+                }
+              : undefined
+          }
           onSave={(options) => {
             void mutate(() =>
               repository.updateTaskOptions(userId, due.id, options),
@@ -575,8 +584,19 @@ export function DoStuff({
               />
             </label>
             <div className="dialog-actions">
-              <button type="button" onClick={() => setEdit(null)}>
-                Cancel
+              <button
+                type="button"
+                disabled={busy || blocked}
+                onClick={() => {
+                  setMenu(
+                    tasks.find(
+                      (task) => task.id === edit.id && !task.deletedAt,
+                    ) ?? null,
+                  );
+                  setEdit(null);
+                }}
+              >
+                Back
               </button>
               <button
                 className="primary"

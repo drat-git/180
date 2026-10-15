@@ -171,6 +171,9 @@ test("long press options add edit and remove estimates and priority without chan
   await page.clock.fastForward("11:00:00");
   options = await menu(page, "Later task");
   await options
+    .getByRole("button", { name: "Edit estimated time", exact: true })
+    .click();
+  await estimate
     .getByRole("button", { name: "Remove estimated time", exact: true })
     .click();
   await expect(row(page, "Later task").locator(".task-estimate")).toHaveCount(
@@ -220,18 +223,126 @@ test("subtasks offer durations but no priority and preserve parent progress and 
     0,
   );
   await expect(
-    options.getByRole("button", { name: "Edit", exact: true }),
+    options.getByRole("button", { name: "Edit text", exact: true }),
   ).toBeVisible();
   await expect(
     options.getByRole("button", { name: "Delete", exact: true }),
   ).toBeVisible();
   await options
+    .getByRole("button", { name: "Edit estimated time", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Estimated time", exact: true })
     .getByRole("button", { name: "Remove estimated time", exact: true })
     .click();
   await expect(row(page, "Outline").locator(".task-estimate")).toHaveCount(0);
   await expect(row(page, "Essay")).toHaveClass(/is-high-priority/);
   await row(page, "Outline").getByRole("checkbox").check();
   await expect(row(page, "Essay").getByRole("checkbox")).toBeChecked();
+});
+
+test("editors return to task options without saving drafts and keep removal actions inside their editors", async ({
+  page,
+}) => {
+  await open(page);
+  const creation = await begin(page, "Plan study session");
+  await creation
+    .getByRole("checkbox", { name: "Include an estimated time" })
+    .check();
+  await creation
+    .getByRole("spinbutton", { name: "Estimated minutes" })
+    .fill("45");
+  await creation
+    .getByRole("checkbox", { name: "Include a due date", exact: true })
+    .check();
+  await creation.getByLabel("Due date", { exact: true }).fill("2026-10-16");
+  await creation.getByRole("button", { name: "Add task", exact: true }).click();
+
+  const options = await menu(page, "Plan study session");
+  await expect(
+    options.getByRole("button", { name: /^Remove (estimated time|due date)$/ }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: `test-results/task-options/consolidated-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+  await options.getByRole("button", { name: "Edit text", exact: true }).click();
+  const text = page.getByRole("dialog", { name: "Edit task", exact: true });
+  await text.getByRole("textbox", { name: "Task title" }).fill("Unsaved title");
+  await text.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(options).toBeVisible();
+  await expect(options).toContainText("Plan study session");
+  await options.getByRole("button", { name: "Edit text", exact: true }).click();
+  await expect(text.getByRole("textbox", { name: "Task title" })).toHaveValue(
+    "Plan study session",
+  );
+  await text.getByRole("button", { name: "Back", exact: true }).click();
+
+  await options
+    .getByRole("button", { name: "Edit estimated time", exact: true })
+    .click();
+  const estimate = page.getByRole("dialog", {
+    name: "Estimated time",
+    exact: true,
+  });
+  await estimate.getByRole("spinbutton", { name: "Estimated hours" }).fill("2");
+  await estimate.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(options).toBeVisible();
+  await expect(row(page, "Plan study session")).toContainText("Est. 45 min");
+
+  await options
+    .getByRole("button", { name: "Edit due date", exact: true })
+    .click();
+  const due = page.getByRole("dialog", { name: "Due date", exact: true });
+  await due.getByLabel("Due date", { exact: true }).fill("2026-10-20");
+  await due.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(options).toBeVisible();
+  await expect(row(page, "Plan study session")).toContainText("Due Oct 16");
+
+  await options
+    .getByRole("button", { name: "Edit due date", exact: true })
+    .click();
+  await expect(due.getByLabel("Due date", { exact: true })).toHaveValue(
+    "2026-10-16",
+  );
+  // Removing ignores invalid unsaved fields and clears only the selected metadata.
+  await due.getByLabel("Due date", { exact: true }).fill("");
+  await due
+    .getByRole("button", { name: "Remove due date", exact: true })
+    .click();
+  await expect(
+    row(page, "Plan study session").locator(".task-due"),
+  ).toHaveCount(0);
+  await expect(row(page, "Plan study session")).toContainText("Est. 45 min");
+
+  await (
+    await menu(page, "Plan study session")
+  )
+    .getByRole("button", { name: "Edit estimated time", exact: true })
+    .click();
+  await page.screenshot({
+    path: `test-results/task-options/estimate-editor-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+  await estimate
+    .getByRole("button", { name: "Remove estimated time", exact: true })
+    .click();
+  await expect(
+    row(page, "Plan study session").locator(".task-estimate"),
+  ).toHaveCount(0);
+  await menu(page, "Plan study session");
+  for (const [label, heading] of [
+    ["Add estimated time", "Estimated time"],
+    ["Add due date", "Due date"],
+  ]) {
+    await options.getByRole("button", { name: label, exact: true }).click();
+    const editor = page.getByRole("dialog", { name: heading, exact: true });
+    await expect(editor.getByRole("button", { name: /^Remove / })).toHaveCount(
+      0,
+    );
+    await editor.getByRole("button", { name: "Back", exact: true }).click();
+    await expect(options).toBeVisible();
+  }
 });
 
 test("fresh demo tasks show priority only, duration only, and both", async ({

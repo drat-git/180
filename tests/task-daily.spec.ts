@@ -252,7 +252,7 @@ test("completion targets its operation day while history stays open; later undo 
   await page
     .getByRole("group", { name: "Task Essay", exact: true })
     .press("Shift+F10");
-  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("button", { name: "Edit text", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Task title", exact: true })
     .fill("Renamed essay");

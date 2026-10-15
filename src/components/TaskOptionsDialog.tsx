@@ -15,6 +15,8 @@ export function TaskOptionsDialog({
   busy,
   onSave,
   onClose,
+  onBack,
+  onRemove,
 }: {
   title: string;
   taskTitle: string;
@@ -26,6 +28,8 @@ export function TaskOptionsDialog({
   busy: boolean;
   onSave: (options: TaskOptions) => void;
   onClose: () => void;
+  onBack?: () => void;
+  onRemove?: () => void;
 }) {
   const [includeEstimate, setIncludeEstimate] = useState(
     estimateOnly || initial.estimatedMinutes != null,
@@ -230,9 +234,21 @@ export function TaskOptionsDialog({
             {error}
           </p>
         )}
-        <div className="dialog-actions">
-          <button type="button" disabled={busy} onClick={onClose}>
-            Cancel
+        <div
+          className={`dialog-actions${onBack ? " task-editor-actions" : ""}`}
+        >
+          {onRemove && (
+            <button
+              type="button"
+              className="danger"
+              disabled={busy}
+              onClick={onRemove}
+            >
+              {deadlineOnly ? "Remove due date" : "Remove estimated time"}
+            </button>
+          )}
+          <button type="button" disabled={busy} onClick={onBack ?? onClose}>
+            {onBack ? "Back" : "Cancel"}
           </button>
           <button className="primary" disabled={busy}>
             {busy

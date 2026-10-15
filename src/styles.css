@@ -2519,6 +2519,9 @@ input[data-complete="false"]:focus {
   color: var(--ink-293c34);
   font-size: 16px;
 }
+.task-editor-actions {
+  flex-wrap: wrap;
+}
 .task-menu-actions {
   flex-direction: column;
   align-items: stretch;

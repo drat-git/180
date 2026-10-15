@@ -235,7 +235,7 @@ test("rename and deletion preserve the recorded task title and delete parents wi
   await page
     .getByRole("group", { name: "Task Resume", exact: true })
     .press("Shift+F10");
-  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("button", { name: "Edit text", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Task title", exact: true })
     .fill("New resume");
