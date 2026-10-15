@@ -1,13 +1,11 @@
-import { weekday } from "./dates";
-import {
-  THRESHOLDS,
-  timeMinutes,
-  breakfastComplete,
-  newFoodChecklist,
-  creatineVisible,
-  type DailyData,
-} from "./model";
+import { THRESHOLDS, timeMinutes, type DailyData } from "./model";
 
+import {
+  answersForConfiguration,
+  customChecklistProgress,
+  defaultConfiguration,
+  LEGACY_BLOCK_TITLES,
+} from "./customization";
 import type { TaskActivityVisibility } from "./taskActivityVisibility";
 import { PRIVATE_MODE, type AppMode } from "./appMode";
 
@@ -18,7 +16,7 @@ export interface ChecklistCount {
   total: number;
 }
 export interface ChecklistProgress extends ChecklistCount {
-  blocks: Record<ChecklistBlockTitle, ChecklistCount>;
+  blocks: Record<string, ChecklistCount>;
 }
 
 export function wakeComplete(
@@ -57,62 +55,22 @@ export function checklistProgress(
   activity: TaskActivityVisibility,
   mode: AppMode = PRIVATE_MODE,
 ): ChecklistProgress {
-  const count = (checks: boolean[]): ChecklistCount => ({
-    completed: checks.filter(Boolean).length,
-    total: checks.length,
-  });
-  const school =
-    weekday(date) !== 0 && weekday(date) !== 6
-      ? [data.classAttendanceStatus === true]
-      : [];
-  const career = [data.applicationsStatus === true];
-  for (const topic of ["school", "career"] as const) {
-    if (activity[topic])
-      (topic === "school" ? school : career).push(
-        data[`${topic}TasksStatus`] === true,
-      );
-  }
-  const blocks = {
-    General: count([
-      wakeComplete(data, mode),
-      screenTimeComplete(data),
-      cannabisComplete(data, mode),
+  const configuration = defaultConfiguration(
+    mode.demo ? "local-demo:default" : "default",
+    date,
+    mode,
+  );
+  const progress = customChecklistProgress(
+    configuration,
+    answersForConfiguration(configuration, data),
+    date,
+    activity,
+  );
+  const blocks = Object.fromEntries(
+    Object.entries(LEGACY_BLOCK_TITLES).map(([id, title]) => [
+      title,
+      progress.blocks[id],
     ]),
-    School: count(school),
-    Career: count(career),
-    Food: count(
-      mode.modernFood || newFoodChecklist(date)
-        ? [
-            breakfastComplete(data),
-            ...[
-              data.meal1Status,
-              data.meal2Status,
-              data.shakeStatus,
-              data.snackStatus,
-            ].map((status) => status === true),
-          ]
-        : [
-            data.meal1Status,
-            data.meal2Status,
-            data.snack1Status,
-            data.snack2Status,
-            data.shakeStatus,
-          ].map((status) => status === true),
-    ),
-    Body: count(
-      mode.bodyFields
-        .filter(
-          (key) => mode.demo || key !== "creatine" || creatineVisible(date),
-        )
-        .map((key) => data[`${key}Status`] === true),
-    ),
-  };
-  return {
-    blocks,
-    completed: Object.values(blocks).reduce(
-      (sum, block) => sum + block.completed,
-      0,
-    ),
-    total: Object.values(blocks).reduce((sum, block) => sum + block.total, 0),
-  };
+  ) as Record<ChecklistBlockTitle, ChecklistCount>;
+  return { completed: progress.completed, total: progress.total, blocks };
 }

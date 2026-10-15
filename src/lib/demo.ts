@@ -290,12 +290,16 @@ export async function seedDemo(
     database.images,
     database.blobs,
     database.outbox,
+    database.configurations,
+    database.customAnswers,
   ];
   await database.transaction("rw", [...tables, database.meta], async () => {
     if (!reset && (await database.meta.get(marker))?.value === SEED_VERSION)
       return;
     for (const table of tables)
       await table.where("userId").equals(userId).delete();
+    await database.meta.delete(`customization-draft:${userId}`);
+    await database.meta.delete(`customization-conflict:${userId}`);
     const seed = createDemoSeed(userId);
     await database.entries.bulkPut(seed.entries);
     await database.tasks.bulkPut(seed.tasks);

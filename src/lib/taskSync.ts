@@ -4,6 +4,10 @@ import type { Json, Tables } from "./database.types";
 import type { PendingOperation, Task, TaskEvent } from "./model";
 import { applyTaskCommand } from "./tasks";
 import { reconcileEntry, type WireEntry } from "./entrySync";
+import {
+  reconcileCustomAnswer,
+  type WireCustomAnswer,
+} from "./customizationSync";
 
 type WireTask = Tables<"tasks">;
 type WireEvent = Tables<"task_events">;
@@ -46,13 +50,18 @@ async function merge(
   remoteEvents: WireEvent[],
   acknowledged?: PendingOperation,
   entry?: WireEntry | null,
+  customAnswers: WireCustomAnswer[] = [],
 ) {
   await db.transaction(
     "rw",
-    db.tasks,
-    db.taskEvents,
-    db.entries,
-    db.outbox,
+    [
+      db.tasks,
+      db.taskEvents,
+      db.entries,
+      db.outbox,
+      db.customAnswers,
+      db.configurations,
+    ],
     async () => {
       if (acknowledged) {
         await db.outbox.delete(acknowledged.id!);
@@ -79,6 +88,11 @@ async function merge(
         .where("userId")
         .equals(userId)
         .sortBy("id");
+      for (const answer of customAnswers)
+        await reconcileCustomAnswer(answer, pending);
+      // Returned answers were reconciled above with the entire ordered queue.
+      // Other answer rows already contain their local transaction's pending
+      // effects. Replaying them again can undo a newer manual correction.
       for (const op of pending) {
         if (op.kind !== "task") continue;
         const result = applyTaskCommand(
@@ -105,6 +119,7 @@ export async function pushTask(userId: string, op: PendingOperation) {
     tasks: WireTask[];
     events: WireEvent[];
     entry?: WireEntry | null;
+    custom_answers?: WireCustomAnswer[];
   };
   const entry =
     result.entry === null && op.taskDailyChange
@@ -117,7 +132,14 @@ export async function pushTask(userId: string, op: PendingOperation) {
           updated_at: op.createdAt,
         }
       : result.entry;
-  await merge(userId, result.tasks, result.events, op, entry);
+  await merge(
+    userId,
+    result.tasks,
+    result.events,
+    op,
+    entry,
+    result.custom_answers,
+  );
 }
 export async function pullTasks(userId: string) {
   async function rows(table: "tasks" | "task_events") {

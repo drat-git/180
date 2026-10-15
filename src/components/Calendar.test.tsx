@@ -163,8 +163,12 @@ it("updates future markers and previews as deadlines change without creating dai
     ).toHaveTextContent("Write essay"),
   );
   await db.tasks.update(task.id, { completedAt: "2026-10-13T13:00:00Z" });
-  await waitFor(() => expect(next).toBeDisabled());
-  expect(screen.queryByText("UPCOMING DEADLINES")).not.toBeInTheDocument();
+  // Next month is already disabled while viewing the last future month; wait
+  // for the live deadline read to remove the preview before checking controls.
+  await waitFor(() =>
+    expect(screen.queryByText("UPCOMING DEADLINES")).not.toBeInTheDocument(),
+  );
+  expect(next).toBeDisabled();
   expect(onOpenDay).not.toHaveBeenCalled();
   expect(await db.entries.count()).toBe(0);
   expect(await db.taskEvents.count()).toBe(0);

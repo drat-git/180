@@ -1,5 +1,19 @@
 import { addDays, dateOrdinal, weekday } from "./dates";
-import { checklistProgress, type ChecklistProgress } from "./checklist";
+import { type ChecklistProgress } from "./checklist";
+import {
+  answersForConfiguration,
+  customChecklistProgress,
+  defaultConfiguration,
+  itemAnswerKey,
+  LEGACY_BLOCK_TITLES,
+  listActivityRelevant,
+  resolveConfiguration,
+} from "./customization";
+import type {
+  ConfigChange,
+  CustomAnswerRecord,
+  ItemAnswers,
+} from "./customizationTypes";
 import { type AppMode } from "./appMode";
 import {
   emptyData,
@@ -15,11 +29,7 @@ import {
 import { antiRecap } from "./antiRotting";
 import { deadlineInput } from "./taskDeadlines";
 import { sortTasks } from "./tasks";
-import {
-  latestTaskEvent,
-  retainedTaskEvents,
-  taskActivityVisibility,
-} from "./taskActivityVisibility";
+import { latestTaskEvent, retainedTaskEvents } from "./taskActivityVisibility";
 
 export const CALENDAR_BANDS = [
   "0%",
@@ -69,12 +79,14 @@ export function calendarDueTasks(
   tasks: Task[],
   userId: string,
   timezone: string,
+  activeListIds?: ReadonlySet<string>,
 ) {
   const days = new Map<string, Task[]>();
   for (const task of sortTasks(
     tasks.filter(
       (task) =>
         task.userId === userId &&
+        (!activeListIds || activeListIds.has(task.topic)) &&
         !task.parentId &&
         !task.deletedAt &&
         !task.completedAt &&
@@ -97,6 +109,7 @@ export interface CalendarWorkedTask {
   children: { taskId: string; title: string }[];
 }
 export interface CalendarDaySummary extends ChecklistProgress {
+  categories: { id: string; title: string; completed: number; total: number }[];
   date: string;
   recorded: boolean;
   band: CompletionBand | null;
@@ -105,6 +118,8 @@ export interface CalendarDaySummary extends ChecklistProgress {
   antiRotting: ReturnType<typeof antiRecap>;
 }
 export interface CalendarSnapshot {
+  configurations?: ConfigChange[];
+  customAnswers?: CustomAnswerRecord[];
   entries: DailyEntry[];
   tasks: Task[];
   events: TaskEvent[];
@@ -142,45 +157,166 @@ export function calendarDaySummary(
       (entry) => entry.userId === userId && entry.logicalDate === date,
     )?.data,
   };
-  const activity = taskActivityVisibility(
-    data,
-    date,
-    today,
-    tasks,
-    events,
-    true,
-    mode,
+  const changes = snapshot.configurations ?? [];
+  const configuration = changes.length
+    ? resolveConfiguration(userId, date, changes)
+    : defaultConfiguration(userId, date, mode);
+  const records = (snapshot.customAnswers ?? []).filter(
+    (record) => record.userId === userId && record.logicalDate === date,
   );
-  const progress = checklistProgress(data, date, activity, mode);
+  const custom: ItemAnswers = Object.fromEntries(
+    records.map((record) => [
+      itemAnswerKey(record.itemId, record.generation),
+      record.value,
+    ]),
+  );
+  const answers = answersForConfiguration(configuration, data, custom);
+  const relevance = Object.fromEntries(
+    configuration.items
+      .filter((item) => item.kind === "tasks" && item.listId)
+      .map((item) => {
+        const list = configuration.lists.find(
+          (list) => list.id === item.listId,
+        );
+        const relevantTasks = date === today && list?.deleted ? [] : tasks;
+        return [
+          item.id,
+          listActivityRelevant(
+            item.listId!,
+            answers[itemAnswerKey(item)],
+            date,
+            today,
+            relevantTasks,
+            events,
+            true,
+            mode,
+          ),
+        ];
+      }),
+  );
+  const counts = customChecklistProgress(
+    configuration,
+    answers,
+    date,
+    relevance,
+  );
+  const progress = {
+    ...counts,
+    blocks: {
+      ...Object.fromEntries(
+        Object.entries(LEGACY_BLOCK_TITLES).map(([id, title]) => [
+          title,
+          counts.blocks[id] ?? { completed: 0, total: 0 },
+        ]),
+      ),
+      ...Object.fromEntries(
+        configuration.blocks
+          .filter((block) => !Object.hasOwn(LEGACY_BLOCK_TITLES, block.id))
+          .map((block) => [block.id, counts.blocks[block.id]]),
+      ),
+    },
+  };
+  const categories = [...configuration.blocks]
+    .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
+    .filter((block) => !block.deleted)
+    .map((block) => ({
+      id: block.id,
+      title: block.title,
+      ...counts.blocks[block.id],
+    }));
   const recorded =
     hasContent(data) ||
+    records.some(
+      (record) =>
+        record.value.value !== null ||
+        record.value.selections.length > 0 ||
+        Object.values(record.value.fields).some((value) =>
+          typeof value === "string"
+            ? !!value.trim()
+            : Array.isArray(value)
+              ? value.some((entry) => !!entry.trim())
+              : value !== null,
+        ),
+    ) ||
     snapshot.images.some(
       (image) =>
         image.userId === userId &&
         image.logicalDate === date &&
         !image.deletedAt,
     );
-  const groups: Record<TaskTopic, Map<string, CalendarWorkedTask>> = {
+  const groups: Record<
+    TaskTopic,
+    Map<string, CalendarWorkedTask>
+  > = Object.assign(Object.create(null), {
     school: new Map(),
     career: new Map(),
     life: new Map(),
-  };
+  });
   const byId = new Map(tasks.map((task) => [task.id, task]));
   const titles = new Map<string, string>();
-  for (const topic of ["school", "career"] as const) {
-    for (const selection of data[`${topic}TasksWorkedOn`]) {
+  const groupFor = (topic: string) => {
+    if (!groups[topic]) groups[topic] = new Map();
+    return groups[topic];
+  };
+  for (const list of configuration.lists) groupFor(list.id);
+  const taskAnswers = configuration.items
+    .filter((item) => item.kind === "tasks" && item.listId)
+    .map((item) => ({ item, answer: answers[itemAnswerKey(item)] }));
+  // A same-day schema edit can retire an answer generation; its recorded work remains history.
+  for (const record of records) {
+    if (
+      taskAnswers.some(
+        ({ item }) =>
+          item.id === record.itemId && item.generation === record.generation,
+      )
+    )
+      continue;
+    const applicable = changes
+      .filter(
+        (change) =>
+          change.userId === userId &&
+          !change.conflict &&
+          change.effectiveDate <= date,
+      )
+      .sort((a, b) => a.sequence - b.sequence);
+    for (let index = applicable.length; index >= 0; index--) {
+      const historical = resolveConfiguration(
+        userId,
+        date,
+        applicable.slice(0, index),
+      ).items.find(
+        (item) =>
+          item.id === record.itemId &&
+          item.generation === record.generation &&
+          item.kind === "tasks" &&
+          item.listId,
+      );
+      if (historical) {
+        taskAnswers.push({ item: historical, answer: record.value });
+        break;
+      }
+    }
+  }
+  for (const { item, answer } of taskAnswers) {
+    for (const selection of answer.selections) {
       titles.set(selection.taskId, selection.title);
       for (const child of selection.children)
         titles.set(child.taskId, child.title);
-      if (data[`${topic}TasksStatus`] !== true) continue;
-      groups[topic].set(selection.taskId, {
+      if (answer.value !== true) continue;
+      const group = groupFor(item.listId!);
+      const existing = group.get(selection.taskId);
+      const children = [...(existing?.children ?? [])];
+      for (const child of selection.children)
+        if (!children.some((entry) => entry.taskId === child.taskId))
+          children.push({ taskId: child.taskId, title: child.title });
+      group.set(selection.taskId, {
         taskId: selection.taskId,
         title: selection.title,
-        workedOn: selection.manual !== false || !!selection.automatic,
-        children: selection.children.map(({ taskId, title }) => ({
-          taskId,
-          title,
-        })),
+        workedOn:
+          !!existing?.workedOn ||
+          selection.manual !== false ||
+          !!selection.automatic,
+        children,
       });
     }
   }
@@ -195,7 +331,7 @@ export function calendarDaySummary(
     const event = latestTaskEvent(list, byId.get(list[0].taskId));
     if (event?.type !== "completed") continue;
     const rootId = event.parentId ?? event.taskId;
-    let group = groups[event.topic].get(rootId);
+    let group = groupFor(event.topic).get(rootId);
     if (!group) {
       // Parent titles are not always captured when only a child is completed.
       // Use a saved title where available, rather than a later renamed row.
@@ -213,7 +349,7 @@ export function calendarDaySummary(
         workedOn: false,
         children: [],
       };
-      groups[event.topic].set(rootId, group);
+      groupFor(event.topic).set(rootId, group);
     }
     if (!event.parentId) {
       group.workedOn = true;
@@ -224,15 +360,17 @@ export function calendarDaySummary(
   }
   return {
     ...progress,
+    categories,
     date,
     recorded,
     band: recorded ? completionBand(progress.completed, progress.total) : null,
     percentage: completionPercent(progress.completed, progress.total),
-    workedOn: {
-      school: [...groups.school.values()],
-      career: [...groups.career.values()],
-      life: [...groups.life.values()],
-    },
+    workedOn: Object.fromEntries(
+      Object.entries(groups).map(([topic, group]) => [
+        topic,
+        [...group.values()],
+      ]),
+    ),
     antiRotting: antiRecap(
       snapshot.antiLogs.filter((log) => log.userId === userId),
       snapshot.antiEvents.filter((event) => event.userId === userId),

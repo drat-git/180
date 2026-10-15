@@ -438,3 +438,237 @@ describe("calendar worked-on history", () => {
     expect(JSON.stringify(summary(data))).not.toContain("Private");
   });
 });
+
+describe("customized calendar history", () => {
+  it("uses effective definitions, stable category IDs and matching answer generations", () => {
+    const data = snapshot();
+    data.configurations = [
+      {
+        id: "configuration",
+        operationId: "configuration",
+        userId,
+        sequence: 1,
+        baseRevision: 0,
+        effectiveDate: "2026-10-13",
+        createdAt: "2026-10-13T12:00:00Z",
+        patch: {
+          blocks: [
+            {
+              id: "custom-block",
+              title: "General",
+              icon: "activity",
+              order: 9,
+            },
+          ],
+          items: [
+            {
+              id: "water",
+              label: "Water",
+              blockId: "custom-block",
+              kind: "number",
+              generation: 2,
+              order: 0,
+              completion: {
+                op: "compare",
+                field: "value",
+                operator: "gte",
+                value: 4,
+              },
+              followups: [],
+            },
+          ],
+        },
+      },
+    ];
+    data.customAnswers = [
+      {
+        userId,
+        logicalDate: DEMO_TODAY,
+        itemId: "water",
+        generation: 1,
+        value: { generation: 1, value: true, fields: {}, selections: [] },
+        revision: 1,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ];
+    expect(summary(data, "2026-10-12").total).toBe(15);
+    const day = summary(data, DEMO_TODAY);
+    expect(day.total).toBe(16);
+    expect(day.completed).toBe(0);
+    expect(
+      day.categories
+        .filter((category) => category.title === "General")
+        .map((category) => category.id),
+    ).toEqual(["general", "custom-block"]);
+    data.customAnswers.push({
+      ...data.customAnswers[0],
+      generation: 2,
+      value: { generation: 2, value: 4, fields: {}, selections: [] },
+    });
+    expect(summary(data, DEMO_TODAY)).toMatchObject({
+      completed: 1,
+      recorded: true,
+      blocks: { "custom-block": { completed: 1, total: 1 } },
+    });
+    data.customAnswers[1].userId = "someone-else";
+    expect(summary(data, DEMO_TODAY).completed).toBe(0);
+  });
+
+  it("keeps custom list work and snapshots after list archival, while excluding archived deadlines", () => {
+    const data = snapshot();
+    data.configurations = [
+      {
+        id: "custom-list",
+        operationId: "custom-list",
+        userId,
+        sequence: 1,
+        baseRevision: 0,
+        effectiveDate: DEMO_TODAY,
+        createdAt: "",
+        patch: {
+          lists: [
+            {
+              id: "writing",
+              title: "Writing",
+              icon: "book",
+              order: 4,
+              deleted: true,
+            },
+          ],
+          items: [
+            {
+              id: "writing-work",
+              label: "Worked on writing?",
+              blockId: "career",
+              kind: "tasks",
+              generation: 1,
+              order: 5,
+              listId: "writing",
+              visibility: "relevant",
+              completion: { op: "equals", field: "value", value: true },
+              followups: [],
+            },
+          ],
+        },
+      },
+    ];
+    data.customAnswers = [
+      {
+        userId,
+        logicalDate: DEMO_TODAY,
+        itemId: "writing-work",
+        generation: 1,
+        value: {
+          generation: 1,
+          value: true,
+          fields: {},
+          selections: [
+            {
+              taskId: "draft",
+              title: "First draft",
+              manual: true,
+              children: [],
+            },
+          ],
+        },
+        revision: 1,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ];
+    data.tasks.push({
+      ...data.tasks[0],
+      id: "draft",
+      topic: "writing",
+      title: "Renamed draft",
+      deadline: { date: "2026-11-01" },
+      completedAt: null,
+    });
+    const day = summary(data, DEMO_TODAY);
+    expect(day.workedOn.writing).toMatchObject([
+      { title: "First draft", workedOn: true },
+    ]);
+    expect(day.completed).toBe(1);
+    expect(
+      calendarDueTasks(
+        data.tasks,
+        userId,
+        "America/New_York",
+        new Set(["school", "career", "life"]),
+      ).get("2026-11-01"),
+    ).toBeUndefined();
+  });
+
+  it("keeps recorded selections from an earlier answer generation after a same-day type edit", () => {
+    const data = snapshot();
+    data.configurations = [
+      {
+        id: "link",
+        operationId: "link",
+        userId,
+        sequence: 1,
+        baseRevision: 0,
+        effectiveDate: DEMO_TODAY,
+        createdAt: "",
+        patch: {
+          items: [
+            {
+              id: "life-work",
+              blockId: "general",
+              label: "Life work",
+              kind: "tasks",
+              generation: 1,
+              order: 9,
+              listId: "life",
+              visibility: "always",
+              completion: { op: "equals", field: "value", value: true },
+              followups: [],
+            },
+          ],
+        },
+      },
+      {
+        id: "type-change",
+        operationId: "type-change",
+        userId,
+        sequence: 2,
+        baseRevision: 1,
+        effectiveDate: DEMO_TODAY,
+        createdAt: "",
+        patch: {
+          items: [
+            {
+              id: "life-work",
+              kind: "number",
+              generation: 2,
+              listId: undefined,
+              completion: { op: "not-empty", field: "value" },
+            },
+          ],
+        },
+      },
+    ];
+    data.customAnswers = [
+      {
+        userId,
+        logicalDate: DEMO_TODAY,
+        itemId: "life-work",
+        generation: 1,
+        value: {
+          generation: 1,
+          value: true,
+          fields: {},
+          selections: [{ taskId: "walk", title: "Walk home", children: [] }],
+        },
+        revision: 1,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ];
+    expect(summary(data, DEMO_TODAY).workedOn.life).toMatchObject([
+      { title: "Walk home" },
+    ]);
+    expect(summary(data, DEMO_TODAY).completed).toBe(0);
+  });
+});

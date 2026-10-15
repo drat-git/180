@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from "dexie";
+import type { ConfigChange, CustomAnswerRecord } from "./customizationTypes";
 import type {
   AntiItem,
   AntiLog,
@@ -11,6 +12,8 @@ import type {
   PendingOperation,
 } from "./model";
 export class AppDatabase extends Dexie {
+  configurations!: EntityTable<ConfigChange, "id">;
+  customAnswers!: EntityTable<CustomAnswerRecord, "itemId">;
   antiItems!: EntityTable<AntiItem, "id">;
   antiLogs!: EntityTable<AntiLog, "id">;
   antiEvents!: EntityTable<AntiEvent, "id">;
@@ -38,6 +41,11 @@ export class AppDatabase extends Dexie {
       antiItems: "id,userId",
       antiLogs: "id,userId,[userId+logicalDate],[userId+itemId]",
       antiEvents: "id,userId,[userId+logicalDate],operationId",
+    });
+    this.version(4).stores({
+      configurations: "id,userId,[userId+effectiveDate],sequence",
+      customAnswers:
+        "[userId+logicalDate+itemId+generation],userId,[userId+logicalDate]",
     });
   }
 }

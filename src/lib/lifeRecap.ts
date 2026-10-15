@@ -17,6 +17,7 @@ export function completedLifeTasksForDay(
   tasks: readonly Task[],
   events: readonly TaskEvent[],
   mode: AppMode = modeForUser(userId),
+  linkedLists: ReadonlySet<string> = new Set(["school", "career"]),
 ): CompletedLifeGroup[] {
   const ownedTasks = tasks.filter((task) => task.userId === userId);
   const byId = new Map(ownedTasks.map((task) => [task.id, task]));
@@ -26,7 +27,7 @@ export function completedLifeTasksForDay(
     events.filter((event) => event.userId === userId),
     mode,
   )) {
-    if (event.topic !== "life") continue;
+    if (linkedLists.has(event.topic)) continue;
     const list = history.get(event.taskId) ?? [];
     list.push(event);
     history.set(event.taskId, list);

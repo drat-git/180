@@ -21,6 +21,7 @@ import { useAuth } from "./lib/auth";
 import { DailyCheckIn } from "./components/DailyCheckIn";
 import { Calendar } from "./components/Calendar";
 import { completionBand } from "./lib/calendar";
+import { CustomizationSettings } from "./components/CustomizationSettings";
 import { Appearance } from "./components/Appearance";
 import { NotificationSettings } from "./components/NotificationSettings";
 import { AntiRotting } from "./components/AntiRotting";
@@ -61,6 +62,9 @@ function CheckInApp({
     [settings, setSettings] = useState(false);
   const [screen, setScreen] = useState<"today" | "tasks" | "anti" | "calendar">(
     "today",
+  );
+  const [customizing, setCustomizing] = useState<"checklist" | "lists" | null>(
+    null,
   );
   const notifications = useNotifications(userId, preview);
   const saving = saveCount > 0;
@@ -522,6 +526,14 @@ function CheckInApp({
           </button>
         </div>
       )}
+      {customizing && (
+        <CustomizationSettings
+          userId={userId}
+          today={today}
+          kind={customizing}
+          onClose={() => setCustomizing(null)}
+        />
+      )}
       {settings && (
         <Modal title="Your space" onClose={() => setSettings(false)}>
           <p>
@@ -529,6 +541,27 @@ function CheckInApp({
               ? "You’re using the local preview. Your preview entries are separate from your private account."
               : email}
           </p>
+          <section className="settings-section">
+            <h3>Your checklist</h3>
+            <div className="dialog-actions">
+              <button
+                onClick={() => {
+                  setSettings(false);
+                  setCustomizing("checklist");
+                }}
+              >
+                Customize checklist
+              </button>
+              <button
+                onClick={() => {
+                  setSettings(false);
+                  setCustomizing("lists");
+                }}
+              >
+                Manage To-do lists
+              </button>
+            </div>
+          </section>
           <Appearance preview={preview} />
           <NotificationSettings controller={notifications} preview={preview} />
           <div className="settings-info">

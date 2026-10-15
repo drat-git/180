@@ -1,0 +1,282 @@
+.customization-dialog {
+  width: 1120px;
+  max-width: min(96vw, 1120px);
+  max-height: 94dvh;
+  margin: auto;
+  overflow-y: auto;
+}
+.customization-dialog .dialog-content {
+  padding: 26px;
+}
+.customization-dialog h3,
+.customization-dialog h4 {
+  margin: 0;
+  font-weight: 600;
+}
+.customization-intro {
+  max-width: 76ch;
+  margin-bottom: 18px !important;
+}
+.customization-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 24px;
+  align-items: start;
+}
+.customization-controls,
+.customization-preview,
+.customization-section {
+  min-width: 0;
+}
+.customization-preview {
+  position: sticky;
+  top: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--surface-f9f9f3);
+}
+.customization-preview .checklist-block {
+  margin-top: 14px;
+  padding: 16px;
+}
+.customization-preview .block-heading {
+  margin-bottom: 0;
+}
+.customization-preview-title,
+.customization-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.customization-row > input,
+.customization-row > select {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+.customization-section {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin: 12px 0;
+}
+.customization-section > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.7;
+}
+.customization-section > summary + * {
+  margin-top: 12px;
+}
+.customization-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.customization-dialog .customization-small-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--paper);
+  font-size: 12px;
+  min-height: 32px;
+}
+.customization-toolbar .customization-small-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.customization-dialog .customization-danger {
+  color: var(--incomplete);
+}
+.customization-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.customization-fields > .customization-wide {
+  grid-column: 1 / -1;
+}
+.customization-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.customization-dialog
+  .customization-field
+  > input:not([type="checkbox"]):not([type="radio"]),
+.customization-dialog .customization-row > input,
+.customization-dialog select,
+.customization-dialog textarea {
+  padding: 8px 9px;
+  min-width: 0;
+  width: 100%;
+  font: inherit;
+  color: var(--ink-293c34);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-f9f9f3);
+}
+.customization-dialog textarea {
+  min-height: 66px;
+}
+.customization-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.customization-check input {
+  margin: 0;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+}
+.customization-weekdays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+}
+.customization-weekdays legend {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.customization-weekdays label {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.customization-choices,
+.customization-followups {
+  display: grid;
+  gap: 9px;
+  margin: 12px 0;
+}
+.customization-item-list {
+  margin-top: 10px;
+}
+.customization-item-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.customization-item-label small {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.customization-save {
+  position: sticky;
+  bottom: 0;
+  margin: 18px -26px -26px;
+  padding: 16px 26px;
+  border-top: 1px solid var(--border);
+  background: var(--paper);
+  z-index: 1;
+}
+.customization-save .dialog-actions {
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.customization-save p,
+.customization-muted {
+  font-size: 12px !important;
+  color: var(--muted);
+}
+.customization-status {
+  padding: 10px 12px;
+  border-radius: 7px;
+  background: var(--surface-f9f9f3);
+  margin: 12px 0 !important;
+}
+.customization-empty {
+  padding: 20px 0;
+}
+.customization-input-note {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+.customization-number {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.customization-number input {
+  width: 72px;
+  text-align: center;
+  padding: 6px;
+}
+.customization-number output {
+  min-width: 20px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.customization-number button {
+  width: 29px;
+  height: 29px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--paper);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.customization-value-input {
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 9px;
+}
+.customization-field select {
+  font: inherit;
+}
+.customization-readonly-answers {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .customization-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .customization-preview {
+    position: static;
+    order: 2;
+  }
+  .customization-dialog .dialog-content {
+    padding: 20px;
+  }
+  .customization-save {
+    margin: 18px -20px -20px;
+    padding: 14px 20px;
+  }
+}
+@media (max-width: 420px) {
+  .customization-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .customization-weekdays {
+    gap: 5px;
+  }
+}

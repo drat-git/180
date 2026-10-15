@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { db } from "../lib/db";
 import { timezoneForUser, type AppMode } from "../lib/appMode";
+import { resolveConfiguration } from "../lib/customization";
 import { childrenOf, formatDuration, topicLabels } from "../lib/tasks";
 import { canNavigate, dateLabel, dayNumber } from "../lib/dates";
 import {
@@ -67,18 +68,39 @@ export function Calendar({
           db.images,
           db.antiLogs,
           db.antiEvents,
+          db.configurations,
+          db.customAnswers,
         ],
         async () => {
-          const [entries, tasks, events, images, antiLogs, antiEvents] =
-            await Promise.all([
-              db.entries.where("userId").equals(userId).toArray(),
-              db.tasks.where("userId").equals(userId).toArray(),
-              db.taskEvents.where("userId").equals(userId).toArray(),
-              db.images.where("userId").equals(userId).toArray(),
-              db.antiLogs.where("userId").equals(userId).toArray(),
-              db.antiEvents.where("userId").equals(userId).toArray(),
-            ]);
-          return { entries, tasks, events, images, antiLogs, antiEvents };
+          const [
+            entries,
+            tasks,
+            events,
+            images,
+            antiLogs,
+            antiEvents,
+            configurations,
+            customAnswers,
+          ] = await Promise.all([
+            db.entries.where("userId").equals(userId).toArray(),
+            db.tasks.where("userId").equals(userId).toArray(),
+            db.taskEvents.where("userId").equals(userId).toArray(),
+            db.images.where("userId").equals(userId).toArray(),
+            db.antiLogs.where("userId").equals(userId).toArray(),
+            db.antiEvents.where("userId").equals(userId).toArray(),
+            db.configurations.where("userId").equals(userId).toArray(),
+            db.customAnswers.where("userId").equals(userId).toArray(),
+          ]);
+          return {
+            entries,
+            tasks,
+            events,
+            images,
+            antiLogs,
+            antiEvents,
+            configurations,
+            customAnswers,
+          };
         },
       );
       return { snapshot, error: "" };
@@ -86,9 +108,37 @@ export function Calendar({
       return { snapshot: null, error: "Could not load your calendar." };
     }
   }, [userId, attempt]);
+  const currentConfiguration = useMemo(
+    () =>
+      resolveConfiguration(
+        userId,
+        today,
+        result?.snapshot?.configurations ?? [],
+      ),
+    [result, userId, today],
+  );
   const dueByDate = useMemo(
-    () => calendarDueTasks(result?.snapshot?.tasks ?? [], userId, timezone),
-    [result, userId, timezone],
+    () =>
+      calendarDueTasks(
+        result?.snapshot?.tasks ?? [],
+        userId,
+        timezone,
+        new Set(
+          currentConfiguration.lists
+            .filter((list) => !list.deleted)
+            .map((list) => list.id),
+        ),
+      ),
+    [result, userId, timezone, currentConfiguration],
+  );
+  const previewConfiguration = useMemo(
+    () =>
+      resolveConfiguration(
+        userId,
+        selectedDate,
+        result?.snapshot?.configurations ?? [],
+      ),
+    [result, userId, selectedDate],
   );
   const firstMonth = mode.startDate.slice(0, 7);
   const lastMonth = [...dueByDate.keys()].reduce(
@@ -314,7 +364,12 @@ export function Calendar({
                     <strong>{task.title}</strong>
                   </p>
                   <p className="calendar-due-list">
-                    {topicLabels[task.topic]} to-do
+                    {previewConfiguration.lists.find(
+                      (list) => list.id === task.topic,
+                    )?.title ??
+                      topicLabels[task.topic] ??
+                      "To-do"}{" "}
+                    to-do
                   </p>
                   <div className="calendar-due-metadata">
                     {task.estimatedMinutes != null && (
@@ -376,13 +431,13 @@ export function Calendar({
             className="calendar-blocks"
             aria-label="Checklist category progress"
           >
-            {Object.entries(summary.blocks)
-              .filter(([, count]) => count.total > 0)
-              .map(([block, count]) => (
-                <div key={block}>
-                  <dt>{block === "Food" ? "Diet" : block}</dt>
+            {summary.categories
+              .filter((category) => category.total > 0)
+              .map((category) => (
+                <div key={category.id}>
+                  <dt>{category.title}</dt>
                   <dd>
-                    {count.completed}/{count.total}
+                    {category.completed}/{category.total}
                   </dd>
                 </div>
               ))}

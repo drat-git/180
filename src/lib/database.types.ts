@@ -114,6 +114,72 @@ export type Database = {
         };
         Relationships: [];
       };
+      config_changes: {
+        Row: {
+          base_revision: number;
+          created_at: string;
+          effective_date: string;
+          operation_id: string;
+          patch: Json;
+          revision: number;
+          sequence: number;
+          user_id: string;
+        };
+        Insert: {
+          base_revision: number;
+          created_at?: string;
+          effective_date: string;
+          operation_id: string;
+          patch: Json;
+          revision: number;
+          sequence: number;
+          user_id: string;
+        };
+        Update: {
+          base_revision?: number;
+          created_at?: string;
+          effective_date?: string;
+          operation_id?: string;
+          patch?: Json;
+          revision?: number;
+          sequence?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      custom_answers: {
+        Row: {
+          created_at: string;
+          generation: number;
+          item_id: string;
+          logical_date: string;
+          revision: number;
+          updated_at: string;
+          user_id: string;
+          value: Json;
+        };
+        Insert: {
+          created_at?: string;
+          generation: number;
+          item_id: string;
+          logical_date: string;
+          revision?: number;
+          updated_at?: string;
+          user_id: string;
+          value: Json;
+        };
+        Update: {
+          created_at?: string;
+          generation?: number;
+          item_id?: string;
+          logical_date?: string;
+          revision?: number;
+          updated_at?: string;
+          user_id?: string;
+          value?: Json;
+        };
+        Relationships: [];
+      };
       daily_entries: {
         Row: {
           created_at: string;
@@ -187,18 +253,21 @@ export type Database = {
       };
       operation_receipts: {
         Row: {
+          context: Json;
           created_at: string;
           entity_key: string;
           operation_id: string;
           user_id: string;
         };
         Insert: {
+          context?: Json;
           created_at?: string;
           entity_key: string;
           operation_id: string;
           user_id: string;
         };
         Update: {
+          context?: Json;
           created_at?: string;
           entity_key?: string;
           operation_id?: string;
@@ -341,11 +410,11 @@ export type Database = {
       };
       tasks: {
         Row: {
-          due_date: string | null;
-          due_at: string | null;
           completed_at: string | null;
           created_at: string;
           deleted_at: string | null;
+          due_at: string | null;
+          due_date: string | null;
           estimated_minutes: number | null;
           high_priority: boolean;
           id: string;
@@ -357,11 +426,11 @@ export type Database = {
           user_id: string;
         };
         Insert: {
-          due_date?: string | null;
-          due_at?: string | null;
           completed_at?: string | null;
           created_at: string;
           deleted_at?: string | null;
+          due_at?: string | null;
+          due_date?: string | null;
           estimated_minutes?: number | null;
           high_priority?: boolean;
           id: string;
@@ -373,11 +442,11 @@ export type Database = {
           user_id: string;
         };
         Update: {
-          due_date?: string | null;
-          due_at?: string | null;
           completed_at?: string | null;
           created_at?: string;
           deleted_at?: string | null;
+          due_at?: string | null;
+          due_date?: string | null;
           estimated_minutes?: number | null;
           high_priority?: boolean;
           id?: string;
@@ -405,6 +474,25 @@ export type Database = {
     Functions: {
       apply_anti_operation: {
         Args: { p_command: Json; p_operation: string };
+        Returns: Json;
+      };
+      apply_custom_answer_operation: {
+        Args: {
+          p_generation: number;
+          p_item_id: string;
+          p_logical_date: string;
+          p_operation_id: string;
+          p_patch: Json;
+        };
+        Returns: Json;
+      };
+      apply_customization_operation: {
+        Args: {
+          p_base_revision: number;
+          p_effective_date: string;
+          p_operation_id: string;
+          p_patch: Json;
+        };
         Returns: Json;
       };
       apply_entry_patch: {
@@ -438,6 +526,74 @@ export type Database = {
       claim_push_delivery: {
         Args: { p_day: string; p_expires: string; p_installation: string };
         Returns: boolean;
+      };
+      customization_bridge_answer: {
+        Args: {
+          answer_generation: number;
+          day: string;
+          item: string;
+          patch: Json;
+        };
+        Returns: undefined;
+      };
+      customization_config_at: {
+        Args: { day: string; max_revision?: number };
+        Returns: Json;
+      };
+      customization_item_at: {
+        Args: {
+          answer_generation: number;
+          day: string;
+          item: string;
+          max_revision?: number;
+        };
+        Returns: Json;
+      };
+      customization_legacy_answer: {
+        Args: { answer_generation: number; data: Json; item: string };
+        Returns: Json;
+      };
+      customization_legacy_patch: {
+        Args: {
+          answer_generation: number;
+          current_data: Json;
+          item: string;
+          patch: Json;
+        };
+        Returns: Json;
+      };
+      customization_merge: {
+        Args: { config: Json; patch: Json };
+        Returns: Json;
+      };
+      customization_merge_answer: {
+        Args: { answer_generation: number; patch: Json; source: Json };
+        Returns: Json;
+      };
+      customization_refresh_legacy_answers: {
+        Args: { day: string; patch: Json };
+        Returns: undefined;
+      };
+      customization_scheduled: {
+        Args: { day: string; schedule: Json };
+        Returns: boolean;
+      };
+      customization_seed_config: { Args: { day?: string }; Returns: Json };
+      customization_valid_answer: {
+        Args: { definition: Json; value: Json };
+        Returns: boolean;
+      };
+      customization_valid_id: { Args: { value: string }; Returns: boolean };
+      customization_valid_options: { Args: { value: Json }; Returns: boolean };
+      customization_valid_patch: { Args: { value: Json }; Returns: boolean };
+      customization_valid_rule: {
+        Args: { depth?: number; value: Json };
+        Returns: boolean;
+      };
+      customization_valid_schedule: { Args: { value: Json }; Returns: boolean };
+      customization_validate_config: {
+        Args: { config: Json };
+        Returns: undefined;
       };
       push_backend_config: {
         Args: { p_private?: string; p_public?: string };

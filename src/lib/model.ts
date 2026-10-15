@@ -77,7 +77,8 @@ export type DailyData = Record<`${BinaryKey}Status`, Answer> &
     cannabisUseDescriptions: string[];
     applicationsCount: number | null;
   };
-export type TaskTopic = "school" | "career" | "life";
+// List IDs stay stable when their display title changes.
+export type TaskTopic = string;
 export type ActivityTopic = "school" | "career";
 export interface SelectionProvenance {
   // Missing provenance on legacy selections means independent manual work.
@@ -115,6 +116,7 @@ export interface Task extends TaskOptions {
   updatedAt: string;
 }
 export interface TaskCommand extends TaskOptions {
+  checklistLink?: TaskChecklistLink | null;
   recordDaily?: boolean;
   taskId: string;
   action: "create" | "rename" | "complete" | "delete" | "options";
@@ -125,6 +127,12 @@ export interface TaskCommand extends TaskOptions {
   at: string;
   logicalDate: string;
   timezone: string;
+}
+export interface TaskChecklistLink {
+  itemId: string;
+  generation: number;
+  listId: string;
+  configurationRevision: number;
 }
 export interface TaskEvent {
   id: string;
@@ -225,9 +233,23 @@ export interface PendingOperation {
   operationId: string;
   userId: string;
   logicalDate: string;
-  kind: "entry" | "photo-add" | "photo-delete" | "task" | "anti-rotting";
+  kind:
+    | "entry"
+    | "photo-add"
+    | "photo-delete"
+    | "task"
+    | "anti-rotting"
+    | "configuration"
+    | "custom-answer";
+  configurationChange?: import("./customizationTypes").ConfigChange;
+  customAnswer?: {
+    itemId: string;
+    generation: number;
+    patch: Partial<import("./customizationTypes").ItemAnswer>;
+  };
   taskCommand?: TaskCommand;
   taskDailyChange?: TaskDailyChange;
+  customTaskChange?: Omit<TaskDailyChange, "topic">;
   antiCommand?: AntiCommand;
   patch?: EntryPatch;
   imageId?: string;

@@ -30,7 +30,7 @@ export function formatDuration(minutes: number) {
     .join(" ");
 }
 export const TASK_RETENTION_MS = 12 * 60 * 60 * 1000;
-export const topicLabels = {
+export const topicLabels: Record<string, string> = {
   school: "School",
   career: "Career",
   life: "Life",

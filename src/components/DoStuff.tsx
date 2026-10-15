@@ -1,34 +1,24 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import {
-  BriefcaseBusiness,
-  GraduationCap,
-  House,
-  Plus,
-  Clock3,
-  Flag,
-  CalendarClock,
-} from "lucide-react";
-import type { Task, TaskTopic, TaskOptions } from "../lib/model";
+import { Plus, Clock3, Flag, CalendarClock } from "lucide-react";
+import type { Task, TaskOptions } from "../lib/model";
 import { repository } from "../lib/repository";
-import {
-  childrenOf,
-  sortTasks,
-  topicLabels,
-  formatDuration,
-} from "../lib/tasks";
+import { childrenOf, sortTasks, formatDuration } from "../lib/tasks";
 import { useTasks } from "../lib/useTasks";
 import { TaskOptionsDialog } from "./TaskOptionsDialog";
 import { ChecklistBlock, Modal } from "./Controls";
 import { DisplayPreferencesProvider } from "../lib/displayPreferences";
+import { useCustomization } from "../lib/useCustomization";
+import { todayForUser } from "../lib/appMode";
+import { CustomizationIcon } from "./CustomizationIcon";
 import { deadlinePresentation } from "../lib/taskDeadlines";
 
 function AddTask({
-  topic,
+  listTitle,
   parentId,
   timezone,
   onAdd,
 }: {
-  topic: TaskTopic;
+  listTitle: string;
   parentId?: string;
   timezone: string;
   onAdd: (title: string, options: TaskOptions) => Promise<boolean>;
@@ -47,7 +37,9 @@ function AddTask({
         }}
       >
         <input
-          aria-label={parentId ? "New subtask" : `New ${topic} task`}
+          aria-label={
+            parentId ? "New subtask" : `New ${listTitle.toLowerCase()} task`
+          }
           placeholder={parentId ? "Add a subtask…" : "Add a task…"}
           maxLength={500}
           value={title}
@@ -58,7 +50,9 @@ function AddTask({
           type="submit"
           className="task-add-button"
           disabled={saving || !title.trim()}
-          aria-label={parentId ? "Add subtask" : `Add ${topic} task`}
+          aria-label={
+            parentId ? "Add subtask" : `Add ${listTitle.toLowerCase()} task`
+          }
         >
           <Plus size={16} />
           <span>Add</span>
@@ -287,11 +281,10 @@ export function DoStuff({
       onSaving(-1);
     }
   }
-  const icons = {
-    school: <GraduationCap size={18} />,
-    career: <BriefcaseBusiness size={18} />,
-    life: <House size={18} />,
-  };
+  const { configuration } = useCustomization(userId, todayForUser(userId));
+  const lists = configuration.lists
+    .filter((list) => !list.deleted)
+    .sort((a, b) => a.order - b.order);
   return (
     <DisplayPreferencesProvider userId={userId}>
       <section className="do-stuff-heading">
@@ -302,113 +295,121 @@ export function DoStuff({
         </p>
       </section>
       <div className="task-topics">
-        {(["school", "career", "life"] as const).map((topic) => (
-          <ChecklistBlock
-            key={topic}
-            title={topicLabels[topic]}
-            preferenceKey={`tasks:${topic}`}
-            icon={icons[topic]}
-          >
-            {roots.filter((t) => t.topic === topic).length === 0 && (
-              <p className="task-empty small">No tasks here yet.</p>
-            )}
-            <ul className="task-list">
-              {roots
-                .filter((t) => t.topic === topic)
-                .map((task) => {
-                  const children = sortTasks(childrenOf(tasks, task.id));
-                  return (
-                    <li
-                      key={task.id}
-                      className={children.length ? "task-group" : undefined}
-                    >
-                      <TaskRow
-                        now={now}
-                        timezone={timezone}
-                        task={task}
-                        children={children}
-                        busy={busy || blocked}
-                        onComplete={() =>
-                          mutate(() =>
-                            repository.completeTask(
-                              userId,
-                              task.id,
-                              !task.completedAt,
-                            ),
-                          )
-                        }
-                        onMenu={() => setMenu(task)}
-                        onSubtask={() =>
-                          setAddingTo(addingTo === task.id ? null : task.id)
-                        }
-                      />
-                      {children.length > 0 && (
-                        <ul className="task-children">
-                          {children.map((child) => (
-                            <li key={child.id}>
-                              <TaskRow
-                                now={now}
-                                timezone={timezone}
-                                task={child}
-                                children={[]}
-                                busy={busy || blocked}
-                                onComplete={() =>
-                                  mutate(() =>
-                                    repository.completeTask(
-                                      userId,
-                                      child.id,
-                                      !child.completedAt,
-                                    ),
-                                  )
-                                }
-                                onMenu={() => setMenu(child)}
-                                onSubtask={() => {}}
-                              />
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {addingTo === task.id && (
-                        <div className="subtask-form">
-                          <AddTask
-                            timezone={timezone}
-                            topic={topic}
-                            parentId={task.id}
-                            onAdd={(value, options) =>
-                              mutate(() =>
-                                repository.createTask(
-                                  userId,
-                                  topic,
-                                  value,
-                                  task.id,
-                                  options,
-                                ),
-                              )
-                            }
-                          />
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-            </ul>
-            <AddTask
-              timezone={timezone}
-              topic={topic}
-              onAdd={(value, options) =>
-                mutate(() =>
-                  repository.createTask(
-                    userId,
-                    topic,
-                    value,
-                    undefined,
-                    options,
-                  ),
-                )
-              }
-            />
-          </ChecklistBlock>
-        ))}
+        {lists.map((list) => {
+          const topic = list.id;
+          return (
+            <ChecklistBlock
+              key={topic}
+              title={list.title}
+              preferenceKey={`tasks:${topic}`}
+              icon={<CustomizationIcon name={list.icon} />}
+            >
+              {roots.filter((t) => t.topic === topic).length === 0 && (
+                <p className="task-empty small">No tasks here yet.</p>
+              )}
+              <ul className="task-list">
+                {roots
+                  .filter((t) => t.topic === topic)
+                  .map((task) => {
+                    const children = sortTasks(childrenOf(tasks, task.id));
+                    return (
+                      <li
+                        key={task.id}
+                        className={children.length ? "task-group" : undefined}
+                      >
+                        <TaskRow
+                          now={now}
+                          timezone={timezone}
+                          task={task}
+                          children={children}
+                          busy={busy || blocked}
+                          onComplete={() =>
+                            mutate(() =>
+                              repository.completeTask(
+                                userId,
+                                task.id,
+                                !task.completedAt,
+                              ),
+                            )
+                          }
+                          onMenu={() => setMenu(task)}
+                          onSubtask={() =>
+                            setAddingTo(addingTo === task.id ? null : task.id)
+                          }
+                        />
+                        {children.length > 0 && (
+                          <ul className="task-children">
+                            {children.map((child) => (
+                              <li key={child.id}>
+                                <TaskRow
+                                  now={now}
+                                  timezone={timezone}
+                                  task={child}
+                                  children={[]}
+                                  busy={busy || blocked}
+                                  onComplete={() =>
+                                    mutate(() =>
+                                      repository.completeTask(
+                                        userId,
+                                        child.id,
+                                        !child.completedAt,
+                                      ),
+                                    )
+                                  }
+                                  onMenu={() => setMenu(child)}
+                                  onSubtask={() => {}}
+                                />
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {addingTo === task.id && (
+                          <div className="subtask-form">
+                            <AddTask
+                              timezone={timezone}
+                              listTitle={list.title}
+                              parentId={task.id}
+                              onAdd={(value, options) =>
+                                mutate(() =>
+                                  repository.createTask(
+                                    userId,
+                                    topic,
+                                    value,
+                                    task.id,
+                                    options,
+                                  ),
+                                )
+                              }
+                            />
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+              </ul>
+              <AddTask
+                timezone={timezone}
+                listTitle={list.title}
+                onAdd={(value, options) =>
+                  mutate(() =>
+                    repository.createTask(
+                      userId,
+                      topic,
+                      value,
+                      undefined,
+                      options,
+                    ),
+                  )
+                }
+              />
+            </ChecklistBlock>
+          );
+        })}
+        {lists.length === 0 && (
+          <p className="small">
+            Create a To-do list from settings to get started.
+          </p>
+        )}
       </div>
       <p className="small task-help">
         Hold a task for options. Completed tasks stay for 12 hours; subtasks

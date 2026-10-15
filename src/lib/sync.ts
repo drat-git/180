@@ -7,6 +7,7 @@ import { logicalDate } from "./dates";
 import { isDemoUser } from "./appMode";
 import { reconcileEntry, type WireEntry } from "./entrySync";
 import { type JournalImage, type PendingOperation } from "./model";
+import { pushCustomization, pullCustomization } from "./customizationSync";
 export type SyncState =
   "local" | "syncing" | "synced" | "offline" | "auth" | "error";
 type WireImage = {
@@ -119,6 +120,7 @@ export class SyncEngine {
           if (
             op.kind !== "task" &&
             op.kind !== "anti-rotting" &&
+            op.kind !== "configuration" &&
             op.logicalDate > logicalDate()
           ) {
             if (op.kind === "entry") blockedDays.add(op.logicalDate);
@@ -127,7 +129,10 @@ export class SyncEngine {
           }
           // A later completion must not overtake an earlier manual correction
           // to the same day while travel temporarily makes that entry inaccessible.
-          if (op.taskDailyChange && blockedDays.has(op.logicalDate)) {
+          if (
+            (op.taskDailyChange || op.taskCommand?.checklistLink) &&
+            blockedDays.has(op.logicalDate)
+          ) {
             deferred.add(op.operationId);
             continue;
           }
@@ -146,6 +151,7 @@ export class SyncEngine {
               !deferred.has(op.operationId) &&
               (op.kind === "task" ||
                 op.kind === "anti-rotting" ||
+                op.kind === "configuration" ||
                 op.logicalDate <= logicalDate()),
           )
         )
@@ -172,6 +178,10 @@ export class SyncEngine {
     }
   }
   private async push(op: PendingOperation) {
+    if (op.kind === "configuration" || op.kind === "custom-answer") {
+      await pushCustomization(op);
+      return;
+    }
     if (op.kind === "anti-rotting") {
       await pushAnti(this.userId, op);
       return;
@@ -262,6 +272,7 @@ export class SyncEngine {
     }
   }
   private async pull() {
+    await pullCustomization(this.userId);
     await pullTasks(this.userId);
     await pullAnti(this.userId);
     const [

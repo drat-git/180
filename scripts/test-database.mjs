@@ -12,6 +12,7 @@ for (const suite of [
   "tasks",
   "task_options",
   "task_deadlines",
+  "customization",
   "task_daily",
   "anti_rotting",
   "food",

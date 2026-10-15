@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000) and choose **Try the demo mode**. No `.env` file is required. Samples and edits are stored in IndexedDB; Reset demo restores the samples for that demo identity. The timeline stays on Day 3, October 13, 2026.
+Open [localhost:3000](http://localhost:3000) and choose **Try the demo mode**. No `.env` file is required. Samples, custom definitions, and answers are stored in IndexedDB; Reset demo clears that identity’s customization and restores its samples without changing other accounts. The timeline stays on Day 3, October 13, 2026.
 
 For the installable production build and offline reload behavior:
 
@@ -45,7 +45,7 @@ npm test
 npm run build
 ```
 
-Tests cover logical dates and DST, completion thresholds, controls, local transactions, failed writes, account partitioning, pending-patch merging, authentication expiry, task/activity history, and lost acknowledgements. Vitest uses JSDOM and fake IndexedDB. GitHub Actions runs these tests and the production build without private backend credentials.
+Tests cover logical dates and DST, generic completion predicates, conditional follow-ups, template parity, effective-date changes, answer generations, stale configuration revisions, controls, local transactions, failed writes, account partitioning, pending-patch merging, authentication expiry, task/activity history, and lost acknowledgements. Vitest uses JSDOM and fake IndexedDB. GitHub Actions runs these tests and the production build without private backend credentials.
 
 ### Browser workflows
 
@@ -55,13 +55,13 @@ npm run build
 npm run test:e2e
 ```
 
-Playwright uses the production preview on port 4173. It runs desktop and iPhone-sized Chromium contexts, including offline reloads, photo persistence, historical protections, calendar previews, theme settings, task workflows, and layout checks. Failure traces are retained in ignored test-output directories.
+Playwright uses the production preview on port 4173. It runs desktop and iPhone-sized Chromium contexts, including offline reloads, photo persistence, historical protections, calendar previews, theme settings, task workflows, checklist/list customization, and layout checks. Failure traces are retained in ignored test-output directories.
 
 Phone-sized Chromium verifies responsive browser behavior. Physical iPhone Safari, Home Screen installation, notification permissions, and real push delivery require separate device checks. A dated record of previous checks is in [`VALIDATION.md`](../VALIDATION.md); its older sections describe the implementation at that time.
 
 ### Database integration
 
-The eight suites in [`supabase/tests`](../supabase/tests) cover daily records, tasks, task options, automatic daily work, Anti-rot, food fields, push delivery, and Creatine. Each uses rollback-only fixtures to test validation, ownership, atomicity, and idempotent replay.
+The suites in [`supabase/tests`](../supabase/tests) cover daily records, tasks, options and deadlines, automatic daily work, customization, Anti-rot, food fields, push delivery, and Creatine. Each uses rollback-only fixtures to test validation, ownership, atomicity, and idempotent replay.
 
 To run against a configured project, supply `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_REF` in the shell, then run:
 
@@ -71,14 +71,20 @@ npm run test:database
 
 The target needs the repository’s migrations and any required push configuration. These checks are separate from CI and should run only against the intended project. A Supabase access token is a server-side credential; never place it in a `VITE_` variable or commit it.
 
-A subset of task-related SQL can run without a hosted project using the PGlite helper:
+The customization SQL helper runs the relevant migrations and rollback-only suites in an isolated PGlite database without a hosted project or credentials:
 
 ```sh
 npm install --prefix /tmp/180-sql-check --no-save --package-lock=false @electric-sql/pglite@0.5.9
-PGLITE_MODULE=file:///tmp/180-sql-check/node_modules/@electric-sql/pglite/dist/index.js node scripts/test-task-daily-local.mjs
+PGLITE_MODULE=file:///tmp/180-sql-check/node_modules/@electric-sql/pglite/dist/index.js node scripts/test-customization-local.mjs
 ```
 
-This helper checks task, task-options, task-daily, food, and Creatine suites. It does not replace hosted storage, Auth, Edge Function, or push checks.
+This helper checks tasks, options, deadlines, automatic daily work, food, Creatine, and customization. Its fixtures exercise configuration revisions, field patches, typed answers, linked work, ownership, and replay safety. It does not establish hosted migration status or replace real Auth, Storage, Edge Function, or push checks. The narrower [`test-task-daily-local.mjs`](../scripts/test-task-daily-local.mjs) helper remains available for the original task/daily boundary.
+
+## Customization development
+
+Use **Your space → Customize checklist** or **Manage To-do lists** in either private or demo mode. Checklist saves apply today or the next logical day; list edits apply immediately. The preview uses the same evaluator as the daily page and calendar, and changing its sample answers does not save daily records.
+
+Preserve stable IDs and original operation IDs when changing these workflows. Increment an item’s answer generation for an incompatible input or list-binding change; retain older answers. Test a scheduled tomorrow change followed by an unrelated today edit, stale editors on two clients, manual plus automatic task work with undo, transaction failure/retry, and demo reset. A configuration conflict must retain the draft and require explicit review before retrying against newer definitions.
 
 ## Private backend configuration
 

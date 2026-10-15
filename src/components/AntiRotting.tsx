@@ -10,6 +10,9 @@ import { ChecklistBlock, Modal } from "./Controls";
 import { useMinimized } from "../lib/displayPreferences";
 import { useTasks } from "../lib/useTasks";
 import { completedLifeTasksForDay } from "../lib/lifeRecap";
+import { useCustomization } from "../lib/useCustomization";
+import { evaluateItem, emptyItemAnswer } from "../lib/customization";
+import { modeForUser } from "../lib/appMode";
 
 function ActivityRow({
   item,
@@ -378,7 +381,29 @@ export function AntiRottingRecap({
 }) {
   const { logs, events } = useAntiRotting(userId);
   const { tasks, events: taskEvents } = useTasks(userId);
-  const life = completedLifeTasksForDay(userId, date, tasks, taskEvents);
+  const { configuration } = useCustomization(userId, date);
+  const linkedLists = new Set(
+    configuration.items
+      .filter(
+        (item) =>
+          item.kind === "tasks" &&
+          evaluateItem(item, emptyItemAnswer(item), date, {
+            block: configuration.blocks.find(
+              (block) => block.id === item.blockId,
+            ),
+            relevant: true,
+          }).visible,
+      )
+      .map((item) => item.listId!),
+  );
+  const life = completedLifeTasksForDay(
+    userId,
+    date,
+    tasks,
+    taskEvents,
+    modeForUser(userId),
+    linkedLists,
+  );
   const rows = antiRecap(logs, events, date);
   if (date >= today || (!life.length && !rows.length)) return null;
   return (

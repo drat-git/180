@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import type { ActivityTopic, Answer, Task, TaskSelection } from "../lib/model";
+import type { Answer, Task, TaskSelection } from "../lib/model";
 import { childrenOf, sortTasks, topicLabels } from "../lib/tasks";
 import { BinaryAnswer, Reason } from "./Controls";
 import { useMinimized } from "../lib/displayPreferences";
@@ -18,8 +18,14 @@ export function TaskActivity({
   onAnswer,
   onReason,
   onSelections,
+  label: suppliedLabel,
+  listTitle,
+  hideAnswerAndReason = false,
 }: {
-  topic: ActivityTopic;
+  topic: string;
+  label?: string;
+  listTitle?: string;
+  hideAnswerAndReason?: boolean;
   visible: boolean;
   roots: Task[];
   tasks: Task[];
@@ -35,7 +41,8 @@ export function TaskActivity({
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useMinimized(`activity:${topic}`);
   const available = roots.filter((t) => t.topic === topic);
-  const label = `Worked on ${topic} tasks`;
+  const label = suppliedLabel ?? `Worked on ${topic} tasks`;
+  const title = listTitle ?? topicLabels[topic] ?? topic;
   if (!visible) return null;
   const change = (next: TaskSelection[]) => {
     if (locked) onAttempt();
@@ -75,12 +82,18 @@ export function TaskActivity({
     );
   }
   return (
-    <div className="field task-activity">
-      <div className="field-line">
-        <span className="field-label">{label}</span>
-        <BinaryAnswer label={label} value={status} onChange={onAnswer} />
-      </div>
-      {status === false && (
+    <div
+      className={
+        hideAnswerAndReason ? "task-activity-content" : "field task-activity"
+      }
+    >
+      {!hideAnswerAndReason && (
+        <div className="field-line">
+          <span className="field-label">{label}</span>
+          <BinaryAnswer label={label} value={status} onChange={onAnswer} />
+        </div>
+      )}
+      {!hideAnswerAndReason && status === false && (
         <Reason
           label={label}
           preferenceKey={`${label}? reason`}
@@ -102,14 +115,15 @@ export function TaskActivity({
               else setOpen(!open);
             }}
           >
-            Choose {topic} tasks <ChevronDown size={15} />
+            Choose {listTitle ? listTitle.toLowerCase() : topic} tasks{" "}
+            <ChevronDown size={15} />
           </button>
           {open && (
             <div
               id={`task-picker-${topic}`}
               className="task-picker"
               role="group"
-              aria-label={`${topicLabels[topic]} tasks worked on`}
+              aria-label={`${title} tasks worked on`}
             >
               {!available.length && (
                 <p className="small">

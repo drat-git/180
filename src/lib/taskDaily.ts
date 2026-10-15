@@ -23,7 +23,7 @@ export function taskDailyChange(
 ): TaskDailyChange | undefined {
   if (!command.recordDaily || command.action !== "complete") return;
   const event = events.find((e) => e.taskId === command.taskId);
-  if (!event || event.topic === "life") return;
+  if (!event || (event.topic !== "school" && event.topic !== "career")) return;
   const parent = tasks.find((t) => t.id === (event.parentId ?? event.taskId));
   if (!parent) return;
   return {
