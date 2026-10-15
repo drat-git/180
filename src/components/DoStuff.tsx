@@ -189,21 +189,23 @@ function TaskRow({
         }}
       />
       <div className="task-copy">
-        <span className="task-title">{task.title}</span>
-        {(task.estimatedMinutes != null ||
-          (task.highPriority && !task.parentId)) && (
+        <span className="task-title-line">
+          {task.highPriority && !task.parentId && (
+            <Flag
+              size={14}
+              className="task-priority"
+              role="img"
+              aria-label="High priority"
+            />
+          )}
+          <span className="task-title">{task.title}</span>
+        </span>
+        {task.estimatedMinutes != null && (
           <span className="task-metadata">
-            {task.highPriority && !task.parentId && (
-              <span className="task-priority">
-                <Flag size={12} aria-hidden="true" /> High priority
-              </span>
-            )}
-            {task.estimatedMinutes != null && (
-              <span className="task-estimate">
-                <Clock3 size={12} aria-hidden="true" /> Est.{" "}
-                {formatDuration(task.estimatedMinutes)}
-              </span>
-            )}
+            <span className="task-estimate">
+              <Clock3 size={12} aria-hidden="true" /> Est.{" "}
+              {formatDuration(task.estimatedMinutes)}
+            </span>
           </span>
         )}
         {parent && (

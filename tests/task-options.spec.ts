@@ -242,9 +242,15 @@ test("fresh demo tasks show priority only, duration only, and both", async ({
     .getByRole("button", { name: "Try the demo mode", exact: true })
     .click();
   await page.getByRole("button", { name: "To-do", exact: true }).click();
-  await expect(row(page, "Prepare history essay")).toContainText(
-    "High priority",
-  );
+  await expect(
+    row(page, "Prepare history essay").getByRole("img", {
+      name: "High priority",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    row(page, "Prepare history essay").locator(".task-metadata"),
+  ).toHaveCount(0);
   await expect(
     row(page, "Prepare history essay").locator(".task-estimate"),
   ).toHaveCount(0);
@@ -255,7 +261,36 @@ test("fresh demo tasks show priority only, duration only, and both", async ({
   await expect(row(page, "Practice common interview questions")).toContainText(
     "Est. 45 min",
   );
-  await expect(row(page, "Practice common interview questions")).toContainText(
-    "High priority",
-  );
+  for (const title of [
+    "Prepare history essay",
+    "Practice common interview questions",
+  ]) {
+    const task = row(page, title);
+    await expect(task).not.toContainText("High priority");
+    const layout = await task.evaluate((element) => {
+      const flag = element
+        .querySelector(".task-priority")!
+        .getBoundingClientRect();
+      const text = element.querySelector(".task-title")!;
+      const range = document.createRange();
+      range.setStart(text.firstChild!, 0);
+      range.setEnd(text.firstChild!, 1);
+      const firstLetter = range.getBoundingClientRect();
+      return {
+        flagRight: flag.right,
+        flagCenter: flag.top + flag.height / 2,
+        textLeft: firstLetter.left,
+        textTop: firstLetter.top,
+        textBottom: firstLetter.bottom,
+        fits: element.scrollWidth <= element.clientWidth,
+      };
+    });
+    expect(layout.flagRight).toBeLessThan(layout.textLeft);
+    expect(layout.flagCenter).toBeGreaterThanOrEqual(layout.textTop);
+    expect(layout.flagCenter).toBeLessThanOrEqual(layout.textBottom);
+    expect(layout.fits).toBe(true);
+  }
+  await row(page, "Practice common interview questions").screenshot({
+    path: `test-results/task-options/inline-priority-${test.info().project.name}.png`,
+  });
 });

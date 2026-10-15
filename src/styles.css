@@ -2401,15 +2401,21 @@ input[data-complete="false"]:focus {
   color: var(--muted);
   line-height: 1.5;
 }
-.task-estimate,
-.task-priority {
+.task-estimate {
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
+.task-title-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
 .task-priority {
+  flex: 0 0 14px;
+  margin-top: 0.2em;
   color: var(--priority-ink);
-  font-weight: 600;
 }
 .task-row.is-high-priority input[type="checkbox"] {
   appearance: none;
