@@ -251,13 +251,38 @@
 .history-calendar .calendar-date[data-outside] {
   opacity: 0.45;
 }
+.history-calendar .calendar-legend-menu {
+  border-top: 1px solid var(--calendar-line);
+  margin-top: 20px;
+  padding-top: 6px;
+  color: var(--calendar-legend-ink);
+}
+.history-calendar .calendar-legend-menu summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+.history-calendar .calendar-legend-menu summary::-webkit-details-marker {
+  display: none;
+}
+.history-calendar .calendar-legend-menu summary:focus-visible {
+  outline: 2px solid var(--calendar-focus);
+  outline-offset: 3px;
+}
+.history-calendar .calendar-legend-menu[open] summary svg {
+  transform: rotate(180deg);
+}
 .history-calendar .calendar-legend {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 14px;
-  border-top: 1px solid var(--calendar-line);
-  margin-top: 20px;
-  padding-top: 16px;
+  padding-top: 8px;
   color: var(--calendar-legend-ink);
   font-size: 11px;
 }

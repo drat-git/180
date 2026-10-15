@@ -3,6 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   ArrowUpRight,
   CalendarClock,
   Clock3,
@@ -252,26 +253,31 @@ export function Calendar({
                 );
               })}
             </div>
-            <div
-              className="calendar-legend"
-              aria-label="Checklist completion color legend"
-            >
-              {CALENDAR_BANDS.map((label, band) => (
-                <span key={label}>
-                  <i data-band={band} aria-hidden="true" />
-                  {label}
-                </span>
-              ))}
-              <span>
-                <i className="calendar-empty-swatch" aria-hidden="true" />
-                No entries
-              </span>
-              {[...dueByDate.keys()].some((date) => date > today) && (
+            <details className="calendar-legend-menu">
+              <summary>
+                Legend <ChevronDown size={15} aria-hidden="true" />
+              </summary>
+              <div
+                className="calendar-legend"
+                aria-label="Checklist completion color legend"
+              >
+                {CALENDAR_BANDS.map((label, band) => (
+                  <span key={label}>
+                    <i data-band={band} aria-hidden="true" />
+                    {label}
+                  </span>
+                ))}
                 <span>
-                  <CalendarClock size={13} aria-hidden="true" /> Tasks due
+                  <i className="calendar-empty-swatch" aria-hidden="true" />
+                  No entries
                 </span>
-              )}
-            </div>
+                {[...dueByDate.keys()].some((date) => date > today) && (
+                  <span>
+                    <CalendarClock size={13} aria-hidden="true" /> Tasks due
+                  </span>
+                )}
+              </div>
+            </details>
           </>
         )}
       </div>
