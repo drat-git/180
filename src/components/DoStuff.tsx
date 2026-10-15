@@ -6,6 +6,7 @@ import {
   Plus,
   Clock3,
   Flag,
+  CalendarClock,
 } from "lucide-react";
 import type { Task, TaskTopic, TaskOptions } from "../lib/model";
 import { repository } from "../lib/repository";
@@ -19,14 +20,17 @@ import { useTasks } from "../lib/useTasks";
 import { TaskOptionsDialog } from "./TaskOptionsDialog";
 import { ChecklistBlock, Modal } from "./Controls";
 import { DisplayPreferencesProvider } from "../lib/displayPreferences";
+import { deadlinePresentation } from "../lib/taskDeadlines";
 
 function AddTask({
   topic,
   parentId,
+  timezone,
   onAdd,
 }: {
   topic: TaskTopic;
   parentId?: string;
+  timezone: string;
   onAdd: (title: string, options: TaskOptions) => Promise<boolean>;
 }) {
   const [title, setTitle] = useState("");
@@ -65,6 +69,7 @@ function AddTask({
           title={parentId ? "Add subtask options" : "Add task options"}
           taskTitle={title.trim()}
           parentId={parentId}
+          timezone={timezone}
           busy={saving}
           onClose={() => setOptionsOpen(false)}
           onSave={(options) => {
@@ -91,6 +96,8 @@ function TaskRow({
   onComplete,
   onMenu,
   onSubtask,
+  now,
+  timezone,
 }: {
   task: Task;
   children: Task[];
@@ -98,6 +105,8 @@ function TaskRow({
   onComplete: () => Promise<boolean>;
   onMenu: () => void;
   onSubtask: () => void;
+  now: number;
+  timezone: string;
 }) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const start = useRef<{ x: number; y: number } | null>(null);
@@ -129,6 +138,10 @@ function TaskRow({
   const completed = optimisticComplete ?? !!task.completedAt;
   const parent = children.length > 0;
   const done = children.filter((t) => t.completedAt).length;
+  const due =
+    !task.parentId && task.deadline
+      ? deadlinePresentation(task.deadline, now, timezone, completed)
+      : null;
   return (
     <div
       className={`task-row ${parent ? "is-parent" : task.parentId ? "is-child" : "is-standalone"} ${completed ? "is-complete" : ""} ${task.highPriority && !task.parentId ? "is-high-priority" : ""}`}
@@ -200,12 +213,19 @@ function TaskRow({
           )}
           <span className="task-title">{task.title}</span>
         </span>
-        {task.estimatedMinutes != null && (
+        {(task.estimatedMinutes != null || due) && (
           <span className="task-metadata">
-            <span className="task-estimate">
-              <Clock3 size={12} aria-hidden="true" /> Est.{" "}
-              {formatDuration(task.estimatedMinutes)}
-            </span>
+            {task.estimatedMinutes != null && (
+              <span className="task-estimate">
+                <Clock3 size={12} aria-hidden="true" /> Est.{" "}
+                {formatDuration(task.estimatedMinutes)}
+              </span>
+            )}
+            {due && (
+              <span className={`task-due ${due.overdue ? "is-overdue" : ""}`}>
+                <CalendarClock size={12} aria-hidden="true" /> {due.label}
+              </span>
+            )}
           </span>
         )}
         {parent && (
@@ -239,9 +259,10 @@ export function DoStuff({
   onError: (message: string) => void;
   blocked: boolean;
 }) {
-  const { tasks, roots } = useTasks(userId);
+  const { tasks, roots, now, timezone } = useTasks(userId);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [estimate, setEstimate] = useState<Task | null>(null);
+  const [due, setDue] = useState<Task | null>(null);
   const [menu, setMenu] = useState<Task | null>(null);
   const [edit, setEdit] = useState<Task | null>(null);
   const [title, setTitle] = useState("");
@@ -302,6 +323,8 @@ export function DoStuff({
                       className={children.length ? "task-group" : undefined}
                     >
                       <TaskRow
+                        now={now}
+                        timezone={timezone}
                         task={task}
                         children={children}
                         busy={busy || blocked}
@@ -324,6 +347,8 @@ export function DoStuff({
                           {children.map((child) => (
                             <li key={child.id}>
                               <TaskRow
+                                now={now}
+                                timezone={timezone}
                                 task={child}
                                 children={[]}
                                 busy={busy || blocked}
@@ -346,6 +371,7 @@ export function DoStuff({
                       {addingTo === task.id && (
                         <div className="subtask-form">
                           <AddTask
+                            timezone={timezone}
                             topic={topic}
                             parentId={task.id}
                             onAdd={(value, options) =>
@@ -367,6 +393,7 @@ export function DoStuff({
                 })}
             </ul>
             <AddTask
+              timezone={timezone}
               topic={topic}
               onAdd={(value, options) =>
                 mutate(() =>
@@ -433,22 +460,49 @@ export function DoStuff({
               </button>
             )}
             {!menu.parentId && (
-              <button
-                disabled={busy || blocked}
-                onClick={() => {
-                  void mutate(() =>
-                    repository.updateTaskOptions(userId, menu.id, {
-                      highPriority: !menu.highPriority,
-                    }),
-                  ).then((ok) => {
-                    if (ok) setMenu(null);
-                  });
-                }}
-              >
-                {menu.highPriority
-                  ? "Remove high priority"
-                  : "Mark high priority"}
-              </button>
+              <>
+                <button
+                  disabled={busy || blocked}
+                  onClick={() => {
+                    setDue(menu);
+                    setMenu(null);
+                  }}
+                >
+                  {menu.deadline ? "Edit due date" : "Add due date"}
+                </button>
+                {menu.deadline && (
+                  <button
+                    disabled={busy || blocked}
+                    onClick={() => {
+                      void mutate(() =>
+                        repository.updateTaskOptions(userId, menu.id, {
+                          deadline: null,
+                        }),
+                      ).then((ok) => {
+                        if (ok) setMenu(null);
+                      });
+                    }}
+                  >
+                    Remove due date
+                  </button>
+                )}
+                <button
+                  disabled={busy || blocked}
+                  onClick={() => {
+                    void mutate(() =>
+                      repository.updateTaskOptions(userId, menu.id, {
+                        highPriority: !menu.highPriority,
+                      }),
+                    ).then((ok) => {
+                      if (ok) setMenu(null);
+                    });
+                  }}
+                >
+                  {menu.highPriority
+                    ? "Remove high priority"
+                    : "Mark high priority"}
+                </button>
+              </>
             )}
             <button
               className="danger"
@@ -476,6 +530,24 @@ export function DoStuff({
               repository.updateTaskOptions(userId, estimate.id, options),
             ).then((ok) => {
               if (ok) setEstimate(null);
+            });
+          }}
+        />
+      )}
+      {due && (
+        <TaskOptionsDialog
+          title="Due date"
+          taskTitle={due.title}
+          initial={due}
+          deadlineOnly
+          timezone={timezone}
+          busy={busy || blocked}
+          onClose={() => setDue(null)}
+          onSave={(options) => {
+            void mutate(() =>
+              repository.updateTaskOptions(userId, due.id, options),
+            ).then((ok) => {
+              if (ok) setDue(null);
             });
           }}
         />

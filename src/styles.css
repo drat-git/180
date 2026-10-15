@@ -2380,11 +2380,13 @@ input[data-complete="false"]:focus {
   --priority-background: #f8edd8;
   --priority-ink: #775221;
   --priority-accent: #a36b22;
+  --due-overdue: #914624;
 }
 :root[data-theme="dark"] {
   --priority-background: #463c2c;
   --priority-ink: #e9c58c;
   --priority-accent: #b78336;
+  --due-overdue: #edb39a;
 }
 .task-row.is-high-priority:not(.is-complete) {
   background: var(--priority-background);
@@ -2401,10 +2403,36 @@ input[data-complete="false"]:focus {
   color: var(--muted);
   line-height: 1.5;
 }
-.task-estimate {
+.task-estimate,
+.task-due {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 4px;
+}
+.task-due svg,
+.task-estimate svg {
+  flex-shrink: 0;
+  align-self: center;
+}
+.task-due.is-overdue {
+  color: var(--due-overdue);
+  font-weight: 600;
+}
+.task-row.is-complete .task-due {
+  color: var(--muted);
+}
+.task-deadline-fields {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+}
+.task-deadline-fields > label:not(.task-setting-toggle) {
+  display: grid;
+  gap: 6px;
+}
+.task-deadline-fields input {
+  min-width: 0;
+  max-width: 100%;
 }
 .task-title-line {
   display: flex;

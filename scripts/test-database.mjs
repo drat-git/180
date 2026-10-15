@@ -11,6 +11,7 @@ for (const suite of [
   "daily_record",
   "tasks",
   "task_options",
+  "task_deadlines",
   "task_daily",
   "anti_rotting",
   "food",

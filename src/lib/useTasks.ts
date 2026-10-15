@@ -5,7 +5,13 @@ import type { Task, TaskEvent } from "./model";
 const EMPTY_TASKS: Task[] = [];
 const EMPTY_EVENTS: TaskEvent[] = [];
 import { TASK_RETENTION_MS, visibleRoots } from "./tasks";
-import { clockForUser, isDemoUser } from "./appMode";
+import { clockForUser, isDemoUser, timezoneForUser } from "./appMode";
+import { addDays } from "./dates";
+import {
+  deadlineDayStart,
+  deadlineInstant,
+  deadlineLocalParts,
+} from "./taskDeadlines";
 
 export function useTasks(userId: string) {
   const snapshot = useLiveQuery(
@@ -21,23 +27,42 @@ export function useTasks(userId: string) {
   );
   const tasks = snapshot?.tasks ?? EMPTY_TASKS;
   const events = snapshot?.events ?? EMPTY_EVENTS;
-  const [now, setNow] = useState(() => clockForUser(userId).getTime());
+  const [{ now, timezone }, setClock] = useState(() => ({
+    now: clockForUser(userId).getTime(),
+    timezone: timezoneForUser(userId),
+  }));
   useEffect(() => {
     if (isDemoUser(userId)) {
-      setNow(clockForUser(userId).getTime());
+      setClock({
+        now: clockForUser(userId).getTime(),
+        timezone: timezoneForUser(userId),
+      });
       return;
     }
-    const update = () => setNow(Date.now());
-    const next = tasks
-      .filter((t) => !t.parentId && t.completedAt && !t.deletedAt)
-      .map((t) => Date.parse(t.completedAt!) + TASK_RETENTION_MS)
-      .filter((t) => t > Date.now());
-    const timer = next.length
-      ? setTimeout(
-          update,
-          Math.min(2147483647, Math.max(1, Math.min(...next) - Date.now())),
-        )
-      : undefined;
+    let timer: ReturnType<typeof setTimeout>;
+    const update = () => {
+      clearTimeout(timer);
+      const stamp = Date.now(),
+        timezone = timezoneForUser(userId);
+      setClock({ now: stamp, timezone });
+      const next = [
+        deadlineDayStart(
+          addDays(deadlineLocalParts(stamp, timezone).date, 1),
+          timezone,
+        ),
+        ...tasks
+          .filter((task) => !task.parentId && !task.deletedAt)
+          .map((task) =>
+            task.completedAt
+              ? Date.parse(task.completedAt) + TASK_RETENTION_MS
+              : deadlineInstant(task.deadline, timezone),
+          ),
+      ].filter((value) => Number.isFinite(value) && value > stamp);
+      timer = setTimeout(
+        update,
+        Math.min(2147483647, Math.max(1, Math.min(...next) - stamp)),
+      );
+    };
     update();
     window.addEventListener("focus", update);
     document.addEventListener("visibilitychange", update);
@@ -48,9 +73,11 @@ export function useTasks(userId: string) {
     };
   }, [tasks, userId]);
   return {
+    now,
+    timezone,
     tasks,
     events,
     ready: snapshot !== undefined,
-    roots: visibleRoots(tasks, now),
+    roots: visibleRoots(tasks, now, timezone),
   };
 }

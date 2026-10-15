@@ -49,6 +49,8 @@ The private app uses a local **2 AM** day boundary. Stored entries keep their ca
 
 Mode, app palette, completion palette, and Anti-rot palette are independent settings. Calendar surfaces follow light/dark mode while staying independent of the app background palette; calendar bubbles follow the chosen completion palette. Preferences are device-local in the private app and session-local in the demo.
 
+Top-level tasks can carry a date-only deadline or a fixed UTC instant, with optional deadlines stored alongside priority and estimates. Active tasks sort by priority, earliest deadline, then creation order; undated tasks come last within each priority group. Date-only deadlines become overdue at local midnight after their date, independently of the checklist’s 2 AM boundary. Timed deadlines display in the device’s current timezone; the demo uses its frozen Eastern clock. Deadline edits use the existing task operation queue and do not change task history, daily progress, parent completion, or archive timers. Subtasks have no deadline, and this feature does not schedule notifications or add Calendar markers.
+
 ## Photos, installation, and reminders
 
 Photo originals are persisted before conversion. JPEG, PNG, WebP, and HEIC inputs are normalized to oriented JPEGs with a maximum 2560-pixel longest edge. Pending uploads survive reloads, downloaded images are cached locally, and tombstones protect deleted photos from reappearing. Uncached remote images still need a connection.

@@ -30,6 +30,7 @@ try {
     "20261013055335_creatine_check",
     "20261014035821_task_options",
     "20261014042751_task_daily_completion",
+    "20261015163403_task_deadlines",
   ];
   for (const migration of migrations) {
     let sql = fs.readFileSync(`supabase/migrations/${migration}.sql`, "utf8");
@@ -44,6 +45,7 @@ try {
   for (const suite of [
     "tasks",
     "task_options",
+    "task_deadlines",
     "task_daily",
     "food",
     "creatine",

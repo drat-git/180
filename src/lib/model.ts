@@ -95,9 +95,12 @@ export interface TaskDailyChange {
   child?: { taskId: string; title: string };
   completed: boolean;
 }
+export type TaskDeadline =
+  { date: string; at?: never } | { at: string; date?: never };
 export interface TaskOptions {
   estimatedMinutes?: number | null;
   highPriority?: boolean;
+  deadline?: TaskDeadline | null;
 }
 export interface Task extends TaskOptions {
   id: string;

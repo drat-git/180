@@ -91,6 +91,40 @@ it("patches only supplied metadata and preserves completion, history, and archiv
     ),
   ).toHaveLength(0);
 });
+it("retains root deadlines through completion and metadata edits, with no daily work from deadline changes", async () => {
+  const deadline = { date: "2026-10-16" };
+  const id = await repo.createTask("owner", "school", "Essay", undefined, {
+    deadline,
+  });
+  const child = await repo.createTask("owner", "school", "Outline", id);
+  expect((await database.tasks.get(child))!.deadline).toBeNull();
+  expect(() =>
+    applyTaskCommand(
+      [root, { ...root, id: child, parentId: root.id }],
+      "owner",
+      "bad-deadline",
+      command(child, "options", { deadline }),
+    ),
+  ).toThrow(/top-level/);
+  await repo.completeTask("owner", child, true);
+  const before = (await database.tasks.get(id))!;
+  const count = await database.taskEvents.count();
+  const entries = await database.entries.toArray();
+  await repo.updateTaskOptions("owner", id, {
+    deadline: { at: "2026-10-16T21:00:00.000Z" },
+  });
+  await repo.updateTaskOptions("owner", id, { estimatedMinutes: 30 });
+  await repo.renameTask("owner", id, "Revised essay");
+  expect(await database.tasks.get(id)).toMatchObject({
+    deadline: { at: "2026-10-16T21:00:00.000Z" },
+    completedAt: before.completedAt,
+    estimatedMinutes: 30,
+  });
+  expect(await database.taskEvents.count()).toBe(count);
+  expect(await database.entries.toArray()).toEqual(entries);
+  await repo.updateTaskOptions("owner", id, { deadline: null });
+  expect((await database.tasks.get(id))!.deadline).toBeNull();
+});
 it("stores child durations without changing parent completion and ignores options for tombstones", async () => {
   const parent = await repo.createTask("owner", "school", "Essay");
   const child = await repo.createTask("owner", "school", "Outline", parent, {

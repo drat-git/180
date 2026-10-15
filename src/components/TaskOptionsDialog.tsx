@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { TaskOptions } from "../lib/model";
 import { MAX_ESTIMATE_MINUTES } from "../lib/tasks";
 import { Modal } from "./Controls";
+import { deadlineFromInput, deadlineInput } from "../lib/taskDeadlines";
 
 export function TaskOptionsDialog({
   title,
@@ -9,6 +10,8 @@ export function TaskOptionsDialog({
   parentId,
   initial = {},
   estimateOnly = false,
+  deadlineOnly = false,
+  timezone = Intl.DateTimeFormat().resolvedOptions().timeZone,
   busy,
   onSave,
   onClose,
@@ -18,6 +21,8 @@ export function TaskOptionsDialog({
   parentId?: string | null;
   initial?: TaskOptions;
   estimateOnly?: boolean;
+  deadlineOnly?: boolean;
+  timezone?: string;
   busy: boolean;
   onSave: (options: TaskOptions) => void;
   onClose: () => void;
@@ -32,6 +37,13 @@ export function TaskOptionsDialog({
     String((initial.estimatedMinutes ?? 0) % 60),
   );
   const [priority, setPriority] = useState(initial.highPriority ?? false);
+  const originalDue = deadlineInput(initial.deadline, timezone);
+  const [includeDue, setIncludeDue] = useState(
+    deadlineOnly || !!initial.deadline,
+  );
+  const [dueDate, setDueDate] = useState(originalDue.date);
+  const [includeTime, setIncludeTime] = useState(!!initial.deadline?.at);
+  const [dueTime, setDueTime] = useState(originalDue.time);
   const [error, setError] = useState("");
   return (
     <Modal
@@ -50,6 +62,7 @@ export function TaskOptionsDialog({
             m = Number(minutes || 0),
             duration = h * 60 + m;
           if (
+            !deadlineOnly &&
             includeEstimate &&
             (!Number.isInteger(h) ||
               !Number.isInteger(m) ||
@@ -64,23 +77,51 @@ export function TaskOptionsDialog({
             );
             return;
           }
-          setError("");
-          onSave({
-            estimatedMinutes: includeEstimate ? duration : null,
-            ...(!estimateOnly && !parentId ? { highPriority: priority } : {}),
-          });
+          try {
+            const options: TaskOptions = deadlineOnly
+              ? {}
+              : {
+                  estimatedMinutes: includeEstimate ? duration : null,
+                  ...(!estimateOnly && !parentId
+                    ? { highPriority: priority }
+                    : {}),
+                };
+            if (!estimateOnly && !parentId) {
+              options.deadline = !includeDue
+                ? null
+                : initial.deadline &&
+                    dueDate === originalDue.date &&
+                    (includeTime ? dueTime : "") === originalDue.time
+                  ? initial.deadline
+                  : deadlineFromInput(
+                      dueDate,
+                      includeTime ? dueTime : null,
+                      timezone,
+                    );
+            }
+            setError("");
+            onSave(options);
+          } catch (error) {
+            setError(
+              error instanceof Error
+                ? error.message
+                : "Choose a valid due date.",
+            );
+          }
         }}
       >
-        <label className="task-setting-toggle">
-          <input
-            type="checkbox"
-            checked={includeEstimate}
-            disabled={busy}
-            onChange={(event) => setIncludeEstimate(event.target.checked)}
-          />
-          Include an estimated time
-        </label>
-        {includeEstimate && (
+        {!deadlineOnly && (
+          <label className="task-setting-toggle">
+            <input
+              type="checkbox"
+              checked={includeEstimate}
+              disabled={busy}
+              onChange={(event) => setIncludeEstimate(event.target.checked)}
+            />
+            Include an estimated time
+          </label>
+        )}
+        {!deadlineOnly && includeEstimate && (
           <div className="task-duration-fields">
             <label>
               Hours
@@ -112,7 +153,7 @@ export function TaskOptionsDialog({
             </label>
           </div>
         )}
-        {!estimateOnly && !parentId && (
+        {!estimateOnly && !deadlineOnly && !parentId && (
           <label className="task-setting-toggle">
             <input
               type="checkbox"
@@ -123,11 +164,65 @@ export function TaskOptionsDialog({
             High priority
           </label>
         )}
-        {!estimateOnly && (
+        {!estimateOnly && !parentId && (
+          <>
+            {!deadlineOnly && (
+              <label className="task-setting-toggle">
+                <input
+                  type="checkbox"
+                  checked={includeDue}
+                  disabled={busy}
+                  onChange={(event) => setIncludeDue(event.target.checked)}
+                />
+                Include a due date
+              </label>
+            )}
+            {includeDue && (
+              <div className="task-deadline-fields">
+                <label>
+                  Due date
+                  <input
+                    type="date"
+                    aria-label="Due date"
+                    min="0001-01-01"
+                    max="9999-12-31"
+                    required
+                    value={dueDate}
+                    disabled={busy}
+                    onChange={(event) => setDueDate(event.target.value)}
+                  />
+                </label>
+                <label className="task-setting-toggle">
+                  <input
+                    type="checkbox"
+                    checked={includeTime}
+                    disabled={busy}
+                    onChange={(event) => setIncludeTime(event.target.checked)}
+                  />
+                  Include a time
+                </label>
+                {includeTime && (
+                  <label>
+                    Due time <span className="small">({timezone})</span>
+                    <input
+                      type="time"
+                      aria-label="Due time"
+                      required
+                      value={dueTime}
+                      disabled={busy}
+                      onChange={(event) => setDueTime(event.target.value)}
+                    />
+                  </label>
+                )}
+              </div>
+            )}
+          </>
+        )}
+        {!estimateOnly && !deadlineOnly && (
           <p className="small">
             {parentId
               ? "Estimated time is optional. You can change it later by holding the subtask."
-              : "Both options are optional. You can change them later by holding the task."}
+              : "These options are optional. You can change them later by holding the task."}
           </p>
         )}
         {error && (
@@ -142,11 +237,13 @@ export function TaskOptionsDialog({
           <button className="primary" disabled={busy}>
             {busy
               ? "Saving…"
-              : estimateOnly
-                ? "Save estimated time"
-                : parentId
-                  ? "Add subtask"
-                  : "Add task"}
+              : deadlineOnly
+                ? "Save due date"
+                : estimateOnly
+                  ? "Save estimated time"
+                  : parentId
+                    ? "Add subtask"
+                    : "Add task"}
           </button>
         </div>
       </form>

@@ -341,6 +341,8 @@ export type Database = {
       };
       tasks: {
         Row: {
+          due_date: string | null;
+          due_at: string | null;
           completed_at: string | null;
           created_at: string;
           deleted_at: string | null;
@@ -355,6 +357,8 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          due_date?: string | null;
+          due_at?: string | null;
           completed_at?: string | null;
           created_at: string;
           deleted_at?: string | null;
@@ -369,6 +373,8 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          due_date?: string | null;
+          due_at?: string | null;
           completed_at?: string | null;
           created_at?: string;
           deleted_at?: string | null;

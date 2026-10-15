@@ -54,6 +54,8 @@ const taskWire = (t: Task) => ({
   parent_id: t.parentId,
   estimated_minutes: t.estimatedMinutes ?? null,
   high_priority: t.highPriority ?? false,
+  due_date: t.deadline?.date ?? null,
+  due_at: t.deadline?.at ?? null,
   title: t.title,
   completed_at: t.completedAt,
   deleted_at: t.deletedAt,
@@ -433,6 +435,36 @@ it("merges independent task options and does not replay a lost acknowledgement o
     highPriority: true,
   });
   expect(remoteTasks[0].estimatedMinutes).toBe(90);
+  expect(await db.outbox.count()).toBe(0);
+  expect(await db.taskEvents.count()).toBe(0);
+});
+it("syncs deadline types and removals, keeps independent metadata, and honors newer remote edits after a lost receipt", async () => {
+  const id = await repository.createTask(
+    "owner",
+    "life",
+    "Book appointment",
+    undefined,
+    { deadline: { date: "2026-10-20" } },
+  );
+  const worker = engine();
+  await worker.run();
+  expect((await db.tasks.get(id))!.deadline).toEqual({ date: "2026-10-20" });
+  remoteTasks[0].highPriority = true;
+  await repository.updateTaskOptions("owner", id, {
+    deadline: { at: "2026-10-20T21:00:00.000Z" },
+  });
+  failAfterCommit = true;
+  await worker.run();
+  expect(worker.state).toBe("error");
+  remoteTasks[0].deadline = { at: "2026-10-21T21:00:00.000Z" };
+  await worker.run();
+  expect(await db.tasks.get(id)).toMatchObject({
+    deadline: remoteTasks[0].deadline,
+    highPriority: true,
+  });
+  await repository.updateTaskOptions("owner", id, { deadline: null });
+  await worker.run();
+  expect((await db.tasks.get(id))!.deadline).toBeNull();
   expect(await db.outbox.count()).toBe(0);
   expect(await db.taskEvents.count()).toBe(0);
 });

@@ -1,4 +1,5 @@
 import type { Task, TaskCommand, TaskEvent, TaskOptions } from "./model";
+import { deadlineInstant, validateDeadline } from "./taskDeadlines";
 
 export const MAX_ESTIMATE_MINUTES = 525600;
 export function validateTaskOptions(
@@ -19,6 +20,7 @@ export function validateTaskOptions(
     throw new Error("Choose a valid priority.");
   if (options.highPriority && parentId)
     throw new Error("High priority is available only for top-level tasks.");
+  if ("deadline" in options) validateDeadline(options.deadline, parentId);
 }
 export function formatDuration(minutes: number) {
   const hours = Math.floor(minutes / 60),
@@ -36,7 +38,18 @@ export const topicLabels = {
 export function childrenOf(tasks: Task[], parentId: string) {
   return tasks.filter((t) => t.parentId === parentId && !t.deletedAt);
 }
-export function sortTasks(tasks: Task[]) {
+export function sortTasks(
+  tasks: Task[],
+  timezone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+) {
+  const due = new Map(
+    tasks.map((task) => [
+      task.id,
+      !task.parentId && !task.completedAt
+        ? deadlineInstant(task.deadline, timezone)
+        : Infinity,
+    ]),
+  );
   return [...tasks].sort(
     (a, b) =>
       Number(!!a.completedAt) - Number(!!b.completedAt) ||
@@ -44,11 +57,14 @@ export function sortTasks(tasks: Task[]) {
         ? Number(!!b.highPriority && !b.parentId) -
           Number(!!a.highPriority && !a.parentId)
         : 0) ||
+      (due.get(a.id)! === due.get(b.id)!
+        ? 0
+        : due.get(a.id)! - due.get(b.id)!) ||
       a.createdAt.localeCompare(b.createdAt) ||
       a.id.localeCompare(b.id),
   );
 }
-export function visibleRoots(tasks: Task[], now: number) {
+export function visibleRoots(tasks: Task[], now: number, timezone?: string) {
   return sortTasks(
     tasks.filter(
       (t) =>
@@ -56,6 +72,7 @@ export function visibleRoots(tasks: Task[], now: number) {
         !t.deletedAt &&
         (!t.completedAt || now < Date.parse(t.completedAt) + TASK_RETENTION_MS),
     ),
+    timezone,
   );
 }
 
@@ -105,6 +122,7 @@ export function applyTaskCommand(
     task = {
       estimatedMinutes: command.estimatedMinutes ?? null,
       highPriority: command.highPriority ?? false,
+      deadline: command.deadline ?? null,
       id: command.taskId,
       userId,
       title,
@@ -129,12 +147,17 @@ export function applyTaskCommand(
       if (!childrenOf(tasks, task.id).length)
         transition(task, !!command.completed);
     } else if (command.action === "options") {
-      if (!("estimatedMinutes" in command) && !("highPriority" in command))
+      if (
+        !("estimatedMinutes" in command) &&
+        !("highPriority" in command) &&
+        !("deadline" in command)
+      )
         throw new Error("Choose a task option to update.");
       validateTaskOptions(command, task.parentId);
       if ("estimatedMinutes" in command)
         task.estimatedMinutes = command.estimatedMinutes;
       if ("highPriority" in command) task.highPriority = command.highPriority;
+      if ("deadline" in command) task.deadline = command.deadline;
       touch(task);
     } else if (command.action === "delete") {
       task.deletedAt = command.at;
