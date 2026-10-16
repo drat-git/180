@@ -88,7 +88,7 @@ export function Login({
         </h1>
         <p>
           {recovery
-            ? "Set a password for your private account."
+            ? "Set a password for your account."
             : reset
               ? "We’ll send a link to reset your password."
               : setup

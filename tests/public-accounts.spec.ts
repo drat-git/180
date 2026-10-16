@@ -203,6 +203,18 @@ for (const title of ["Everyday", "Student", "Work & projects"]) {
       page.getByLabel("Daily checklist progress", { exact: true }),
     ).toHaveText("0/6 checks complete");
     expect(backend.posts).toHaveLength(1);
+    await page
+      .getByRole("button", { name: "Account and app information" })
+      .click();
+    const account = page.getByRole("dialog", {
+      name: "Your space",
+      exact: true,
+    });
+    await expect(account).toContainText("Day 1: Thursday, October 15, 2026");
+    await expect(account).not.toContainText("October 9");
+    await account
+      .getByRole("button", { name: "Close dialog", exact: true })
+      .click();
     await page.getByRole("button", { name: "To-do", exact: true }).click();
     await expect(page.locator(".task-row")).toHaveCount(3);
     await page.getByRole("button", { name: "Anti-rot", exact: true }).click();

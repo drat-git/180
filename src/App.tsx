@@ -400,7 +400,7 @@ function CheckInApp({
           {today < mode.startDate ? (
             <section className="before-start">
               <span className="eyebrow">A NEW CHAPTER</span>
-              <h1>Your Day 1 begins October 9.</h1>
+              <h1>Your Day 1 begins {dateLabel(mode.startDate)}.</h1>
               <p>The first checklist opens at 2 AM in your local timezone.</p>
             </section>
           ) : (
@@ -541,7 +541,7 @@ function CheckInApp({
         <Modal title="Your space" onClose={() => setSettings(false)}>
           <p>
             {preview
-              ? "You’re using the local preview. Your preview entries are separate from your private account."
+              ? "You’re using the local preview. Your preview entries are separate from your account."
               : email}
           </p>
           <section className="settings-section">
@@ -585,7 +585,8 @@ function CheckInApp({
                 </>
               ) : (
                 <>
-                  Day 1: October 9, 2026
+                  Day 1: {dateLabel(mode.startDate)},{" "}
+                  {mode.startDate.slice(0, 4)}
                   <br />
                   Day boundary: 2 AM · device local time
                   <br />
