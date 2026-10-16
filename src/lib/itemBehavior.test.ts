@@ -18,7 +18,7 @@ describe("live behavior explanations", () => {
       { op: "equals", field: "value", value: true },
       true,
       null,
-      "you check the box",
+      "you answer Yes",
     ],
     [
       "boolean",

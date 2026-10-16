@@ -31,6 +31,9 @@ import {
   editorItem,
   duplicateEditorItem,
   normalizeEditorItem,
+  originalMainInput,
+  mainInputError,
+  newMainInputError,
   summarizeItem,
   summarizeSchedule,
 } from "../lib/editorPresentation";
@@ -280,6 +283,10 @@ export function CustomizationEditor({
       setError("Review the recovered settings before choosing Done.");
       return false;
     }
+    if (form.kind !== "block" && !originalMainInput(form.value.kind)) {
+      setError(mainInputError(form.value));
+      return false;
+    }
     const candidate = candidateFor(form);
     const errors = validateConfiguration(candidate);
     if (errors.length) {
@@ -397,6 +404,11 @@ export function CustomizationEditor({
     relevance,
   );
   async function publish(date: string) {
+    const inputError = newMainInputError(configuration, draft);
+    if (inputError) {
+      setError(inputError);
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -540,7 +552,7 @@ export function CustomizationEditor({
   return (
     <>
       <EditorWorkspace
-        title="Customize checklist"
+        title="Edit Daily Checklist"
         subtitle={draftError ? "Draft could not be saved" : "Draft"}
         sidebar={sidebar}
         showSidebar={screen === "navigation"}
@@ -963,7 +975,18 @@ export function CustomizationEditor({
             )}
             blocks={blocks}
             lists={draft.lists.filter((list) => !list.deleted)}
-            onChange={(value) => setForm({ ...form, value })}
+            onChange={(value) => {
+              const beforeKey = previewKey(form.value),
+                afterKey = previewKey(value);
+              if (beforeKey !== afterKey)
+                setPreviewAnswers((current) => {
+                  const next = { ...current };
+                  delete next[beforeKey];
+                  delete next[afterKey];
+                  return next;
+                });
+              setForm({ ...form, value });
+            }}
           />
         )}
         {screen === "preview" && (

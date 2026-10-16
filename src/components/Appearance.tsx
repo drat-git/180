@@ -1,4 +1,4 @@
-import { Check, Moon, Sun } from "lucide-react";
+import { Check, ChevronDown, Moon, Sun } from "lucide-react";
 import { useAppearance } from "../lib/theme";
 
 const palettes = {
@@ -30,11 +30,15 @@ const palettes = {
 export function Appearance({ preview = false }: { preview?: boolean }) {
   const { appearance, setAppearance, error } = useAppearance(preview);
   return (
-    <section
+    <details
       className="settings-section appearance-settings"
       aria-labelledby="appearance-title"
     >
-      <h3 id="appearance-title">Appearance</h3>
+      <summary>
+        <h3 id="appearance-title">
+          Appearance <ChevronDown size={16} aria-hidden="true" />
+        </h3>
+      </summary>
       <fieldset className="appearance-group">
         <legend>Mode</legend>
         <div className="appearance-options">
@@ -98,6 +102,6 @@ export function Appearance({ preview = false }: { preview?: boolean }) {
           {error}
         </p>
       )}
-    </section>
+    </details>
   );
 }

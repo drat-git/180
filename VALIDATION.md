@@ -4,6 +4,13 @@
 
 This is a dated record of implementation checks. Earlier sections describe the app at the time of each check; they are not the current feature list or a guarantee of checks on every revision. Current screenshots are in [`docs/images`](docs/images); `artifacts/` contains earlier visual checks.
 
+## Original checklist input controls — October 15, 2026
+
+- Restricted new main questions to Yes/No, time of day, time spent and linked To-do work. Notes, counters, choices and notes for each count remain extra questions. The creator, type selector and unfinished-draft validation enforce that distinction. Earlier definitions remain readable so history is retained.
+- Earlier starter checkbox definitions now render the existing Yes/No buttons and use matching editor summaries/explanations. Their definitions, saved values, generations and completion rules are retained. Duplicating one creates a Yes/No item.
+- **56 focused helper/component tests passed**, along with the production build and **14 desktop/phone browser workflows**. Checks cover supported creation controls, follow-up editing, saved starter booleans, cleared answers, retained previous answer versions, preview isolation, duplicate/move/reorder, recovery and live explanations. Switching an unfinished input schema clears its incompatible preview examples, including when switching back.
+- These changes are local. No database migration, production configuration update or real-account signup test was performed for this change.
+
 ## Public accounts and starter setups — October 15, 2026
 
 - Added per-account creation-day anchors, frozen initial definitions, an onboarding gate, four starters, selection recovery, and idempotent atomic setup. Email/password signup has no owner-email restriction; recovery UI stays disabled pending email delivery. The original owner retains the October 9 anchor and legacy cutovers; the demo retains its own samples and clock.

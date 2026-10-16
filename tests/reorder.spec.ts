@@ -10,12 +10,12 @@ async function openEditor(page: Page, lists = false) {
     .click();
   await page
     .getByRole("button", {
-      name: lists ? "Manage To-do lists" : "Customize checklist",
+      name: lists ? "Edit To-Do lists" : "Edit Daily Checklist",
       exact: true,
     })
     .click();
   return page.getByRole("dialog", {
-    name: lists ? "Manage To-do lists" : "Customize checklist",
+    name: lists ? "Edit To-Do lists" : "Edit Daily Checklist",
     exact: true,
   });
 }
@@ -71,9 +71,9 @@ async function newBlock(editor: Locator, title: string) {
     .fill(title);
   await editor.getByRole("button", { name: "Done", exact: true }).click();
 }
-async function addCheckbox(editor: Locator, question: string) {
+async function addCheck(editor: Locator, question: string) {
   await editor.getByRole("button", { name: "Add item", exact: true }).click();
-  await editor.getByRole("button", { name: /^Checkbox(?:\s|$)/ }).click();
+  await editor.getByRole("button", { name: /^Yes \/ No(?:\s|$)/ }).click();
   await editor
     .getByRole("textbox", { name: "Question", exact: true })
     .fill(question);
@@ -86,7 +86,7 @@ test("hold handles reorder compact item rows, highlight the moving row, and canc
 }, info) => {
   const editor = await openEditor(page);
   await newBlock(editor, "Practice");
-  for (const name of ["Read", "Write"]) await addCheckbox(editor, name);
+  for (const name of ["Read", "Write"]) await addCheck(editor, name);
   const items = editor.locator("[data-reorder-card=item]");
   const titles = items.getByRole("button", { name: /^Edit / });
   const write = editor.getByRole("button", {
@@ -191,10 +191,10 @@ test("block and To-do list handles support keyboard pickup, drop, cancel and per
     .getByRole("button", { name: "Account and app information" })
     .click();
   await page
-    .getByRole("button", { name: "Manage To-do lists", exact: true })
+    .getByRole("button", { name: "Edit To-Do lists", exact: true })
     .click();
   editor = page.getByRole("dialog", {
-    name: "Manage To-do lists",
+    name: "Edit To-Do lists",
     exact: true,
   });
   const listCards = editor.locator("[data-reorder-card=list]");

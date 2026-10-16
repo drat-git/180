@@ -18,16 +18,6 @@ export const ITEM_TYPES: {
     description: "A question with two answers",
   },
   {
-    kind: "checkbox",
-    label: "Checkbox",
-    description: "A simple check when done",
-  },
-  {
-    kind: "number",
-    label: "Number / counter",
-    description: "Track a count or amount",
-  },
-  {
     kind: "time",
     label: "Time of day",
     description: "For wake-up times and similar goals",
@@ -37,12 +27,6 @@ export const ITEM_TYPES: {
     label: "Time spent",
     description: "An amount of hours and minutes",
   },
-  { kind: "text", label: "Text", description: "Write an answer" },
-  {
-    kind: "choice",
-    label: "Choose one",
-    description: "Pick an answer from your options",
-  },
   {
     kind: "tasks",
     label: "To-do list",
@@ -51,7 +35,35 @@ export const ITEM_TYPES: {
 ];
 
 export function itemKindLabel(kind: ItemKind): string {
-  return ITEM_TYPES.find((type) => type.kind === kind)?.label ?? kind;
+  if (kind === "checkbox") return "Yes / No";
+  const previous = {
+    number: "Number / counter",
+    text: "Text",
+    choice: "Choose one",
+  };
+  return (
+    ITEM_TYPES.find((type) => type.kind === kind)?.label ??
+    previous[kind as keyof typeof previous] ??
+    kind
+  );
+}
+export function originalMainInput(kind: ItemKind): boolean {
+  return kind === "checkbox" || ITEM_TYPES.some((type) => type.kind === kind);
+}
+export function mainInputError(item: ChecklistItem): string {
+  return `${item.label || "This question"}: choose Yes / No, Time of day, Time spent, or To-do list. Put notes, counters and choices in Extra questions.`;
+}
+export function newMainInputError(
+  before: Configuration,
+  after: Configuration,
+): string | undefined {
+  const unsupported = after.items.find(
+    (item) =>
+      !item.deleted &&
+      !originalMainInput(item.kind) &&
+      before.items.find((old) => old.id === item.id)?.kind !== item.kind,
+  );
+  return unsupported ? mainInputError(unsupported) : undefined;
 }
 export function defaultEditorRule(kind: ItemKind): Rule {
   if (kind === "boolean" || kind === "checkbox" || kind === "tasks")
@@ -117,7 +129,8 @@ export function duplicateEditorItem(item: ChecklistItem): ChecklistItem {
     legacyKey: undefined,
     inputId: undefined,
     listId: undefined,
-    kind: item.kind === "tasks" ? "boolean" : item.kind,
+    kind:
+      item.kind === "tasks" || item.kind === "checkbox" ? "boolean" : item.kind,
     followups: next.followups.map((field) => ({
       ...field,
       preferenceKey: undefined,
@@ -218,7 +231,7 @@ export function summarizeRule(rule: Rule, item: ChecklistItem): string {
       return rule.value ? "Item is complete" : "Item is incomplete";
     case "equals": {
       if (rule.field === "value" && typeof rule.value === "boolean")
-        return `${item.kind === "checkbox" ? (rule.value ? "Checked" : "Unchecked") : rule.value ? "Yes" : "No"} earns a check`;
+        return `${rule.value ? "Yes" : "No"} earns a check`;
       const option = (field?.options ?? item.options)?.find(
         (entry) => entry.id === rule.value,
       );

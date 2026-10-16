@@ -203,6 +203,19 @@ for (const title of ["Everyday", "Student", "Work & projects"]) {
       page.getByLabel("Daily checklist progress", { exact: true }),
     ).toHaveText("0/6 checks complete");
     expect(backend.posts).toHaveLength(1);
+    await expect(
+      page.getByRole("checkbox", { name: "Moved my body", exact: true }),
+    ).toHaveCount(0);
+    const move = page.getByRole("group", {
+      name: "Moved my body",
+      exact: true,
+    });
+    await expect(
+      move.getByRole("button", { name: "Yes", exact: true }),
+    ).toBeVisible();
+    await expect(
+      move.getByRole("button", { name: "No", exact: true }),
+    ).toBeVisible();
     await page
       .getByRole("button", { name: "Account and app information" })
       .click();
@@ -322,6 +335,6 @@ test("blank setup retains the account anchor after delayed onboarding and expose
   ).toBeVisible();
   await page.getByRole("button", { name: "Create your checklist" }).click();
   await expect(
-    page.getByRole("dialog", { name: "Customize checklist", exact: true }),
+    page.getByRole("dialog", { name: "Edit Daily Checklist", exact: true }),
   ).toBeVisible();
 });

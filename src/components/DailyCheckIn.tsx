@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { LockKeyhole } from "lucide-react";
+import { LockKeyhole, Pencil } from "lucide-react";
 import { db } from "../lib/db";
 import { repository } from "../lib/repository";
 import { emptyData, type EntryPatch } from "../lib/model";
@@ -306,6 +306,17 @@ export function DailyCheckIn({
           <section className="checkin-card">
             <div className="section-heading">
               <h2>Daily checklist</h2>
+              {onCustomize && (
+                <button
+                  type="button"
+                  className="icon-button heading-edit-button"
+                  aria-label="Edit daily checklist"
+                  title="Edit Daily Checklist"
+                  onClick={onCustomize}
+                >
+                  <Pencil size={16} aria-hidden="true" />
+                </button>
+              )}
             </div>
             {!configuration.items.some((item) => !item.deleted) && (
               <div className="onboarding-empty">

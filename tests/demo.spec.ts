@@ -543,6 +543,7 @@ test("demo theme, reset and uploaded photos cannot alter the private app", async
   await page
     .getByRole("button", { name: "Account and app information" })
     .click();
+  await page.locator(".appearance-settings > summary").click();
   await page.getByRole("button", { name: "Light", exact: true }).click();
   expect(
     await page.evaluate(() => localStorage.getItem("180:theme")),

@@ -545,15 +545,15 @@ function CheckInApp({
               : email}
           </p>
           <section className="settings-section">
-            <h3>Your checklist</h3>
-            <div className="dialog-actions">
+            <h3>Edit your lists</h3>
+            <div className="dialog-actions settings-list-actions">
               <button
                 onClick={() => {
                   setSettings(false);
                   setCustomizing("checklist");
                 }}
               >
-                Customize checklist
+                Edit Daily Checklist
               </button>
               <button
                 onClick={() => {
@@ -561,7 +561,7 @@ function CheckInApp({
                   setCustomizing("lists");
                 }}
               >
-                Manage To-do lists
+                Edit To-Do lists
               </button>
             </div>
           </section>

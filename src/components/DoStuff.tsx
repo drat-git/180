@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { Plus, Clock3, Flag, CalendarClock } from "lucide-react";
+import { Plus, Clock3, Flag, CalendarClock, Pencil } from "lucide-react";
 import type { Task, TaskOptions } from "../lib/model";
 import { repository } from "../lib/repository";
 import { childrenOf, sortTasks, formatDuration } from "../lib/tasks";
@@ -290,7 +290,20 @@ export function DoStuff({
   return (
     <DisplayPreferencesProvider userId={userId}>
       <section className="do-stuff-heading">
-        <h1>To-do</h1>
+        <div className="do-stuff-title-row">
+          <h1>To-do</h1>
+          {onManage && (
+            <button
+              type="button"
+              className="icon-button heading-edit-button"
+              aria-label="Edit To-Do lists"
+              title="Edit To-Do lists"
+              onClick={onManage}
+            >
+              <Pencil size={16} aria-hidden="true" />
+            </button>
+          )}
+        </div>
         <p>
           “Every action you take is a vote for the type of person you wish to
           become.” - James Clear

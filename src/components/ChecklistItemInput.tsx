@@ -216,7 +216,12 @@ export function ChecklistItemInput({
   function field(id: string, next: FollowupValue) {
     commit({ ...answer, fields: { ...answer.fields, [id]: next } });
   }
-  const binary = item.kind === "boolean" || item.kind === "tasks";
+  // Retain the original boolean values/generations in earlier starter definitions.
+  // The retired checkbox type uses the same Yes/No control as existing checks.
+  const binary =
+    item.kind === "boolean" ||
+    item.kind === "checkbox" ||
+    item.kind === "tasks";
   const duration = typeof answer.value === "number" ? answer.value : null;
   return (
     <div
@@ -235,15 +240,6 @@ export function ChecklistItemInput({
             value={typeof answer.value === "boolean" ? answer.value : null}
             completed={complete}
             onChange={(next) => value(answer.value === next ? null : next)}
-          />
-        )}
-        {item.kind === "checkbox" && (
-          <input
-            id={inputId}
-            type="checkbox"
-            checked={answer.value === true}
-            aria-label={label}
-            onChange={(event) => value(event.target.checked)}
           />
         )}
         {item.kind === "number" && (

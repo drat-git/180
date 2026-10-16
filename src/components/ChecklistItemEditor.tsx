@@ -13,6 +13,7 @@ import {
   defaultEditorRule,
   ITEM_TYPES,
   itemKindLabel,
+  originalMainInput,
   summarizeRule,
 } from "../lib/editorPresentation";
 import { ChoicesEditor, Field, ScheduleEditor, Toggle } from "./EditorFields";
@@ -412,7 +413,7 @@ function SimpleCompletion({
 }) {
   const rule = item.completion;
   if (
-    item.kind === "boolean" &&
+    (item.kind === "boolean" || item.kind === "checkbox") &&
     rule.op === "equals" &&
     rule.field === "value" &&
     typeof rule.value === "boolean"
@@ -431,7 +432,7 @@ function SimpleCompletion({
       </Field>
     );
   if (
-    (item.kind === "checkbox" || item.kind === "tasks") &&
+    item.kind === "tasks" &&
     rule.op === "equals" &&
     rule.field === "value" &&
     rule.value === true
@@ -439,7 +440,7 @@ function SimpleCompletion({
     return (
       <Field label="Earn a check when">
         <span className="editor-static-value">
-          {item.kind === "tasks" ? "Worked on the connected list" : "Checked"}
+          Worked on the connected list
         </span>
       </Field>
     );
@@ -889,7 +890,7 @@ export function ChecklistItemEditor({
         {!fixedConnection && (
           <Field label="Answer type">
             <select
-              value={item.kind}
+              value={item.kind === "checkbox" ? "boolean" : item.kind}
               onChange={(event) => {
                 const kind = event.target.value as ItemKind;
                 onChange({
@@ -903,6 +904,11 @@ export function ChecklistItemEditor({
                 });
               }}
             >
+              {!originalMainInput(item.kind) && (
+                <option value={item.kind} disabled>
+                  {itemKindLabel(item.kind)} (previous type)
+                </option>
+              )}
               {ITEM_TYPES.map(({ kind, label }) => (
                 <option key={kind} value={kind}>
                   {label}
@@ -910,6 +916,12 @@ export function ChecklistItemEditor({
               ))}
             </select>
           </Field>
+        )}
+        {!originalMainInput(item.kind) && (
+          <p className="editor-notice editor-field-wide">
+            Choose a supported main answer type. Notes, counters and choices
+            belong in Extra questions; previous answers remain in history.
+          </p>
         )}
         {item.kind === "choice" && (
           <div className="editor-field-wide">

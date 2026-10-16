@@ -534,7 +534,7 @@ export function ManageTodoLists({
 
   return (
     <EditorWorkspace
-      title="Manage To-do lists"
+      title="Edit To-Do lists"
       subtitle={form ? undefined : "Make room for the things you want to do."}
       breadcrumb={breadcrumb}
       onBack={form ? handleBack : undefined}

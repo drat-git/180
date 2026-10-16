@@ -141,7 +141,7 @@ it("keeps new blocks and items in working forms until Done and drops canceled it
     "true",
   );
   await user.click(screen.getByRole("button", { name: "Add item" }));
-  await user.click(screen.getByRole("button", { name: /^Number \/ counter/ }));
+  await user.click(screen.getByRole("button", { name: /^Yes \/ No/ }));
   fireEvent.change(screen.getByRole("textbox", { name: "Question" }), {
     target: { value: "Pages read" },
   });
@@ -153,7 +153,7 @@ it("keeps new blocks and items in working forms until Done and drops canceled it
   await user.click(screen.getByRole("button", { name: "Cancel" }));
   expect(screen.queryByRole("button", { name: "Edit Pages read" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "Add item" }));
-  await user.click(screen.getByRole("button", { name: /^Number \/ counter/ }));
+  await user.click(screen.getByRole("button", { name: /^Yes \/ No/ }));
   fireEvent.change(screen.getByRole("textbox", { name: "Question" }), {
     target: { value: "Pages read" },
   });
@@ -163,7 +163,7 @@ it("keeps new blocks and items in working forms until Done and drops canceled it
   ).toBeInTheDocument();
   expect(draft.mock.lastCall?.[0].items).toEqual(
     expect.arrayContaining([
-      expect.objectContaining({ label: "Pages read", kind: "number" }),
+      expect.objectContaining({ label: "Pages read", kind: "boolean" }),
     ]),
   );
 });

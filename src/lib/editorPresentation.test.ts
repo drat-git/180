@@ -75,3 +75,31 @@ describe("editor presentation and identities", () => {
     ).toBe("Mon, Wed, Fri from 2026-10-15");
   });
 });
+
+it("offers only the original main controls and blocks retired types from new drafts", async () => {
+  const { ITEM_TYPES, newMainInputError } =
+    await import("./editorPresentation");
+  expect(ITEM_TYPES.map((type) => type.kind)).toEqual([
+    "boolean",
+    "time",
+    "duration",
+    "tasks",
+  ]);
+  const before = {
+    blocks: [{ id: "general", title: "General", icon: "star", order: 0 }],
+    items: [],
+    lists: [],
+  };
+  for (const kind of ["number", "text", "choice"] as const) {
+    const item = { ...editorItem(kind, "general", 0), label: "Retired" };
+    expect(newMainInputError(before, { ...before, items: [item] })).toContain(
+      "Extra questions",
+    );
+    expect(
+      newMainInputError(
+        { ...before, items: [item] },
+        { ...before, items: [{ ...item, label: "Retained" }] },
+      ),
+    ).toBeUndefined();
+  }
+});

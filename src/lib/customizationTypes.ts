@@ -1,6 +1,7 @@
 import type { TaskSelection } from "./model";
 
 export type ItemKind =
+  // Read compatibility for existing definitions; displayed as Yes/No, never offered as a new type.
   | "checkbox"
   | "boolean"
   | "number"

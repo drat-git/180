@@ -82,7 +82,7 @@ This helper checks tasks, options, deadlines, automatic daily work, food, Creati
 
 ## Customization development
 
-Use **Your space → Customize checklist** or **Manage To-do lists** in either account or demo mode. Checklist saves apply today or the next logical day; list edits apply immediately. The preview uses the same evaluator as the daily page and calendar, and changing its sample answers does not save daily records.
+Use **Your space → Edit Daily Checklist** or **Edit To-Do lists** in either account or demo mode. Checklist saves apply today or the next logical day; list edits apply immediately. The preview uses the same evaluator as the daily page and calendar, and changing its sample answers does not save daily records.
 
 Preserve stable IDs and original operation IDs when changing these workflows. Increment an item’s answer generation for an incompatible input or list-binding change; retain older answers. Test a scheduled tomorrow change followed by an unrelated today edit, stale editors on two clients, manual plus automatic task work with undo, transaction failure/retry, and demo reset. A configuration conflict must retain the draft and require explicit review before retrying against newer definitions.
 

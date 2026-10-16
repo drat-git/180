@@ -14,7 +14,7 @@ Open the [live app](https://180-vlfh.vercel.app) and choose **Try the demo mode*
 
 - Browse two populated sample days using the arrows or **Calendar**.
 - Answer the daily checklist, add a task or subtask, and try an **Anti-rot** activity.
-- Open **Your space → Customize checklist** to build a block or question, preview its rules, and choose when to apply it.
+- Open **Your space → Edit Daily Checklist** to build a block or question, preview its rules, and choose when to apply it.
 - Change the appearance through the settings button, or try **Send demo notification** on a supported device—no account needed. Use **Reset demo** to restore the samples.
 
 The demo uses synthetic data and a fixed three-day timeline. Its edits stay in your browser and never enter an account. Email/password accounts have their own synced records and checklist, with Day 1 anchored to account creation.
@@ -23,7 +23,7 @@ The demo uses synthetic data and a fixed three-day timeline. Its edits stay in y
 
 | Area                     | What you can do                                                                                                                                                                                   |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Daily check-ins**      | Create and organize blocks and questions with checkboxes, Yes/No, numbers, times, durations, text, choices, and linked tasks. Add schedules, notes, counters, and conditional follow-ups.         |
+| **Daily check-ins**      | Create and organize blocks and questions with Yes/No, times, durations, and linked tasks. Add schedules and extra questions for notes, counters, choices, and notes for each count.               |
 | **To-do lists**          | Create, rename, order, and archive lists. Plan tasks with subtasks, priority, estimates, and due dates/times; connect a list to a daily “Worked on…” question.                                    |
 | **Interactive calendar** | Browse completion-colored dates, category totals, and **Things you did**; open daily records or preview future task deadlines. Historical definitions, titles, and relationships remain readable. |
 | **Anti-rot**             | Keep reusable ideas and one-time activities as alternatives to scrolling. Log what you did and revisit it in past-day recaps.                                                                     |
@@ -32,11 +32,11 @@ The demo uses synthetic data and a fixed three-day timeline. Its edits stay in y
 
 ## Make it your own
 
-In **Your space → Customize checklist**, create, edit, reorder, duplicate, or archive blocks and items. Configure weekday and date schedules, completion thresholds, and conditions combined with **all**, **any**, or **not**. Follow-ups can request a note, count, choice, or a description for each occurrence. Every applicable item contributes one check; its follow-ups determine completion without adding extra checks.
+In **Your space → Edit Daily Checklist**, create, edit, reorder, duplicate, or archive blocks and items. Configure weekday and date schedules, completion thresholds, and conditions combined with **all**, **any**, or **not**. Follow-ups can request a note, count, choice, or a description for each occurrence. Every applicable item contributes one check; its follow-ups determine completion without adding extra checks.
 
 The editor previews the result before you save. Apply checklist changes **today** or **the next logical day**; earlier days retain their definitions and scores. Incompatible input changes start a new answer generation while preserving the old answers.
 
-**Manage To-do lists** applies list changes immediately. A list can have one linked daily question, shown when relevant work exists or always on its scheduled days. Completing a task records work automatically; manual selections remain independent. List management and dated checklist connections work in accounts and the isolated demo. Tasks stay in their original list.
+**Edit To-Do lists** applies list changes immediately. A list can have one linked daily question, shown when relevant work exists or always on its scheduled days. Completing a task records work automatically; manual selections remain independent. List management and dated checklist connections work in accounts and the isolated demo. Tasks stay in their original list.
 
 ## Your own starting point
 

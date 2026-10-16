@@ -92,15 +92,15 @@ export function explainItemBehavior(
         return `it is not the case that (${predicate(rule.rule, visibility)})`;
       case "not-empty":
         return rule.field === "value"
-          ? item.kind === "tasks" || item.kind === "boolean"
+          ? item.kind === "tasks" ||
+            item.kind === "boolean" ||
+            item.kind === "checkbox"
             ? "you answer Yes or No"
-            : item.kind === "checkbox"
-              ? "you explicitly check or uncheck the box"
-              : item.kind === "choice"
-                ? "you choose an answer"
-                : item.kind === "text"
-                  ? "you provide a nonblank answer"
-                  : "you provide an answer"
+            : item.kind === "choice"
+              ? "you choose an answer"
+              : item.kind === "text"
+                ? "you provide a nonblank answer"
+                : "you provide an answer"
           : rule.field === "selections"
             ? "you select at least one task"
             : `${fieldName(rule.field)} has ${fieldFor(rule.field)?.kind === "note" ? "nonblank text" : "an answer"}`;
@@ -112,15 +112,11 @@ export function explainItemBehavior(
             ? "your main answer is unanswered"
             : `${fieldName(rule.field)} is explicitly cleared`;
         if (typeof rule.value === "boolean") {
-          if (main && item.kind === "checkbox")
-            return rule.value
-              ? "you check the box"
-              : "you explicitly uncheck the box";
           if (main && item.kind === "tasks")
             return rule.value
               ? `you record work on ${listName}`
               : `you answer No to working on ${listName}`;
-          if (main && item.kind === "boolean")
+          if (main && (item.kind === "boolean" || item.kind === "checkbox"))
             return `you answer ${rule.value ? "Yes" : "No"}`;
           return `${fieldName(rule.field)} is ${rule.value ? "Yes" : "No"}`;
         }

@@ -1,11 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
 import { openPrivateApp } from "./private-fixture";
+import { expandAppearance } from "./appearance-fixture";
 
 const root = (page: Page) => page.locator("html");
 const space = (page: Page) =>
   page.getByRole("dialog", { name: "Your space", exact: true });
-const openSpace = (page: Page) =>
-  page.getByRole("button", { name: "Account and app information" }).click();
+async function openSpace(page: Page) {
+  await page
+    .getByRole("button", { name: "Account and app information" })
+    .click();
+  await expandAppearance(page);
+}
 const closeSpace = (page: Page) =>
   space(page)
     .getByRole("button", { name: "Close dialog", exact: true })

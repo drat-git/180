@@ -192,3 +192,32 @@ it("uses question wording in condition controls and supports notes for each coun
     countField: "value",
   });
 });
+
+it("offers no plain checkbox type and edits an existing checkbox definition with Yes/No controls", () => {
+  const item = {
+    ...editorItem("checkbox", "general", 0),
+    label: "Moved my body",
+  };
+  const change = vi.fn();
+  render(
+    <ChecklistItemEditor
+      item={item}
+      blocks={[]}
+      lists={[]}
+      onChange={change}
+    />,
+  );
+  expect(
+    screen.queryByRole("option", { name: "Checkbox" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByRole("combobox", { name: "Answer type" })).toHaveValue(
+    "boolean",
+  );
+  expect(
+    screen.getByRole("combobox", { name: "Earn a check when" }),
+  ).toHaveValue("true");
+  fireEvent.change(screen.getByRole("textbox", { name: "Question" }), {
+    target: { value: "Moved today" },
+  });
+  expect(change).toHaveBeenLastCalledWith({ ...item, label: "Moved today" });
+});

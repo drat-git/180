@@ -1283,10 +1283,21 @@ dialog::backdrop {
   color: var(--ink-344932);
   box-shadow: 0 1px 4px var(--surface-18231212);
 }
+.heading-edit-button {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.do-stuff-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
 .do-stuff-heading h1 {
   font-family: Georgia, serif;
   font-size: clamp(2.2rem, 5vw, 3.8rem);
-  margin: 0 0 8px;
+  margin: 0;
 }
 .do-stuff-heading p {
   color: var(--ink-72776a);
@@ -2988,6 +2999,40 @@ input[data-complete="false"]:focus {
   input[type="checkbox"] {
   background: var(--complete);
   border-color: var(--complete);
+}
+.settings-list-actions {
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 12px;
+}
+.settings-list-actions button {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  font-size: 13px;
+}
+.appearance-settings > summary {
+  cursor: pointer;
+  list-style: none;
+  border-radius: 6px;
+}
+.appearance-settings > summary::-webkit-details-marker {
+  display: none;
+}
+.appearance-settings > summary:focus-visible {
+  outline: 2px solid var(--app-focus);
+  outline-offset: 3px;
+}
+.appearance-settings > summary h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+  margin: 0;
+}
+.appearance-settings[open] > summary svg {
+  transform: rotate(180deg);
 }
 .appearance-group {
   border: 0;

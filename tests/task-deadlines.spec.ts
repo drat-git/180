@@ -346,6 +346,7 @@ test("overdue labels preserve priority styling, remain legible across app palett
         })
         .click();
       const settings = dialog(page, "Your space");
+      await settings.locator(".appearance-settings > summary").click();
       await settings
         .getByRole("group", { name: "Mode", exact: true })
         .getByRole("button", { name: mode, exact: true })

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { openPrivateApp } from "./private-fixture";
+import { expandAppearance } from "./appearance-fixture";
 
 async function open(page: Page) {
   await page.clock.install({ time: new Date("2026-10-14T12:00:00-04:00") });
@@ -96,6 +97,7 @@ test("creation offers both optional settings, cancel keeps the draft, and priori
   await page
     .getByRole("button", { name: "Account and app information" })
     .click();
+  await expandAppearance(page);
   await page
     .getByRole("dialog", { name: "Your space" })
     .getByRole("button", { name: "Dark", exact: true })

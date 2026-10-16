@@ -92,6 +92,7 @@ test("demo Life completions precede anti-rot activities in a headerless recap ac
         name: "Your space",
         exact: true,
       });
+      await settings.locator(".appearance-settings > summary").click();
       await settings
         .getByRole("group", { name: "Mode", exact: true })
         .getByRole("button", { name: mode, exact: true })
