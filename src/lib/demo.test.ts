@@ -18,6 +18,7 @@ import { emptyData, reasonVisible } from "./model";
 import { taskActivityVisibility } from "./taskActivityVisibility";
 import { visibleRoots } from "./tasks";
 import { antiRecap, visibleAntiItems } from "./antiRotting";
+import { editorRecoveryKey } from "./editorRecovery";
 
 const userId = "local-demo:tests";
 const database = new AppDatabase("180-demo-tests");
@@ -166,8 +167,26 @@ describe("demo storage boundary", () => {
     expect((await repo.getDay(userId, DEMO_TODAY))?.data.journalText).toBe(
       "Visitor edit",
     );
+    for (const account of [userId, "owner", "local-demo:other"]) {
+      for (const section of ["checklist", "lists"] as const) {
+        await database.meta.put({
+          key: editorRecoveryKey(account, section),
+          value: "unfinished form",
+        });
+      }
+    }
     const count = await database.tasks.count();
     await seedDemo(userId, true, database);
+    for (const section of ["checklist", "lists"] as const) {
+      expect(
+        await database.meta.get(editorRecoveryKey(userId, section)),
+      ).toBeUndefined();
+      for (const account of ["owner", "local-demo:other"]) {
+        expect(
+          await database.meta.get(editorRecoveryKey(account, section)),
+        ).toMatchObject({ value: "unfinished form" });
+      }
+    }
     expect(await database.tasks.get(example.id)).toMatchObject({
       estimatedMinutes: 45,
       highPriority: true,

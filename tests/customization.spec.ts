@@ -39,35 +39,81 @@ async function publish(
   await expect(editor).not.toBeVisible();
 }
 async function newBlock(editor: Locator, title: string) {
-  await editor.getByRole("button", { name: "Add block", exact: true }).click();
-  const block = editor.getByRole("region", {
-    name: "Edit New block",
-    exact: true,
-  });
-  await block
-    .getByRole("textbox", { name: "Block title", exact: true })
+  await editor
+    .getByRole("button", { name: "Add block", exact: true })
+    .first()
+    .click();
+  if (
+    !(await editor
+      .getByRole("textbox", { name: "Block name", exact: true })
+      .isVisible())
+  )
+    await editor
+      .getByRole("button", { name: "Edit block", exact: true })
+      .click();
+  await editor
+    .getByRole("textbox", { name: "Block name", exact: true })
     .fill(title);
-  return editor.getByRole("region", { name: `Edit ${title}`, exact: true });
+  await done(editor);
+  return editor;
 }
+async function selectBlock(editor: Locator, title: string) {
+  const button = editor
+    .getByRole("navigation", { name: "Checklist blocks", exact: true })
+    .getByRole("button", { name: `Open ${title}`, exact: true });
+  if (!(await button.isVisible()))
+    await editor.getByRole("button", { name: "Blocks", exact: true }).click();
+  await button.click();
+  await expect(
+    editor.getByRole("heading", { name: title, exact: true }),
+  ).toBeVisible();
+}
+async function done(editor: Locator) {
+  await editor.getByRole("button", { name: "Done", exact: true }).click();
+}
+async function advanced(editor: Locator) {
+  const summary = editor.getByText("Advanced", { exact: true });
+  if (!(await summary.evaluate((element) => element.closest("details")?.open)))
+    await summary.click();
+}
+async function editItem(editor: Locator, block: string, label: string) {
+  await selectBlock(editor, block);
+  await editor
+    .getByRole("button", { name: `Edit ${label}`, exact: true })
+    .click();
+  return editor;
+}
+async function actions(editor: Locator, label: string) {
+  await editor.getByLabel(`${label} actions`, { exact: true }).click();
+}
+const inputNames: Record<string, string> = {
+  boolean: "Yes / No",
+  checkbox: "Checkbox",
+  number: "Number / counter",
+  time: "Time of day",
+  duration: "Time spent",
+  text: "Text",
+  choice: "Choose one",
+  tasks: "To-do list",
+};
 async function newQuestion(
   block: Locator,
-  blockTitle: string,
+  _blockTitle: string,
   label: string,
   kind = "boolean",
 ) {
+  await block.getByRole("button", { name: "Add item", exact: true }).click();
   await block
-    .getByRole("button", { name: `Add item to ${blockTitle}`, exact: true })
+    .getByRole("button", {
+      name: new RegExp(
+        `^${inputNames[kind].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`,
+      ),
+    })
     .click();
-  const item = block.locator(".customization-item-list > details").last();
-  await item.locator(":scope > summary").click();
-  await item
-    .getByRole("textbox", { name: "Item label", exact: true })
+  await block
+    .getByRole("textbox", { name: "Question", exact: true })
     .fill(label);
-  if (kind !== "boolean")
-    await item
-      .getByRole("combobox", { name: "Input type", exact: true })
-      .selectOption(kind);
-  return item;
+  return block;
 }
 const nav = (page: Page, name: string) =>
   page
@@ -96,50 +142,45 @@ test("custom blocks use scheduled typed inputs, conditional notes, independent p
   await demo(page);
   let editor = await settings(page, "checklist");
   const block = await newBlock(editor, "Wellbeing");
+  await block.getByRole("button", { name: "Edit block", exact: true }).click();
   await block
     .getByRole("combobox", { name: "Block icon", exact: true })
     .selectOption("leaf");
+  await done(editor);
   const item = await newQuestion(
     block,
     "Wellbeing",
     "Glasses of water",
     "number",
   );
-  await item
-    .getByRole("spinbutton", { name: "Threshold", exact: true })
-    .fill("2");
+  await item.getByRole("spinbutton", { name: "Goal", exact: true }).fill("2");
+  await advanced(item);
   await item
     .getByRole("textbox", {
-      name: "Subtext / instructions (optional)",
+      name: "Subtext (optional)",
       exact: true,
     })
     .fill("A glass is about 250 ml.");
-  await item.getByText("Schedule", { exact: true }).click();
   const weekdays = item.getByRole("group", { name: "Appears on", exact: true });
   for (const day of ["Sun", "Mon", "Wed", "Thu", "Fri", "Sat"])
     await weekdays.getByRole("checkbox", { name: day, exact: true }).uncheck();
-  await item.getByText("Follow-up fields (0)", { exact: true }).click();
   await item.getByRole("button", { name: "Add note", exact: true }).click();
-  const followup = item
-    .locator(".customization-section")
-    .filter({
-      has: page.getByRole("textbox", { name: "Follow-up label", exact: true }),
-    })
-    .last();
+  const followup = item.locator(".editor-extra-form");
   await followup
-    .getByRole("textbox", { name: "Follow-up label", exact: true })
+    .getByRole("textbox", { name: "Extra question", exact: true })
     .fill("Extra context");
   await followup
-    .getByRole("combobox", { name: "Follow-up visibility rule", exact: true })
+    .getByRole("combobox", { name: "Show when", exact: true })
     .selectOption("compare");
   await followup
-    .getByRole("combobox", { name: "Threshold comparison", exact: true })
+    .getByRole("combobox", { name: "Comparison", exact: true })
     .selectOption("gt");
   await followup
     .getByRole("spinbutton", { name: "Threshold", exact: true })
     .fill("4");
-  const preview = editor.getByRole("complementary", {
-    name: "Checklist live preview",
+  await editor.getByRole("button", { name: "Preview", exact: true }).click();
+  const preview = editor.getByRole("region", {
+    name: "Checklist preview",
     exact: true,
   });
   await preview
@@ -153,8 +194,12 @@ test("custom blocks use scheduled typed inputs, conditional notes, independent p
   ).toBeVisible();
   await preview.getByLabel("Preview date", { exact: true }).fill("2026-10-14");
   await expect(
-    preview.getByText("Glasses of water", { exact: true }),
+    preview.getByRole("spinbutton", { name: "Glasses of water", exact: true }),
   ).not.toBeVisible();
+  await editor
+    .getByRole("button", { name: "Back to editor", exact: true })
+    .click();
+  await done(editor);
   await publish(editor);
   const daily = page.getByRole("region", { name: "Wellbeing", exact: true });
   await expect(
@@ -186,14 +231,11 @@ test("custom blocks use scheduled typed inputs, conditional notes, independent p
   await nav(page, "Show daily checklist").click();
 
   editor = await settings(page, "checklist");
-  const savedItem = editor
-    .getByRole("region", { name: "Edit Wellbeing", exact: true })
-    .locator(".customization-item-list > details")
-    .first();
-  await savedItem.locator(":scope > summary").click();
+  const savedItem = await editItem(editor, "Wellbeing", "Glasses of water");
   await savedItem
-    .getByRole("combobox", { name: "Input type", exact: true })
+    .getByRole("combobox", { name: "Answer type", exact: true })
     .selectOption("text");
+  await done(editor);
   await publish(editor);
   await expect(
     page.getByRole("textbox", { name: "Glasses of water", exact: true }),
@@ -231,15 +273,18 @@ test("tomorrow additions survive unrelated changes applied today in the private 
   let editor = await settings(page, "checklist");
   const block = await newBlock(editor, "Future routine");
   await newQuestion(block, "Future routine", "Practice piano");
+  await done(editor);
   await publish(editor, "Start next day");
   await expect(
     page.getByRole("region", { name: "Future routine", exact: true }),
   ).not.toBeVisible();
   editor = await settings(page, "checklist");
+  await selectBlock(editor, "General");
+  await editor.getByRole("button", { name: "Edit block", exact: true }).click();
   await editor
-    .getByRole("region", { name: "Edit General", exact: true })
-    .getByRole("textbox", { name: "Block title", exact: true })
+    .getByRole("textbox", { name: "Block name", exact: true })
     .fill("Morning routine");
+  await done(editor);
   await publish(editor);
   await expect(
     page.getByRole("region", { name: "Morning routine", exact: true }),
@@ -264,13 +309,27 @@ test("items can duplicate, move between blocks and reorder without reusing ident
   const editor = await settings(page, "checklist");
   const block = await newBlock(editor, "Practice");
   let item = await newQuestion(block, "Practice", "Read", "checkbox");
+  await done(editor);
+  await actions(editor, "Read");
   await item.getByRole("button", { name: "Duplicate", exact: true }).click();
-  const duplicate = block.locator(".customization-item-list > details").last();
-  await duplicate.locator(":scope > summary").click();
-  await duplicate
-    .getByRole("combobox", { name: "Block", exact: true })
+  await done(editor);
+  await actions(editor, "Read copy");
+  await editor
+    .getByRole("button", { name: "Move to block", exact: true })
+    .click();
+  const moveDialog = page.getByRole("dialog", {
+    name: "Move item",
+    exact: true,
+  });
+  await moveDialog
+    .getByRole("combobox", { name: "Destination block", exact: true })
     .selectOption("general");
+  await moveDialog
+    .getByRole("button", { name: "Move item", exact: true })
+    .click();
+  await selectBlock(editor, "Practice");
   item = await newQuestion(block, "Practice", "Write", "text");
+  await done(editor);
   const itemHandle = item.getByRole("button", {
     name: "Reorder Write",
     exact: true,
@@ -279,13 +338,18 @@ test("items can duplicate, move between blocks and reorder without reusing ident
   await page.keyboard.press("Space");
   await page.keyboard.press("ArrowUp");
   await page.keyboard.press("Space");
+  await block.getByRole("button", { name: "Edit block", exact: true }).click();
   await block
-    .getByRole("textbox", { name: "Block title", exact: true })
+    .getByRole("textbox", { name: "Block name", exact: true })
     .fill("Creativity");
-  const renamed = editor.getByRole("region", {
-    name: "Edit Creativity",
+  await done(editor);
+  const renamed = editor;
+  const blockHandle = renamed.getByRole("button", {
+    name: "Reorder Creativity",
     exact: true,
   });
+  if (!(await blockHandle.isVisible()))
+    await editor.getByRole("button", { name: "Blocks", exact: true }).click();
   await renamed
     .getByRole("button", { name: "Reorder Creativity", exact: true })
     .focus();
@@ -355,15 +419,20 @@ test("custom lists connect always-visible daily questions and preserve manual wo
     .getByRole("combobox", { name: "List icon", exact: true })
     .selectOption("dumbbell");
   await manager.getByRole("button", { name: "Save list", exact: true }).click();
-  const fitnessEditor = manager.locator("section").filter({
-    has: page.getByRole("heading", { name: "Fitness", exact: true }),
+  const fitnessEditor = manager.getByRole("region", {
+    name: "Fitness list",
+    exact: true,
   });
+  await fitnessEditor
+    .getByLabel("Actions for Fitness", { exact: true })
+    .click();
   await fitnessEditor
     .getByRole("button", { name: "Connect to daily checklist", exact: true })
     .click();
   await manager
     .getByRole("combobox", { name: "Question visibility", exact: true })
     .selectOption("always");
+  await done(manager);
   await manager
     .getByRole("button", { name: "Apply today", exact: true })
     .click();
@@ -421,20 +490,21 @@ test("custom lists connect always-visible daily questions and preserve manual wo
     "Stretch",
   );
   manager = await settings(page, "lists");
+  await manager
+    .getByRole("region", { name: "Fitness list", exact: true })
+    .getByLabel("Actions for Fitness", { exact: true })
+    .click();
   page.once("dialog", (dialog) => dialog.accept());
   await manager
-    .locator("section")
-    .filter({
-      has: page.getByRole("heading", { name: "Fitness", exact: true }),
-    })
-    .getByRole("button", { name: "Remove", exact: true })
+    .getByRole("button", { name: "Archive list", exact: true })
     .click();
-  await manager.getByText("Removed lists (1)", { exact: true }).click();
+  await manager.getByText("Archived lists (1)", { exact: true }).click();
+  page.once("dialog", (dialog) => dialog.accept());
   await manager
     .getByRole("button", { name: "Restore Fitness", exact: true })
     .click();
   await expect(
-    manager.getByRole("heading", { name: "Fitness", exact: true }),
+    manager.getByRole("button", { name: "Edit Fitness", exact: true }),
   ).toBeVisible();
   await manager.getByRole("button", { name: "Done", exact: true }).click();
   await nav(page, "To-do").click();
@@ -456,4 +526,367 @@ test("custom lists connect always-visible daily questions and preserve manual wo
   await expect(
     page.getByRole("region", { name: "School", exact: true }),
   ).toBeVisible();
+});
+
+test("focused edits support cancel, unfinished navigation, reload recovery and preview without saving answers", async ({
+  page,
+}) => {
+  await demo(page);
+  let editor = await settings(page, "checklist");
+  await newBlock(editor, "Focus");
+  await newQuestion(editor, "Focus", "Cancelled attempt", "checkbox");
+  await editor.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(
+    editor.getByRole("button", { name: "Edit Cancelled attempt", exact: true }),
+  ).toHaveCount(0);
+
+  await newQuestion(editor, "Focus", "Draft practice", "checkbox");
+  await expect(
+    editor.getByRole("textbox", { name: "Question", exact: true }),
+  ).toBeVisible();
+  await expect(
+    editor.getByRole("group", { name: "Appears on", exact: true }),
+  ).not.toBeVisible();
+  await editor.getByRole("button", { name: "Preview", exact: true }).click();
+  const preview = editor.getByRole("region", {
+    name: "Checklist preview",
+    exact: true,
+  });
+  await preview
+    .getByRole("checkbox", { name: "Draft practice", exact: true })
+    .check();
+  await editor
+    .getByRole("button", { name: "Back to editor", exact: true })
+    .click();
+
+  async function leaveForm() {
+    const general = editor
+      .getByRole("navigation", { name: "Checklist blocks", exact: true })
+      .getByRole("button", { name: "Open General", exact: true });
+    if (await general.isVisible()) await general.click();
+    else
+      await editor.getByRole("button", { name: "Focus", exact: true }).click();
+    return page.getByRole("alertdialog", {
+      name: "Unfinished item",
+      exact: true,
+    });
+  }
+  let unfinished = await leaveForm();
+  await unfinished
+    .getByRole("button", { name: "Keep editing", exact: true })
+    .click();
+  await expect(
+    editor.getByRole("textbox", { name: "Question", exact: true }),
+  ).toHaveValue("Draft practice");
+  await page.reload();
+  editor = await settings(page, "checklist");
+  await expect(editor.getByText(/^Recovered unfinished edit/)).toBeVisible();
+  await expect(
+    editor.getByRole("textbox", { name: "Question", exact: true }),
+  ).toHaveValue("Draft practice");
+  unfinished = await leaveForm();
+  await unfinished
+    .getByRole("button", { name: "Save to draft", exact: true })
+    .click();
+  await editItem(editor, "Focus", "Draft practice");
+  await editor
+    .getByRole("textbox", { name: "Question", exact: true })
+    .fill("Discarded change");
+  unfinished = await leaveForm();
+  await unfinished
+    .getByRole("button", { name: "Discard item edits", exact: true })
+    .click();
+  await selectBlock(editor, "Focus");
+  await expect(
+    editor.getByRole("button", { name: "Edit Draft practice", exact: true }),
+  ).toBeVisible();
+  await expect(
+    editor.getByRole("button", { name: "Edit Discarded change", exact: true }),
+  ).toHaveCount(0);
+  await publish(editor);
+  await expect(
+    page.getByRole("checkbox", { name: "Draft practice", exact: true }),
+  ).not.toBeChecked();
+});
+
+test("editing hierarchy fits every appearance palette on narrow and wide screens", async ({
+  page,
+}, info) => {
+  await demo(page);
+  const editor = await settings(page, "checklist");
+  await editItem(editor, "General", "Wake-up time");
+  for (const theme of ["dark", "light"]) {
+    for (const palette of ["classic", "monochrome", "blue-slate"]) {
+      await page.evaluate(
+        ({ theme, palette }) => {
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.dataset.appPalette = palette;
+          document.documentElement.dataset.antiPalette = "classic";
+          document.documentElement.dataset.completionPalette = "forest-rust";
+          document.documentElement.style.colorScheme = theme;
+        },
+        { theme, palette },
+      );
+      const measurements = await editor.evaluate((element) => {
+        const inputs = [
+          ...element.querySelectorAll<HTMLElement>("input,select,button"),
+        ].filter((control) => control.getClientRects().length);
+        const box = element.getBoundingClientRect();
+        return {
+          overflow: element.scrollWidth - element.clientWidth,
+          outside: inputs.some(
+            (control) => control.getBoundingClientRect().right > box.right + 2,
+          ),
+          heading: getComputedStyle(element.querySelector("h2")!).color,
+          surface: getComputedStyle(element).backgroundColor,
+        };
+      });
+      expect(measurements.overflow).toBeLessThanOrEqual(2);
+      expect(measurements.outside).toBe(false);
+      expect(measurements.heading).not.toBe(measurements.surface);
+      if (
+        (theme === "dark" && palette === "classic") ||
+        (theme === "light" && palette === "blue-slate")
+      )
+        await page.screenshot({
+          path: `/tmp/180-editor-${theme}-${palette}-${info.project.name}.png`,
+        });
+    }
+  }
+});
+
+test("stale recovered forms merge unrelated settings and require an explicit choice for conflicting fields", async ({
+  page,
+}) => {
+  await demo(page);
+  let currentLabel = "Wake-up time";
+  for (const [index, choice] of [
+    "Use latest settings",
+    "Keep my changes",
+  ].entries()) {
+    let editor = await settings(page, "checklist");
+    await editItem(editor, "General", currentLabel);
+    const localLabel = `My wake-up ${index + 1}`;
+    const sharedLabel = `Shared wake-up ${index + 1}`;
+    const helper = `My reminder ${index + 1}`;
+    await editor
+      .getByRole("textbox", { name: "Question", exact: true })
+      .fill(localLabel);
+    await advanced(editor);
+    await editor
+      .getByRole("textbox", { name: "Subtext (optional)", exact: true })
+      .fill(helper);
+
+    // Simulate a synced configuration arriving after this unfinished form was saved.
+    // Read the account-scoped recovery record rather than inventing item identities.
+    const readRecovery = () =>
+      page.evaluate(async () => {
+        const database = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open("180-private");
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        const key = `customization-editor:checklist:${sessionStorage.getItem("180:demo-session")}`;
+        const record = await new Promise<{ value: string } | undefined>(
+          (resolve, reject) => {
+            const request = database
+              .transaction("meta")
+              .objectStore("meta")
+              .get(key);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          },
+        );
+        database.close();
+        return record ? JSON.parse(record.value) : null;
+      });
+    await expect
+      .poll(async () => (await readRecovery())?.form?.value?.helper)
+      .toBe(helper);
+    await page.evaluate(
+      async ({ sharedLabel, threshold }) => {
+        const database = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open("180-private");
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        const userId = sessionStorage.getItem("180:demo-session")!;
+        const records = await new Promise<{ value: string }>(
+          (resolve, reject) => {
+            const request = database
+              .transaction("meta")
+              .objectStore("meta")
+              .get(`customization-editor:checklist:${userId}`);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          },
+        );
+        const form = JSON.parse(records.value).form;
+        const changes = await new Promise<
+          { sequence: number; userId: string }[]
+        >((resolve, reject) => {
+          const request = database
+            .transaction("configurations")
+            .objectStore("configurations")
+            .getAll();
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        const revision = Math.max(
+          0,
+          ...changes
+            .filter((change) => change.userId === userId)
+            .map((change) => change.sequence),
+        );
+        await new Promise<void>((resolve, reject) => {
+          const transaction = database.transaction(
+            "configurations",
+            "readwrite",
+          );
+          transaction.objectStore("configurations").put({
+            id: crypto.randomUUID(),
+            operationId: crypto.randomUUID(),
+            userId,
+            sequence: revision + 1,
+            baseRevision: revision,
+            revision: revision + 1,
+            effectiveDate: "2026-10-13",
+            createdAt: new Date().toISOString(),
+            patch: {
+              items: [
+                {
+                  id: form.value.id,
+                  label: sharedLabel,
+                  completion: {
+                    op: "compare",
+                    field: "value",
+                    operator: "lte",
+                    value: threshold,
+                  },
+                },
+              ],
+            },
+          });
+          transaction.oncomplete = () => resolve();
+          transaction.onerror = () => reject(transaction.error);
+        });
+        database.close();
+      },
+      { sharedLabel, threshold: 585 - index * 30 },
+    );
+    await page.reload();
+    editor = await settings(page, "checklist");
+    const conflict = editor.getByRole("alert", {
+      name: "Recovered edit conflicts",
+      exact: true,
+    });
+    await expect(conflict).toContainText("question");
+    await expect(
+      editor.getByRole("textbox", { name: "Question", exact: true }),
+    ).toHaveValue(localLabel);
+    await expect(editor.getByLabel("Goal time", { exact: true })).toHaveValue(
+      index ? "09:15" : "09:45",
+    );
+    await done(editor);
+    await expect(
+      editor
+        .getByRole("alert")
+        .filter({ hasText: "Review the recovered settings" }),
+    ).toBeVisible();
+    await conflict.getByRole("button", { name: choice, exact: true }).click();
+    currentLabel = index ? localLabel : sharedLabel;
+    await expect(
+      editor.getByRole("textbox", { name: "Question", exact: true }),
+    ).toHaveValue(currentLabel);
+    await advanced(editor);
+    await expect(
+      editor.getByRole("textbox", { name: "Subtext (optional)", exact: true }),
+    ).toHaveValue(helper);
+    await done(editor);
+    await publish(editor);
+    await expect(page.getByLabel(currentLabel, { exact: true })).toBeVisible();
+    await expect(page.getByText(helper, { exact: true })).toBeVisible();
+  }
+});
+
+test("preview examples start blank after repeated incompatible input and choice changes", async ({
+  page,
+}) => {
+  await demo(page);
+  const editor = await settings(page, "checklist");
+  await newBlock(editor, "Experiments");
+  await newQuestion(editor, "Experiments", "Flexible answer", "number");
+  const preview = editor.getByRole("region", {
+    name: "Checklist preview",
+    exact: true,
+  });
+  const progress = preview.getByLabel("Experiments checklist progress", {
+    exact: true,
+  });
+  const showPreview = () =>
+    editor.getByRole("button", { name: "Preview", exact: true }).click();
+  const back = () =>
+    editor.getByRole("button", { name: "Back to editor", exact: true }).click();
+  const changeType = (kind: string) =>
+    editor
+      .getByRole("combobox", { name: "Answer type", exact: true })
+      .selectOption(kind);
+
+  await showPreview();
+  await preview
+    .getByRole("spinbutton", { name: "Flexible answer", exact: true })
+    .fill("37");
+  await expect(progress).toHaveText("1/1 complete");
+  await back();
+  await changeType("text");
+  await showPreview();
+  await expect(
+    preview.getByRole("textbox", { name: "Flexible answer", exact: true }),
+  ).toHaveValue("");
+  await expect(progress).toHaveText("0/1 complete");
+  await preview
+    .getByRole("textbox", { name: "Flexible answer", exact: true })
+    .fill("A text example");
+  await back();
+  await changeType("duration");
+  await showPreview();
+  await expect(
+    preview.getByRole("spinbutton", {
+      name: "Flexible answer hours",
+      exact: true,
+    }),
+  ).toHaveValue("");
+  await expect(
+    preview.getByRole("spinbutton", {
+      name: "Flexible answer minutes",
+      exact: true,
+    }),
+  ).toHaveValue("");
+  await expect(progress).toHaveText("0/1 complete");
+  await preview
+    .getByRole("spinbutton", { name: "Flexible answer hours", exact: true })
+    .fill("1");
+  await back();
+  await changeType("choice");
+  await editor.getByRole("button", { name: "Add choice", exact: true }).click();
+  await showPreview();
+  await expect(preview.getByRole("radio", { checked: true })).toHaveCount(0);
+  await expect(progress).toHaveText("0/1 complete");
+  await preview.getByRole("radio", { name: "Choice 1", exact: true }).check();
+  await expect(progress).toHaveText("1/1 complete");
+  await back();
+  await editor
+    .getByRole("button", { name: "Remove Choice 2", exact: true })
+    .click();
+  await showPreview();
+  await expect(preview.getByRole("radio", { checked: true })).toHaveCount(0);
+  await expect(progress).toHaveText("0/1 complete");
+  await preview.getByRole("radio", { name: "Choice 1", exact: true }).check();
+  await back();
+  await changeType("checkbox");
+  await showPreview();
+  await expect(
+    preview.getByRole("checkbox", { name: "Flexible answer", exact: true }),
+  ).not.toBeChecked();
+  await expect(progress).toHaveText("0/1 complete");
 });

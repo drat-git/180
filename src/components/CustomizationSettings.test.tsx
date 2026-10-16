@@ -9,6 +9,8 @@ import { db } from "../lib/db";
 import { repository } from "../lib/repository";
 import { configurationFor } from "../lib/customizationStore";
 import { CustomizationSettings } from "./CustomizationSettings";
+import { editorRecoveryKey } from "../lib/editorRecovery";
+import { defaultConfiguration } from "../lib/customization";
 
 // Exercise the wrapper and real persistence while leaving detailed input behavior
 // to the editor tests and browser scenarios.
@@ -30,6 +32,12 @@ vi.mock("./CustomizationEditor", async () => {
       }
       return (
         <section aria-label="Checklist editor">
+          <output aria-label="Checklist recovery">
+            {JSON.stringify(props.recovery)}
+          </output>
+          <button onClick={() => props.onRecoveryChange?.(null)}>
+            Clear checklist recovery
+          </button>
           <output aria-label="Checklist draft">
             {JSON.stringify(props.initialDraft ?? props.configuration)}
           </output>
@@ -76,6 +84,9 @@ vi.mock("./CustomizationEditor", async () => {
       }
       return (
         <section aria-label="List manager">
+          <output aria-label="List recovery">
+            {JSON.stringify(props.recovery)}
+          </output>
           <ul aria-label="Lists under review">
             {lists.map((list) => (
               <li key={list.id}>{list.title}</li>
@@ -470,4 +481,82 @@ it("keeps a queued answer to an existing changed input version during mixed revi
       (item) => item.id === "wake",
     )?.generation,
   ).toBe(2);
+});
+
+it("loads the rendered editor's recovery and clears only that section after switching from lists", async () => {
+  const userId = `settings-owner-${++identity}`;
+  const configuration = defaultConfiguration(userId, today);
+  const wake = configuration.items.find((item) => item.id === "wake")!;
+  const checklistRecovery = {
+    section: "checklist",
+    baseRevision: 0,
+    selectionId: "general",
+    form: {
+      kind: "item",
+      before: wake,
+      value: { ...wake, label: "Recovered wake question" },
+      isNew: false,
+    },
+  };
+  const listRecovery = {
+    section: "lists",
+    baseRevision: 0,
+    drafts: [
+      {
+        kind: "list",
+        before: null,
+        value: {
+          id: "new-local-list",
+          title: "Keep this list draft",
+          icon: "book",
+          order: 3,
+        },
+        isNew: true,
+      },
+    ],
+  };
+  await db.meta.bulkPut([
+    {
+      key: editorRecoveryKey(userId, "checklist"),
+      value: JSON.stringify(checklistRecovery),
+    },
+    {
+      key: editorRecoveryKey(userId, "lists"),
+      value: JSON.stringify(listRecovery),
+    },
+    {
+      key: `customization-draft:${userId}`,
+      value: JSON.stringify({
+        patch: { blocks: [{ id: "body", title: "My health" }] },
+      }),
+    },
+  ]);
+  render(
+    <CustomizationSettings
+      userId={userId}
+      today={today}
+      kind="lists"
+      onClose={vi.fn()}
+    />,
+  );
+  expect(await screen.findByLabelText("List recovery")).toHaveTextContent(
+    "Keep this list draft",
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Review checklist draft" }),
+  );
+  expect(await screen.findByLabelText("Checklist recovery")).toHaveTextContent(
+    "Recovered wake question",
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Clear checklist recovery" }),
+  );
+  await waitFor(async () =>
+    expect(
+      await db.meta.get(editorRecoveryKey(userId, "checklist")),
+    ).toBeUndefined(),
+  );
+  expect(
+    JSON.parse((await db.meta.get(editorRecoveryKey(userId, "lists")))!.value),
+  ).toEqual(listRecovery);
 });

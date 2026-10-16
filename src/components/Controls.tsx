@@ -320,11 +320,13 @@ export function Modal({
   onClose,
   children,
   className,
+  role,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   className?: string;
+  role?: "dialog" | "alertdialog";
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -337,6 +339,7 @@ export function Modal({
       ref={ref}
       className={className}
       aria-label={title}
+      role={role}
       onCancel={(e) => {
         e.preventDefault();
         onClose();

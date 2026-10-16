@@ -300,6 +300,8 @@ export async function seedDemo(
       await table.where("userId").equals(userId).delete();
     await database.meta.delete(`customization-draft:${userId}`);
     await database.meta.delete(`customization-conflict:${userId}`);
+    await database.meta.delete(`customization-editor:checklist:${userId}`);
+    await database.meta.delete(`customization-editor:lists:${userId}`);
     const seed = createDemoSeed(userId);
     await database.entries.bulkPut(seed.entries);
     await database.tasks.bulkPut(seed.tasks);

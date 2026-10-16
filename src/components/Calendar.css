@@ -63,6 +63,9 @@
 .history-calendar .calendar-preview {
   margin-top: 16px;
 }
+.history-calendar .calendar-month {
+  padding-bottom: 12px;
+}
 .history-calendar h1,
 .history-calendar h2 {
   color: var(--calendar-ink);
@@ -254,14 +257,13 @@
 .history-calendar .calendar-legend-menu {
   border-top: 1px solid var(--calendar-line);
   margin-top: 20px;
-  padding-top: 6px;
   color: var(--calendar-legend-ink);
 }
 .history-calendar .calendar-legend-menu summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 44px;
+  min-height: 32px;
   cursor: pointer;
   list-style: none;
   font-size: 12px;
@@ -378,6 +380,9 @@
   .history-calendar .calendar-month,
   .history-calendar .calendar-preview {
     padding: 16px;
+  }
+  .history-calendar .calendar-month {
+    padding-bottom: 12px;
   }
   .history-calendar .calendar-work {
     grid-template-columns: repeat(2, minmax(0, 1fr));

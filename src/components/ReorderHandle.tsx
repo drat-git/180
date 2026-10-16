@@ -118,13 +118,17 @@ export function ReorderHandle({
           gesture.current = current;
           const tick = () => {
             if (gesture.current !== current || !current.active) return;
-            const dialog = card.closest("dialog");
-            if (dialog) {
-              const bounds = dialog.getBoundingClientRect();
+            const scrollContainer =
+              card.closest<HTMLElement>("[data-reorder-scroll]") ??
+              card.closest("dialog");
+            if (scrollContainer) {
+              const bounds = scrollContainer.getBoundingClientRect();
               const footer =
-                dialog
-                  .querySelector(".customization-save")
-                  ?.getBoundingClientRect().height ?? 0;
+                scrollContainer.tagName === "DIALOG"
+                  ? (scrollContainer
+                      .querySelector(".customization-save")
+                      ?.getBoundingClientRect().height ?? 0)
+                  : 0;
               const top = bounds.top + 48;
               const bottom = bounds.bottom - footer - 48;
               const scroll =
@@ -133,7 +137,7 @@ export function ReorderHandle({
                   : current.y > bottom
                     ? Math.min(14, (current.y - bottom) / 4)
                     : 0;
-              if (scroll) dialog.scrollTop += scroll;
+              if (scroll) scrollContainer.scrollTop += scroll;
             }
             positionCard(current);
             const siblings = Array.from(

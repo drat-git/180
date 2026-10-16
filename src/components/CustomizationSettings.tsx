@@ -1,4 +1,10 @@
 import { useCallback, useState } from "react";
+import {
+  editorRecoveryKey,
+  readEditorRecovery,
+  rebaseEditorRecovery,
+  type EditorRecoveryState,
+} from "../lib/editorRecovery";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../lib/db";
 import { repository } from "../lib/repository";
@@ -69,9 +75,19 @@ export function CustomizationSettings({
   const [attempt, setAttempt] = useState(0),
     [reviewed, setReviewed] = useState(false);
   const [view, setView] = useState(kind);
+  const [draftError, setDraftError] = useState("");
   const state = useLiveQuery(async () => {
     const current = await configurationFor(userId, today);
-    const [entry, records, draft, conflict, tasks, events] = await Promise.all([
+    const [
+      entry,
+      records,
+      draft,
+      conflict,
+      tasks,
+      events,
+      checklistRecovery,
+      listRecovery,
+    ] = await Promise.all([
       db.entries.get([userId, today]),
       db.customAnswers
         .where("[userId+logicalDate]")
@@ -81,6 +97,8 @@ export function CustomizationSettings({
       db.meta.get(`customization-conflict:${userId}`),
       db.tasks.where("userId").equals(userId).toArray(),
       db.taskEvents.where("userId").equals(userId).toArray(),
+      db.meta.get(editorRecoveryKey(userId, "checklist")),
+      db.meta.get(editorRecoveryKey(userId, "lists")),
     ]);
     let initialDraft = current.configuration;
     let conflictPatch: ConfigurationPatch = {};
@@ -144,8 +162,12 @@ export function CustomizationSettings({
       retainedPatch,
       conflictPatch,
       conflict: !!conflict,
+      recoveries: {
+        checklist: readEditorRecovery(checklistRecovery?.value, "checklist"),
+        lists: readEditorRecovery(listRecovery?.value, "lists"),
+      },
     };
-  }, [userId, today, attempt, reviewed]);
+  }, [userId, today, attempt, reviewed, kind]);
   // An open editor keeps its original revision until the user explicitly reviews again.
   const [base, setBase] = useState<typeof state>(undefined);
   if (
@@ -158,14 +180,47 @@ export function CustomizationSettings({
   const persist = useCallback(
     (draft: Configuration) => {
       if (!base) return;
-      void db.meta.put({
-        key: `customization-draft:${userId}`,
-        value: JSON.stringify({
-          patch: diffConfiguration(base.configuration, draft),
-        }),
-      });
+      void db.meta
+        .put({
+          key: `customization-draft:${userId}`,
+          value: JSON.stringify({
+            patch: diffConfiguration(base.configuration, draft),
+          }),
+        })
+        .then(
+          () => setDraftError(""),
+          () =>
+            setDraftError(
+              "Your draft could not be saved on this device. Keep the editor open and try again.",
+            ),
+        );
     },
     [base, userId],
+  );
+  const persistRecovery = useCallback(
+    (
+      section: EditorRecoveryState["section"],
+      state: EditorRecoveryState | null,
+    ) => {
+      const key = editorRecoveryKey(userId, section);
+      const write = state
+        ? db.meta.put({ key, value: JSON.stringify(state) })
+        : db.meta.delete(key);
+      void Promise.resolve(write).catch(() =>
+        setDraftError(
+          "Your unfinished edit could not be saved on this device. Keep the editor open and try again.",
+        ),
+      );
+    },
+    [userId],
+  );
+  const persistChecklistRecovery = useCallback(
+    (state: EditorRecoveryState | null) => persistRecovery("checklist", state),
+    [persistRecovery],
+  );
+  const persistListRecovery = useCallback(
+    (state: EditorRecoveryState | null) => persistRecovery("lists", state),
+    [persistRecovery],
   );
   async function retainDraft(patch: ConfigurationPatch) {
     if (hasChanges(patch))
@@ -312,6 +367,17 @@ export function CustomizationSettings({
         retainedListIds.has(list.id),
       )}
       onDraftChange={persist}
+      recovery={
+        base.recoveries.checklist
+          ? rebaseEditorRecovery(
+              base.recoveries.checklist,
+              base.initialDraft,
+              base.revision,
+            )
+          : undefined
+      }
+      onRecoveryChange={persistChecklistRecovery}
+      draftError={draftError}
       onSave={save}
       onClose={onClose}
     />
@@ -326,6 +392,17 @@ export function CustomizationSettings({
       today={today}
       baseRevision={base.revision}
       onSaveLists={saveLists}
+      recovery={
+        base.recoveries.lists
+          ? rebaseEditorRecovery(
+              base.recoveries.lists,
+              base.initialDraft,
+              base.revision,
+            )
+          : undefined
+      }
+      onRecoveryChange={persistListRecovery}
+      draftError={draftError}
       onSaveConnection={(configuration, date, revision) =>
         save(configuration, date, revision, true)
       }

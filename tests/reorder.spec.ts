@@ -61,50 +61,50 @@ async function pressHandle(page: Page, handle: Locator, touch: boolean) {
   };
 }
 
-test("hold handles reorder collapsed items, highlight the moving card, and cancel safely", async ({
+async function newBlock(editor: Locator, title: string) {
+  await editor
+    .getByRole("button", { name: "Add block", exact: true })
+    .first()
+    .click();
+  await editor
+    .getByRole("textbox", { name: "Block name", exact: true })
+    .fill(title);
+  await editor.getByRole("button", { name: "Done", exact: true }).click();
+}
+async function addCheckbox(editor: Locator, question: string) {
+  await editor.getByRole("button", { name: "Add item", exact: true }).click();
+  await editor.getByRole("button", { name: /^Checkbox(?:\s|$)/ }).click();
+  await editor
+    .getByRole("textbox", { name: "Question", exact: true })
+    .fill(question);
+  await editor.getByRole("button", { name: "Done", exact: true }).click();
+}
+
+test("hold handles reorder compact item rows, highlight the moving row, and cancel safely", async ({
   page,
   isMobile,
 }, info) => {
   const editor = await openEditor(page);
-  await editor.getByRole("button", { name: "Add block", exact: true }).click();
-  const block = editor.getByRole("region", {
-    name: "Edit New block",
-    exact: true,
-  });
-  await block
-    .getByRole("textbox", { name: "Block title", exact: true })
-    .fill("Practice");
-  const practice = editor.getByRole("region", {
-    name: "Edit Practice",
-    exact: true,
-  });
-  for (const name of ["Read", "Write"]) {
-    await practice
-      .getByRole("button", { name: "Add item to Practice", exact: true })
-      .click();
-    const item = practice.locator("[data-reorder-card=item]").last();
-    await item.locator(":scope > summary").click();
-    await item
-      .getByRole("textbox", { name: "Item label", exact: true })
-      .fill(name);
-    await item.locator(":scope > summary").click();
-  }
-  const items = practice.locator("[data-reorder-card=item]");
-  const titles = items.locator(":scope > summary > span:first-child");
-  const write = practice.getByRole("button", {
+  await newBlock(editor, "Practice");
+  for (const name of ["Read", "Write"]) await addCheckbox(editor, name);
+  const items = editor.locator("[data-reorder-card=item]");
+  const titles = items.getByRole("button", { name: /^Edit / });
+  const write = editor.getByRole("button", {
     name: "Reorder Write",
     exact: true,
   });
   await write.click();
   await expect(titles).toHaveText([/Read/, /Write/]);
-  await expect(items.locator(":scope[open]")).toHaveCount(0);
+  await expect(
+    editor.getByRole("textbox", { name: "Question", exact: true }),
+  ).toHaveCount(0);
   await expect(
     editor.getByRole("button", { name: /^Move .+ (up|down)$/ }),
   ).toHaveCount(0);
 
   const drag = await pressHandle(page, write, isMobile);
   await expect(write).toHaveAttribute("aria-pressed", "true");
-  const moving = practice.locator(".is-reordering");
+  const moving = editor.locator("[data-reorder-card=item].is-reordering");
   await expect(moving).toHaveCSS("scale", "0.98");
   await expect(moving).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await page.screenshot({
@@ -114,21 +114,23 @@ test("hold handles reorder collapsed items, highlight the moving card, and cance
   await drag.move(target.y + target.height / 2 - 12);
   await expect(titles).toHaveText([/Write/, /Read/]);
   await drag.end();
-  await expect(practice.locator(".is-reordering")).toHaveCount(0);
-  await expect(items.locator(":scope[open]")).toHaveCount(0);
+  await expect(editor.locator(".is-reordering")).toHaveCount(0);
+  await expect(
+    editor.getByRole("textbox", { name: "Question", exact: true }),
+  ).toHaveCount(0);
 
   const cancel = await pressHandle(
     page,
-    practice.getByRole("button", { name: "Reorder Read", exact: true }),
+    editor.getByRole("button", { name: "Reorder Read", exact: true }),
     isMobile,
   );
-  await expect(practice.locator(".is-reordering")).toHaveCount(1);
+  await expect(editor.locator(".is-reordering")).toHaveCount(1);
   const first = (await items.first().boundingBox())!;
   await cancel.move(first.y + first.height / 2 - 12);
   await expect(titles).toHaveText([/Read/, /Write/]);
   await cancel.end(true);
   await expect(titles).toHaveText([/Write/, /Read/]);
-  await expect(practice.locator(".is-reordering")).toHaveCount(0);
+  await expect(editor.locator(".is-reordering")).toHaveCount(0);
 
   await editor
     .getByRole("button", { name: "Review changes", exact: true })
@@ -136,6 +138,7 @@ test("hold handles reorder collapsed items, highlight the moving card, and cance
   await editor
     .getByRole("button", { name: "Apply today", exact: true })
     .click();
+  await expect(editor).not.toBeVisible();
   await page.reload();
   await expect(
     page
@@ -149,9 +152,7 @@ test("block and To-do list handles support keyboard pickup, drop, cancel and per
   isMobile,
 }) => {
   let editor = await openEditor(page);
-  const blocks = editor.locator(
-    ".customization-controls > [data-reorder-card=block]",
-  );
+  const blocks = editor.locator("[data-reorder-card=block]");
   const school = editor.getByRole("button", {
     name: "Reorder School",
     exact: true,
@@ -159,17 +160,22 @@ test("block and To-do list handles support keyboard pickup, drop, cancel and per
   await school.focus();
   await page.keyboard.press("Space");
   await page.keyboard.press("ArrowUp");
-  await expect(blocks.first()).toHaveAttribute("aria-label", "Edit School");
+  await expect(
+    blocks.first().getByRole("button", { name: "Open School", exact: true }),
+  ).toBeVisible();
   await expect(school).toBeFocused();
   await page.keyboard.press("Escape");
-  await expect(blocks.first()).toHaveAttribute("aria-label", "Edit General");
+  await expect(
+    blocks.first().getByRole("button", { name: "Open General", exact: true }),
+  ).toBeVisible();
   await expect(editor).toBeVisible();
   const blockDrag = await pressHandle(page, school, isMobile);
   await expect(school).toHaveAttribute("aria-pressed", "true");
-  const dialogBox = (await editor.boundingBox())!;
-  // Hold at the upper edge to reach the previous large block by auto-scrolling.
-  await blockDrag.move(dialogBox.y + 8);
-  await expect(blocks.first()).toHaveAttribute("aria-label", "Edit School");
+  const firstBlock = (await blocks.first().boundingBox())!;
+  await blockDrag.move(firstBlock.y + firstBlock.height / 2 - 10);
+  await expect(
+    blocks.first().getByRole("button", { name: "Open School", exact: true }),
+  ).toBeVisible();
   await blockDrag.end();
   await editor
     .getByRole("button", { name: "Review changes", exact: true })
@@ -200,19 +206,23 @@ test("block and To-do list handles support keyboard pickup, drop, cancel and per
   await page.keyboard.press("Space");
   await page.keyboard.press("ArrowUp");
   await page.keyboard.press("ArrowUp");
-  await expect(listCards.first().locator("h3")).toHaveText("Life");
+  await expect(
+    listCards.first().getByRole("button", { name: "Edit Life", exact: true }),
+  ).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(listCards.first().locator("h3")).toHaveText("School");
+  await expect(
+    listCards.first().getByRole("button", { name: "Edit School", exact: true }),
+  ).toBeVisible();
   const listDrag = await pressHandle(page, life, isMobile);
   await expect(life).toHaveAttribute("aria-pressed", "true");
   const firstList = (await listCards.first().boundingBox())!;
   await listDrag.move(firstList.y + firstList.height / 2 - 10);
-  await expect(listCards.first().locator("h3")).toHaveText("Life");
+  await expect(
+    listCards.first().getByRole("button", { name: "Edit Life", exact: true }),
+  ).toBeVisible();
   await listDrag.end();
   await expect(editor.locator(".is-reordering")).toHaveCount(0);
-  await editor
-    .getByRole("button", { name: "Close dialog", exact: true })
-    .click();
+  await editor.getByRole("button", { name: "Done", exact: true }).click();
   await page.getByRole("button", { name: "To-do", exact: true }).click();
   await expect(
     page.locator(".task-topics > .checklist-block").first(),

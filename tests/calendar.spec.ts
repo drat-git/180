@@ -473,6 +473,9 @@ test("calendar surfaces follow light and dark mode independently of app palettes
   await openCalendar(page);
   const legend = calendar(page).getByLabel("Checklist completion color legend");
   await expect(legend).not.toBeVisible();
+  await calendar(page).locator(".calendar-month").screenshot({
+    path: `test-results/calendar-legend-collapsed-${test.info().project.name}.png`,
+  });
   const legendToggle = calendar(page).locator("summary", { hasText: "Legend" });
   await legendToggle.focus();
   await page.keyboard.press("Enter");
