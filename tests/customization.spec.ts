@@ -890,3 +890,197 @@ test("preview examples start blank after repeated incompatible input and choice 
   ).not.toBeChecked();
   await expect(progress).toHaveText("0/1 complete");
 });
+
+test("live explanations follow unfinished rules, recover after reload and never write daily answers", async ({
+  page,
+}, info) => {
+  await demo(page);
+  const savedRecords = () =>
+    page.evaluate(async () => {
+      const database = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open("180-private");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const stores = ["entries", "customAnswers", "configurations", "outbox"];
+      const transaction = database.transaction(stores);
+      const records = await Promise.all(
+        stores.map(
+          (store) =>
+            new Promise<unknown[]>((resolve, reject) => {
+              const request = transaction.objectStore(store).getAll();
+              request.onsuccess = () => resolve(request.result);
+              request.onerror = () => reject(request.error);
+            }),
+        ),
+      );
+      database.close();
+      return records;
+    });
+  const originalRecords = await savedRecords();
+  let editor = await settings(page, "checklist");
+  await selectBlock(editor, "General");
+  await newQuestion(editor, "General", "Avoid scrolling", "boolean");
+  const explanation = () =>
+    editor.getByRole("region", { name: "How this check works", exact: true });
+  await editor
+    .getByRole("combobox", { name: "Earn a check when", exact: true })
+    .selectOption("false");
+  await expect(explanation()).toContainText(
+    "You earn a check when you answer No.",
+  );
+  await advanced(editor);
+  await editor
+    .getByRole("button", { name: "Add counter", exact: true })
+    .click();
+  await expect(explanation()).toContainText(
+    "If you answer Yes, we’ll ask “How many times?”",
+  );
+  await editor.getByRole("button", { name: "Add note", exact: true }).click();
+  await editor
+    .getByRole("textbox", { name: "Extra question", exact: true })
+    .fill("What distracted you?");
+  await editor
+    .getByRole("checkbox", {
+      name: "Require an answer to earn the check",
+      exact: true,
+    })
+    .check();
+  await editor
+    .getByRole("combobox", { name: "Earn a check when", exact: true })
+    .selectOption("true");
+  await expect(explanation()).toContainText(
+    "you answer Yes and you complete every required extra question that appears",
+  );
+  await expect(explanation()).toContainText("2 extra questions");
+  await expect(
+    explanation().getByText(/we’ll ask “What distracted you\?”/),
+  ).not.toBeVisible();
+  const toggle = explanation().getByRole("button", {
+    name: "Show details",
+    exact: true,
+  });
+  await toggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    explanation().getByText(/we’ll ask “What distracted you\?”/),
+  ).toBeVisible();
+  await page.addStyleTag({
+    content: "*, *::before, *::after { transition: none !important; }",
+  });
+  for (const theme of ["dark", "light"]) {
+    for (const palette of ["classic", "monochrome", "blue-slate"]) {
+      await page.evaluate(
+        ({ theme, palette }) => {
+          Object.assign(document.documentElement.dataset, {
+            theme,
+            appPalette: palette,
+            antiPalette: "classic",
+            completionPalette: "forest-rust",
+          });
+        },
+        { theme, palette },
+      );
+      const measurements = await explanation().evaluate((element) => {
+        const paragraph = element.querySelector("p")!;
+        const luminance = (color: string) => {
+          const channels = color
+            .match(/[\d.]+/g)!
+            .slice(0, 3)
+            .map((value) => {
+              const channel = Number(value) / 255;
+              return channel <= 0.04045
+                ? channel / 12.92
+                : ((channel + 0.055) / 1.055) ** 2.4;
+            });
+          return (
+            channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+          );
+        };
+        const text = luminance(getComputedStyle(paragraph).color);
+        const background = luminance(getComputedStyle(element).backgroundColor);
+        return {
+          overflow: element.scrollWidth - element.clientWidth,
+          contrast:
+            (Math.max(text, background) + 0.05) /
+            (Math.min(text, background) + 0.05),
+        };
+      });
+      expect(measurements.overflow).toBeLessThanOrEqual(2);
+      expect(measurements.contrast).toBeGreaterThanOrEqual(4.5);
+      if (
+        (theme === "dark" && palette === "classic") ||
+        (theme === "light" && palette === "blue-slate")
+      )
+        await explanation().screenshot({
+          path: `/tmp/180-live-explanation-${theme}-${palette}-${info.project.name}.png`,
+        });
+    }
+  }
+  await editor.getByRole("button", { name: "Preview", exact: true }).click();
+  const preview = editor.getByRole("region", {
+    name: "Checklist preview",
+    exact: true,
+  });
+  await preview
+    .getByRole("group", { name: "Avoid scrolling", exact: true })
+    .getByRole("button", { name: "Yes", exact: true })
+    .click();
+  await expect(
+    preview.getByLabel("General checklist progress", { exact: true }),
+  ).toHaveText("0/1 complete");
+  await preview
+    .getByRole("textbox", {
+      name: "Avoid scrolling What distracted you?",
+      exact: true,
+    })
+    .fill("A notification");
+  await expect(
+    preview.getByLabel("General checklist progress", { exact: true }),
+  ).toHaveText("1/1 complete");
+  await editor
+    .getByRole("button", { name: "Back to editor", exact: true })
+    .click();
+  await expect.poll(savedRecords).toEqual(originalRecords);
+  await page.reload();
+  editor = await settings(page, "checklist");
+  await expect(editor.getByText(/^Recovered unfinished edit/)).toBeVisible();
+  await expect(explanation()).toContainText(
+    "you answer Yes and you complete every required extra question that appears",
+  );
+  await expect(
+    explanation().getByRole("button", { name: "Show details", exact: true }),
+  ).toHaveAttribute("aria-expanded", "false");
+  await editor.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(
+    editor.getByRole("button", { name: "Edit Avoid scrolling", exact: true }),
+  ).toHaveCount(0);
+  await editor
+    .getByRole("button", { name: "Close editor", exact: true })
+    .click();
+  const manager = await settings(page, "lists");
+  const school = manager.getByRole("region", {
+    name: "School list",
+    exact: true,
+  });
+  await school.getByLabel("Actions for School", { exact: true }).click();
+  await school
+    .getByRole("button", { name: "Edit daily question", exact: true })
+    .click();
+  const connectionExplanation = manager.getByRole("region", {
+    name: "How this check works",
+    exact: true,
+  });
+  await expect(connectionExplanation).toContainText("record work on “School”");
+  await connectionExplanation
+    .getByRole("button", { name: "Show details", exact: true })
+    .click();
+  await manager
+    .getByRole("combobox", { name: "Question visibility", exact: true })
+    .selectOption("always");
+  await expect(connectionExplanation).toContainText(
+    "always appears on its scheduled days",
+  );
+  await manager.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect.poll(savedRecords).toEqual(originalRecords);
+});

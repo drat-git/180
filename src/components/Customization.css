@@ -36,6 +36,42 @@
 }
 
 /* Dedicated editor: navigation, compact rows and a single focused form. */
+.editor-behavior {
+  margin: 24px 0;
+  padding: 16px 18px;
+  border-radius: 10px;
+  background: var(--surface-f9f9f3);
+  border-left: 3px solid var(--border);
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.editor-behavior h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 7px;
+}
+.editor-behavior p {
+  margin: 5px 0;
+}
+.editor-workspace .editor-behavior-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 12px;
+}
+.editor-behavior ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+.editor-behavior li + li {
+  margin-top: 8px;
+}
 .editor-workspace {
   position: fixed;
   inset: 0;

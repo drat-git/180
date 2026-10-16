@@ -16,6 +16,7 @@ import {
   summarizeRule,
 } from "../lib/editorPresentation";
 import { ChoicesEditor, Field, ScheduleEditor, Toggle } from "./EditorFields";
+import { ItemBehaviorSummary } from "./ItemBehaviorSummary";
 
 export function RuleEditor({
   rule,
@@ -599,7 +600,6 @@ function SimpleCompletion({
   return (
     <div className="editor-field-wide">
       <span className="editor-label">Earn a check when…</span>
-      <p className="editor-summary">{summarizeRule(rule, item)}</p>
       <button type="button" className="editor-small-button" onClick={onCustom}>
         Edit custom conditions
       </button>
@@ -987,6 +987,12 @@ export function ChecklistItemEditor({
           </>
         )}
       </div>
+      <ItemBehaviorSummary
+        key={item.id}
+        item={item}
+        block={blocks.find((block) => block.id === item.blockId)}
+        lists={lists}
+      />
       <details
         className="editor-advanced"
         open={advanced}
@@ -1163,7 +1169,6 @@ export function ChecklistItemEditor({
         </section>
         <section className="editor-form-section">
           <h3>Custom completion conditions</h3>
-          <p className="editor-help">{summarizeRule(item.completion, item)}</p>
           <RuleEditor
             item={item}
             rule={item.completion}
