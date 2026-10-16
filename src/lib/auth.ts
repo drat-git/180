@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { disableInstallation } from "./notifications";
+import { passwordRecoveryEnabled } from "./authAvailability";
 import { db } from "./db";
 export interface AppUser {
   id: string;
@@ -11,7 +12,7 @@ export function useAuth() {
   const [user, setUser] = useState<AppUser | null>(null),
     [loading, setLoading] = useState(true),
     [recovery, setRecovery] = useState(
-      location.pathname === "/update-password",
+      passwordRecoveryEnabled && location.pathname === "/update-password",
     ),
     [error, setError] = useState("");
   useEffect(() => {
@@ -20,7 +21,8 @@ export function useAuth() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
-      if (event === "PASSWORD_RECOVERY") setRecovery(true);
+      if (passwordRecoveryEnabled && event === "PASSWORD_RECOVERY")
+        setRecovery(true);
       if (session) {
         const next = { id: session.user.id, email: session.user.email ?? "" };
         setUser(next);
@@ -49,7 +51,11 @@ export function useAuth() {
         setLoading(false);
       }
       const token = new URLSearchParams(location.search).get("token_hash");
-      if (token && location.pathname === "/update-password") {
+      if (
+        passwordRecoveryEnabled &&
+        token &&
+        location.pathname === "/update-password"
+      ) {
         const { error } = await supabase.auth.verifyOtp({
           token_hash: token,
           type: "recovery",

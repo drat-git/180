@@ -8,6 +8,7 @@ if (!token) {
 }
 const ref = process.env.SUPABASE_PROJECT_REF || "xlkmnczbuzmdfchoqqbr";
 for (const suite of [
+  "public_accounts",
   "daily_record",
   "tasks",
   "task_options",

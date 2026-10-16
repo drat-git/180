@@ -3,8 +3,7 @@ import { repository } from "./repository";
 import { supabase } from "./supabase";
 import { pushAnti, pullAnti } from "./antiSync";
 import { pushTask, pullTasks } from "./taskSync";
-import { logicalDate } from "./dates";
-import { isDemoUser } from "./appMode";
+import { isDemoUser, todayForUser } from "./appMode";
 import { reconcileEntry, type WireEntry } from "./entrySync";
 import { type JournalImage, type PendingOperation } from "./model";
 import { pushCustomization, pullCustomization } from "./customizationSync";
@@ -121,7 +120,7 @@ export class SyncEngine {
             op.kind !== "task" &&
             op.kind !== "anti-rotting" &&
             op.kind !== "configuration" &&
-            op.logicalDate > logicalDate()
+            op.logicalDate > todayForUser(this.userId)
           ) {
             if (op.kind === "entry") blockedDays.add(op.logicalDate);
             deferred.add(op.operationId);
@@ -152,7 +151,7 @@ export class SyncEngine {
               (op.kind === "task" ||
                 op.kind === "anti-rotting" ||
                 op.kind === "configuration" ||
-                op.logicalDate <= logicalDate()),
+                op.logicalDate <= todayForUser(this.userId)),
           )
         )
           this.schedule(600);

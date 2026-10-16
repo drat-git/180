@@ -1,3 +1,9 @@
+import { beforeEach as registerLegacyBeforeEach } from "vitest";
+import { registerAccountProfile, legacyAccountProfile } from "./accountProfile";
+registerLegacyBeforeEach(() => {
+  registerAccountProfile(legacyAccountProfile("owner"));
+  registerAccountProfile(legacyAccountProfile("default"));
+});
 import { describe, expect, it } from "vitest";
 import {
   answersForConfiguration,

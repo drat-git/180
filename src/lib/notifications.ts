@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getAccountProfile } from "./accountProfile";
 import { supabase } from "./supabase";
 const INSTALLATION_KEY = "180:push-installation";
 export interface ReminderConfig {
@@ -9,12 +10,18 @@ export interface ReminderConfig {
   installationId?: string;
 }
 const timezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
-function installationId() {
-  let id = localStorage.getItem(INSTALLATION_KEY);
+function installationKey(userId: string) {
+  return `${INSTALLATION_KEY}:${userId}`;
+}
+function installationId(userId: string) {
+  const key = installationKey(userId);
+  let id = localStorage.getItem(key);
+  if (!id && getAccountProfile(userId)?.legacy)
+    id = localStorage.getItem(INSTALLATION_KEY);
   if (!id) {
     id = crypto.randomUUID();
-    localStorage.setItem(INSTALLATION_KEY, id);
   }
+  localStorage.setItem(key, id);
   return id;
 }
 export function notificationSupport() {
@@ -102,7 +109,7 @@ export function useNotifications(userId: string, preview: boolean) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [id, setId] = useState(() => {
     try {
-      return preview ? "" : installationId();
+      return preview ? "" : installationId(userId);
     } catch {
       return "";
     }
@@ -187,7 +194,7 @@ export function useNotifications(userId: string, preview: boolean) {
         setConfig(next);
         if (next.installationId && next.installationId !== id) {
           try {
-            localStorage.setItem(INSTALLATION_KEY, next.installationId);
+            localStorage.setItem(installationKey(userId), next.installationId);
           } catch {
             /* The canonical ID can be recovered from this subscription again. */
           }
@@ -274,7 +281,15 @@ export function useNotifications(userId: string, preview: boolean) {
 }
 export async function disableInstallation() {
   try {
-    const id = localStorage.getItem(INSTALLATION_KEY);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const id = session
+      ? (localStorage.getItem(installationKey(session.user.id)) ??
+        (getAccountProfile(session.user.id)?.legacy
+          ? localStorage.getItem(INSTALLATION_KEY)
+          : null))
+      : null;
     if (id && navigator.onLine) await request("unsubscribe", id);
   } catch {
     /* Browser unsubscription also stops delivery if offline. */

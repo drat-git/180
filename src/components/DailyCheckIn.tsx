@@ -41,6 +41,7 @@ export function DailyCheckIn({
   onSaving,
   onError,
   renderHeader,
+  onCustomize,
 }: {
   userId: string;
   date: string;
@@ -49,6 +50,7 @@ export function DailyCheckIn({
   onSaving: (delta: number) => void;
   onError: (v: string) => void;
   renderHeader?: (progress: ChecklistProgress) => ReactNode;
+  onCustomize?: () => void;
 }) {
   const mode = modeForUser(userId);
   const entry = useLiveQuery(
@@ -305,6 +307,16 @@ export function DailyCheckIn({
             <div className="section-heading">
               <h2>Daily checklist</h2>
             </div>
+            {!configuration.items.some((item) => !item.deleted) && (
+              <div className="onboarding-empty">
+                <p>Your checklist is ready for your first check.</p>
+                {onCustomize && (
+                  <button className="text-button" onClick={onCustomize}>
+                    Create your checklist
+                  </button>
+                )}
+              </div>
+            )}
             {configuration.blocks
               .filter(
                 (block) =>

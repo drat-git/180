@@ -1,3 +1,7 @@
+import {
+  registerAccountProfile,
+  legacyAccountProfile,
+} from "../lib/accountProfile";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type {
@@ -127,6 +131,7 @@ const today = "2026-10-15";
 let identity = 0;
 async function conflict(patch: ConfigurationPatch, answerItem?: string) {
   const userId = `settings-owner-${++identity}`;
+  registerAccountProfile(legacyAccountProfile(userId));
   await repository.saveConfiguration(userId, patch, today, 0);
   if (answerItem)
     await repository.patchItem(userId, today, answerItem, 1, { value: true });
@@ -367,6 +372,7 @@ it("publishes mixed list changes today while scheduling checklist changes for to
 
 it("preserves unrelated checklist draft fields when publishing a connected question", async () => {
   const userId = `settings-owner-${++identity}`;
+  registerAccountProfile(legacyAccountProfile(userId));
   await db.meta.put({
     key: `customization-draft:${userId}`,
     value: JSON.stringify({
@@ -485,6 +491,7 @@ it("keeps a queued answer to an existing changed input version during mixed revi
 
 it("loads the rendered editor's recovery and clears only that section after switching from lists", async () => {
   const userId = `settings-owner-${++identity}`;
+  registerAccountProfile(legacyAccountProfile(userId));
   const configuration = defaultConfiguration(userId, today);
   const wake = configuration.items.find((item) => item.id === "wake")!;
   const checklistRecovery = {

@@ -1,3 +1,8 @@
+import { beforeEach as registerLegacyBeforeEach } from "vitest";
+import { registerAccountProfile, legacyAccountProfile } from "./accountProfile";
+registerLegacyBeforeEach(() => {
+  registerAccountProfile(legacyAccountProfile("calendar-owner"));
+});
 import { describe, expect, it } from "vitest";
 import { DEMO_MODE, DEMO_TODAY, PRIVATE_MODE } from "./appMode";
 import {

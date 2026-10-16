@@ -14,6 +14,42 @@ export type Database = {
   };
   public: {
     Tables: {
+      account_profiles: {
+        Row: {
+          created_at: string;
+          initial_configuration: Json;
+          legacy: boolean;
+          onboarding_completed_at: string | null;
+          signup_timezone: string;
+          start_date: string;
+          starter_id: string | null;
+          starter_version: number | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at: string;
+          initial_configuration?: Json;
+          legacy?: boolean;
+          onboarding_completed_at?: string | null;
+          signup_timezone: string;
+          start_date: string;
+          starter_id?: string | null;
+          starter_version?: number | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          initial_configuration?: Json;
+          legacy?: boolean;
+          onboarding_completed_at?: string | null;
+          signup_timezone?: string;
+          start_date?: string;
+          starter_id?: string | null;
+          starter_version?: number | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       anti_rotting_events: {
         Row: {
           data: Json;
@@ -472,6 +508,8 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      account_ready: { Args: never; Returns: boolean };
+      account_start_date: { Args: never; Returns: string };
       apply_anti_operation: {
         Args: { p_command: Json; p_operation: string };
         Returns: Json;
@@ -526,6 +564,15 @@ export type Database = {
       claim_push_delivery: {
         Args: { p_day: string; p_expires: string; p_installation: string };
         Returns: boolean;
+      };
+      complete_onboarding: {
+        Args: {
+          p_operation: string;
+          p_selection: Json;
+          p_starter: string;
+          p_version: number;
+        };
+        Returns: Json;
       };
       customization_bridge_answer: {
         Args: {

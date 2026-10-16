@@ -4,6 +4,15 @@
 
 This is a dated record of implementation checks. Earlier sections describe the app at the time of each check; they are not the current feature list or a guarantee of checks on every revision. Current screenshots are in [`docs/images`](docs/images); `artifacts/` contains earlier visual checks.
 
+## Public accounts and starter setups — October 15, 2026
+
+- Added per-account creation-day anchors, frozen initial definitions, an onboarding gate, four starters, selection recovery, and idempotent atomic setup. Email/password signup has no owner-email restriction; recovery UI stays disabled pending email delivery. The original owner retains the October 9 anchor and legacy cutovers; the demo retains its own samples and clock.
+- Focused unit/component checks cover starter validity, list dependencies, blank setup, draft recovery, retries, per-account baselines, Day 1 clamping, legacy IndexedDB upgrade and reminder identity isolation. The legacy compatibility suites passed after making their owner profiles explicit. The production build and TypeScript pass; existing bundle-size warnings remain.
+- **22 distinct desktop/phone Chromium workflows passed** across new signup/onboarding fixtures and existing compatibility workflows. They cover all populated starters, blank setup, list deselection, Back/reload, failed completion, offline reopening, creation tools, original calendar history, 2 AM rollover, future deadlines, linked task checks and demo/photo isolation. Classic Dark and Blue Slate Light layouts were inspected.
+- All **11 hosted rollback-only SQL suites passed**, including public profiles/onboarding and existing daily, task, customization, activity, photo/storage and push contracts. The public-account suite also passes in isolated PostgreSQL. Before/after hashes and row counts for ten existing data/history/receipt tables are identical.
+- Additive migration `20261016012441_public_accounts` and `push-settings` version 4 are installed. A private administrator-only switch keeps registration closed until the compatible client and Auth settings are ready. Generated database types match the hosted schema. The security advisor reports no new warnings: the existing leaked-password-protection warning remains; no-policy information for private catalog/release tables and service-only push tables reflects their intentionally denied client access.
+- Production signup smoke verification is a separate release step, restricted to **one disposable account**. Physical iPhone installation and real push delivery remain separate device checks.
+
 ## Hold-to-drag reorder handles — October 15, 2026
 
 - Replaced both reorder arrows with one three-line handle on checklist blocks, items, and To-do lists. A short hold activates a lightly highlighted, slightly smaller card; dragging changes its position and scrolls the editor at its edges. Collapsed items keep their handle visible. To-do order saves on drop; cancelling restores the original order. Keyboard users can pick up with Space/Enter, move with arrow keys, drop, or cancel with Escape.
@@ -96,14 +105,12 @@ This is a dated record of implementation checks. Earlier sections describe the a
 
 There is no privileged bootstrap endpoint, and no service-role key in the frontend. The rejected endpoint deployment did not take place.
 
-
 ## Task question applicability — October 11, 2026
 
 - Restored the latest pushed application baseline (`42a8677`) before implementing the replacement. Removed the discarded daily eligibility capture effects and flags from the application. The already applied experimental migration remains as an audit record; a compensating migration removes its trigger/function without deleting saved data. Legacy flags remain valid input for older queued patches and are ignored by the new calculation.
 - Questions and totals now share a calculation using retained tasks/events and saved daily content. Today requires an unfinished task, a parent/child completion today not undone today, or saved content. Earlier completed tasks in their 12-hour display window do not create a new requirement. Past days use unfinished roots at the local 2 AM boundary, qualifying completions that day, or saved content. Same-day deletion removes unanswered requirements; later deletion preserves earlier unfinished days. No daily snapshots or background writes are added.
 - **76 unit tests**, **70 desktop/phone browser tests**, and the production build passed. Coverage includes older completion carryover, completed tasks remaining selectable, completion archive, same-day creation/deletion and undo, child completion with parent deletion, automatic parent transitions, saved Yes/No/reasons/title snapshots, weekend counts, unopened days, offline reload, 2 AM and DST boundaries, late cloud history pulls, retired flags, and loading readiness.
 - All three rollback-only live database suites passed. They verify hierarchy/history, snapshots, retry idempotency, owner/access isolation, and legacy queued updates with preserved answers. Confirmed the retired trigger/function are absent. Generated database types are unchanged. React review confirmed no capture effects or conditional hooks were introduced.
-
 
 ## Day 4 Food checklist — October 11, 2026
 
@@ -113,7 +120,6 @@ There is no privileged bootstrap endpoint, and no service-role key in the fronte
 - Applied additive migration `20261012034639_day_four_food`. Its only application-schema change is replacing the existing JSON validator function to accept the new fields. It does not delete or rewrite daily records, alter columns, or change ownership policies. The AM answer and choice are stored as one field so concurrent field patches cannot split them. Generated database types remain unchanged because existing JSONB columns and RPC signatures are unchanged.
 - All **four rollback-only live database suites** passed, covering daily records/photos, tasks, Anti Rotting, and food. The food suite verifies pending required choice, invalid values, legacy fields, preserved hidden descriptions, different-field merge, and acknowledgement-loss retries. All test mutations were rolled back. Security advisor found no database issues; the previously documented Auth leaked-password setting remains unchanged.
 
-
 ## Tabs, appearance, and reminders — October 12, 2026
 
 - Navigation is Today / To-do / Anti Rotting. Anti Rotting has its own tab, and existing daily recaps/history remain. Daily check-in is labeled Daily checklist. Panels stay mounted so tab changes preserve task drafts; unsaved-write guards remain.
@@ -121,7 +127,6 @@ There is no privileged bootstrap endpoint, and no service-role key in the fronte
 - Deployed authenticated notification settings and private reminder-dispatch functions plus one minute-based cron job. Verified real scheduler HTTP 200 responses, private Vault key initialization, rejection of missing/invalid user tokens and invalid scheduler credentials, and isolation of subscription/key data. Existing data was preserved; all database test fixtures roll back.
 - 88 unit tests and 78 desktop/phone browser cases passed, including navigation/drafts, theme selection and offline reload, reminder navigation, permission denial, orphan subscription cleanup, failed/offline saves, timezone/DST boundaries, and trusted endpoint validation. All five database suites passed. The production build and formatting checks passed. Generated database types include the additive push schema; reviewed React hooks/accessibility and service-worker cache/update handling.
 - Physical iPhone notification permission, test delivery, and scheduled delivery remain a user-device acceptance check. Reminders remain off until explicitly enabled. Default is one reminder at 9 PM every day regardless of daily answers.
-
 
 ## Diet label and Creatine — October 13, 2026
 
@@ -131,30 +136,25 @@ There is no privileged bootstrap endpoint, and no service-role key in the fronte
 - Applied additive migration `20261013055335_creatine_check`. It extends the existing validator with boolean/null `creatineStatus` and text `creatineReason`, preserving its other fields, signature, permissions, and search path. No saved daily records are rewritten or deleted. Generated database types are unchanged because the data remains in existing JSONB columns.
 - The rollback-only daily-record, food, and Creatine database suites passed. They verify ownership/access restrictions, existing fields, new validation, preserved hidden reasons, field merging, clearing, and idempotent acknowledgement-loss retries. All fixture edits were rolled back. Existing [push-table RLS information](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) and the previously documented Auth setting remain outside this change; no policies were altered.
 
-
 ## Daily and To-do quotes — October 13, 2026
 
 - Today shows the supplied Aristotle quote beneath the Day header; yesterday retains its editing reminder, now at weight 500 with readable orange colors in light/dark themes. Older days show neither of these notices. The To-do heading uses the supplied James Clear quote.
 - Production build and four focused desktop/phone browser checks passed. Existing navigation and theme workflows verify quote visibility by date, the To-do text, yesterday styling in both themes, and unchanged historical editing behavior. Updated dark-theme screenshots retained. No persistence or cloud changes were needed.
-
 
 ## Anti Rotting expansion — October 13, 2026
 
 - Removed the block-level Minimize/Maximize control from the Anti Rotting list and past-day recaps. Both stay expanded even if an older browser preference stored them as minimized. Individual note disclosure controls remain available, and other checklist/task blocks retain their normal minimization behavior.
 - Production build, four control/component tests, and four focused desktop/phone browser workflows passed. Regression coverage seeds old minimized preferences and verifies activities/recaps stay accessible without a block toggle; the existing cross-day/reload test verifies other blocks still minimize persistently. Updated Anti Rotting screenshots retained. No cloud or saved-record changes were needed.
 
-
 ## Chevron-only block controls — October 13, 2026
 
 - Daily checklist and To-do card headers now use icon-only up/down chevrons. Buttons are 38 pixels square with 18-pixel icons, while accessible Minimize/Maximize labels, expanded-state semantics, keyboard focus, and stored preferences remain unchanged. Individual text-box disclosure buttons retain their text; Anti Rotting remains non-collapsible.
 - Production build, four component/control tests, and four focused desktop/phone browser workflows passed. Checks verify persistent minimization across navigation/reloads and task/daily layouts; updated screenshots retained and phone To-do layout inspected.
 
-
 ## Anti-rot wording — October 13, 2026
 
 - The switcher tab is labeled Anti-rot. Its activity-card heading is "Things to do instead of scrolling", followed by "Topics to explore, skills to learn, specific media, activities, places to go, etc". Existing purple styling, stored activities, note preferences, and non-collapsible behavior are preserved. Past-day recap content remains unchanged.
 - Production build and six focused desktop/phone browser scenarios passed, covering the exact new copy, tab navigation, retained styling, layout width, activity ordering/history, and dark mode. Updated screenshots retained; phone activity-card layout inspected. No cloud or data changes were needed.
-
 
 ## Demo entry button — October 13, 2026
 
@@ -181,13 +181,11 @@ There is no privileged bootstrap endpoint, and no service-role key in the fronte
 - **Production build and TypeScript checks passed.** Existing bundle-size and service-worker option deprecation warnings remain. **Five isolated local PostgreSQL suites passed:** tasks, task options, automatic daily work, food and Creatine. `scripts/test-task-daily-local.mjs` uses temporary PGlite 0.5.9 with synthetic auth/owner fixtures, the real relevant migrations, RLS roles, and the repository SQL suites; it makes no hosted connection. New SQL tests cover transactional rollback, provenance validation, same/later-day undo, manual corrections after lost acknowledgements, independent contributions, deletion-induced parent completion, snapshots, options, Life and legacy commands/receipts. Existing task suites verify owner/foreign/anonymous access. This is not a physical two-device or hosted PostgREST integration test.
 - **No push, deployment, or persistent hosted migration was performed.** After the user's no-push instruction, automatic approval review rejected an attempted rollback-only live migration/test transaction because it still targeted the hosted schema. No live change occurred; database execution was moved to the isolated local runtime. The hosted migration and hosted post-migration/access/advisor checks were deferred during that hold; the release verification below records their completion after authorization. Physical iPhone Safari/Home Screen and real-account two-device checks remain manual follow-ups.
 
-
 ## Automatic daily work release verification — October 14, 2026
 
 - Following the user's explicit push authorization, applied the tested additive migration to the existing 180 Supabase project before pushing the new client. The connector assigned version `20261014042751`; the local filename and test harness match that hosted migration history. No existing daily records, completion history, task options, or ownership rules were replaced or backfilled. Refreshed TypeScript definitions from the connected project.
 - All **eight rollback-only hosted database suites passed**: daily records/photos/access, tasks, task options, task daily work, Anti Rotting, food, push reminders and Creatine. This verifies the actual hosted functions, validation and access rules; all fixture edits rolled back.
 - Security advisors show no new findings. Existing push-table deny-by-default RLS information and the existing Auth leaked-password protection warning remain unchanged, as documented above. The earlier automatic approval rejection applied to the hold period; the newly authorized migration and hosted verification succeeded.
-
 
 ## Independent appearance palettes — October 14, 2026
 
@@ -213,7 +211,6 @@ There is no privileged bootstrap endpoint, and no service-role key in the fronte
 - Past-day header progress now uses the same completion bands and shared palette colors as calendar day bubbles. Today retains its neutral bubble. Four focused desktop/phone browser checks passed, comparing both demo days across Light/Dark and all three completion palettes, plus existing calendar surface behavior. Production build and diff checks passed; the updated Day 2 header was visually inspected and opened in the local preview.
 
 - Demo default refinement: swapped all General samples, including wake/screen reasons and vaping count/descriptions, between Days 1 and 2. Day 1 now totals 9/13 and Day 2 13/15. New demo visits and resets default to Dark with Forest & Rust completion colors; bootstrap and runtime defaults agree. Private preferences and records are unchanged, and visitor appearance choices still survive reloads. **43 focused unit tests** and **16 desktop/phone browser checks** passed across the main run and focused rerun, covering samples, calendar gradients/header parity, outside-Eastern dates, recap totals, palette reload/reset and private isolation. Production build and diff checks passed. The open preview was reset to these new defaults.
-
 
 ## Main-app calendar — October 14, 2026
 

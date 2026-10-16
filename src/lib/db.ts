@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from "dexie";
 import type { ConfigChange, CustomAnswerRecord } from "./customizationTypes";
+import { accountProfileKey, legacyAccountProfile } from "./accountProfile";
 import type {
   AntiItem,
   AntiLog,
@@ -47,6 +48,27 @@ export class AppDatabase extends Dexie {
       customAnswers:
         "[userId+logicalDate+itemId+generation],userId,[userId+logicalDate]",
     });
+    this.version(5)
+      .stores({})
+      .upgrade(async (transaction) => {
+        const meta = transaction.table("meta");
+        const cached = await meta.get("active-account");
+        if (cached) {
+          try {
+            const account = JSON.parse(cached.value);
+            if (
+              typeof account.id === "string" &&
+              !account.id.startsWith("local-demo:")
+            )
+              await meta.put({
+                key: accountProfileKey(account.id),
+                value: JSON.stringify(legacyAccountProfile(account.id)),
+              });
+          } catch {
+            /* Leave an invalid cached account locked. */
+          }
+        }
+      });
   }
 }
 export const db = new AppDatabase();

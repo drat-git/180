@@ -29,6 +29,7 @@ import { DisplayPreferencesProvider } from "./lib/displayPreferences";
 import { useNotifications } from "./lib/notifications";
 import { DoStuff } from "./components/DoStuff";
 import { Login } from "./components/Login";
+import { AccountGate } from "./components/AccountGate";
 import { Modal } from "./components/Controls";
 import { DEMO_SESSION_KEY, modeForUser, todayForUser } from "./lib/appMode";
 import { clearDemoDisplayPreferences, demoSession, seedDemo } from "./lib/demo";
@@ -374,6 +375,7 @@ function CheckInApp({
         <div hidden={screen !== "tasks"}>
           <DoStuff
             userId={userId}
+            onManage={() => setCustomizing("lists")}
             blocked={!!saveError}
             onSaving={(delta) =>
               setSaveCount((count) => Math.max(0, count + delta))
@@ -404,6 +406,7 @@ function CheckInApp({
           ) : (
             <>
               <DailyCheckIn
+                onCustomize={() => setCustomizing("checklist")}
                 renderHeader={(progress) => (
                   <>
                     <section
@@ -722,15 +725,21 @@ export default function App() {
       />
     );
   return (
-    <CheckInApp
+    <AccountGate
       key={auth.user!.id}
       userId={auth.user!.id}
-      email={auth.user?.email ?? ""}
-      preview={false}
-      cached={auth.user?.cached}
-      onExit={() => {
-        void auth.signOut();
-      }}
-    />
+      onSignOut={() => void auth.signOut()}
+    >
+      <CheckInApp
+        key={auth.user!.id}
+        userId={auth.user!.id}
+        email={auth.user?.email ?? ""}
+        preview={false}
+        cached={auth.user?.cached}
+        onExit={() => {
+          void auth.signOut();
+        }}
+      />
+    </AccountGate>
   );
 }

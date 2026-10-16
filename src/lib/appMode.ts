@@ -1,4 +1,5 @@
 import { addDays, logicalDate } from "./dates";
+import { getAccountProfile } from "./accountProfile";
 import {
   START_DATE,
   THRESHOLDS,
@@ -52,12 +53,17 @@ export const DEMO_MODE: AppMode = {
   breakfastLabels: { shake: "Smoothie", meal: "Meal" },
 };
 export const isDemoUser = (userId: string) => userId.startsWith(DEMO_PREFIX);
-export const modeForUser = (userId: string) =>
-  isDemoUser(userId) ? DEMO_MODE : PRIVATE_MODE;
+export const modeForUser = (userId: string): AppMode => {
+  if (isDemoUser(userId)) return DEMO_MODE;
+  const profile = getAccountProfile(userId);
+  return profile && !profile.legacy
+    ? { ...PRIVATE_MODE, startDate: profile.startDate }
+    : PRIVATE_MODE;
+};
 export const clockForUser = (userId: string) =>
   isDemoUser(userId) ? new Date(DEMO_NOW) : new Date();
 export const todayForUser = (userId: string) =>
-  isDemoUser(userId) ? DEMO_TODAY : logicalDate();
+  recordedDateForUser(userId, clockForUser(userId));
 export const timezoneForUser = (userId: string) =>
   isDemoUser(userId)
     ? "America/New_York"
@@ -79,5 +85,8 @@ export function demoLogicalDate(now: Date): string {
 }
 
 export function recordedDateForUser(userId: string, now: Date) {
-  return isDemoUser(userId) ? demoLogicalDate(now) : logicalDate(now);
+  if (isDemoUser(userId)) return demoLogicalDate(now);
+  const day = logicalDate(now),
+    start = getAccountProfile(userId)?.startDate;
+  return start && day < start ? start : day;
 }

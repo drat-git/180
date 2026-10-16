@@ -1,5 +1,6 @@
 -- All fixtures and changes are rolled back, including the temporary auth identity.
 begin;
+update private.registration_settings set enabled=true;
 do $$
 begin
   if not exists(select 1 from public.app_owner) then
@@ -76,10 +77,11 @@ begin
 end; $$;
 reset role;
 do $$
-declare failed boolean:=false;
+declare identity uuid:=gen_random_uuid();
 begin
-  begin insert into auth.users(id,email) values(gen_random_uuid(),'outsider@example.invalid');exception when insufficient_privilege then failed:=true;end;
-  assert failed,'Public account registration was not blocked';
+  insert into auth.users(id,email,created_at) values(identity,'outsider@example.invalid',now());
+  assert exists(select 1 from public.account_profiles where user_id=identity and not legacy and onboarding_completed_at is null),'Public profile was not initialized';
+  assert not exists(select 1 from public.app_owner where user_id=identity),'Public account was assigned legacy ownership';
 end; $$;
 rollback;
-select 'PASS: field merge, latest edit, idempotency, validation, photo tombstones, owner isolation, storage isolation, registration gate' as result;
+select 'PASS: field merge, latest edit, idempotency, validation, photo tombstones, owner isolation, storage isolation, public profile initialization' as result;

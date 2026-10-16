@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import "fake-indexeddb/auto";
 import { beforeEach, afterEach, vi } from "vitest";
+import { clearAccountProfiles } from "../lib/accountProfile";
 import { cleanup } from "@testing-library/react";
 // JSDOM has no layout observer; textarea resizing is covered in browser tests.
 vi.stubGlobal(
@@ -18,4 +19,7 @@ vi.stubGlobal(
     .jsdom.window.localStorage,
 );
 afterEach(cleanup);
-beforeEach(() => window.localStorage.clear());
+beforeEach(() => {
+  window.localStorage.clear();
+  clearAccountProfiles();
+});

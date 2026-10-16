@@ -1,3 +1,8 @@
+import { beforeEach as registerLegacyBeforeEach } from "vitest";
+import { registerAccountProfile, legacyAccountProfile } from "./accountProfile";
+registerLegacyBeforeEach(() => {
+  registerAccountProfile(legacyAccountProfile("owner-customization-tests"));
+});
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppDatabase } from "./db";
 import { LocalRepository } from "./repository";

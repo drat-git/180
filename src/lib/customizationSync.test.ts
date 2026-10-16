@@ -1,3 +1,10 @@
+import { beforeEach as registerLegacyBeforeEach } from "vitest";
+import { registerAccountProfile, legacyAccountProfile } from "./accountProfile";
+registerLegacyBeforeEach(() => {
+  registerAccountProfile(
+    legacyAccountProfile("11111111-1111-4111-8111-111111111111"),
+  );
+});
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { db } from "./db";
 import type { Tables } from "./database.types";

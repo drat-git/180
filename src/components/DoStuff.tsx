@@ -247,11 +247,13 @@ export function DoStuff({
   onSaving,
   onError,
   blocked,
+  onManage,
 }: {
   userId: string;
   onSaving: (delta: number) => void;
   onError: (message: string) => void;
   blocked: boolean;
+  onManage?: () => void;
 }) {
   const { tasks, roots, now, timezone } = useTasks(userId);
   const [addingTo, setAddingTo] = useState<string | null>(null);
@@ -408,6 +410,11 @@ export function DoStuff({
         {lists.length === 0 && (
           <p className="small">
             Create a To-do list from settings to get started.
+            {onManage && (
+              <button className="text-button" onClick={onManage}>
+                Create a To-do list
+              </button>
+            )}
           </p>
         )}
       </div>

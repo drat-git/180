@@ -18,7 +18,7 @@ const headers = {
 };
 const reply = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers });
-Deno.serve(async (req) => {
+export async function handlePushSettings(req: Request) {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   if (req.method !== "POST")
     return reply({ error: "Method not allowed." }, 405);
@@ -31,12 +31,13 @@ Deno.serve(async (req) => {
   } = await admin.auth.getUser(token);
   if (authError || !user)
     return reply({ error: "Sign in again to manage reminders." }, 401);
-  const { data: owner } = await admin
-    .from("app_owner")
-    .select("user_id")
+  const { data: account } = await admin
+    .from("account_profiles")
+    .select("user_id,onboarding_completed_at")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (!owner) return reply({ error: "Not allowed." }, 403);
+  if (!account?.onboarding_completed_at)
+    return reply({ error: "Finish account setup to manage reminders." }, 403);
   try {
     const body = await req.json();
     const id = body.installationId;
@@ -103,11 +104,18 @@ Deno.serve(async (req) => {
           auth: sub.keys.auth,
           enabled: true,
         });
-        const result = await admin
-          .from("push_installations")
-          .upsert(values)
-          .select()
-          .single();
+        // An insert must fail on a foreign ID collision. Upsert by primary key
+        // would allow a caller to replace another account's installation.
+        const targetId = prior.data?.id ?? id;
+        const ownExisting = prior.data || existing;
+        const write = ownExisting
+          ? admin
+              .from("push_installations")
+              .update(values)
+              .eq("id", targetId)
+              .eq("user_id", user.id)
+          : admin.from("push_installations").insert(values);
+        const result = await write.select().single();
         if (result.error) throw result.error;
         row = result.data;
       } else {
@@ -193,4 +201,5 @@ Deno.serve(async (req) => {
       validation ? 400 : 500,
     );
   }
-});
+}
+Deno.serve(handlePushSettings);

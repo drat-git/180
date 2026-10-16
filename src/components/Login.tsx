@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { ArrowRight, ArrowLeft, ShieldCheck } from "lucide-react";
 import { supabase, configured } from "../lib/supabase";
+import { signupTimezone } from "../lib/accountProfile";
+import { passwordRecoveryEnabled } from "../lib/authAvailability";
 export function Login({
   onPreview,
   recovery,
@@ -43,20 +45,16 @@ export function Login({
         if (error) throw error;
         setMessage("Check your email for a password reset link.");
       } else if (setup) {
-        if (email.toLowerCase() !== "dratgit@gmail.com")
-          throw new Error(
-            "Account setup is reserved for the app owner. You can try the local preview.",
-          );
         if (password.length < 8) throw new Error("Use at least 8 characters.");
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: location.origin },
+          options: { data: { signup_timezone: signupTimezone() } },
         });
         if (error) throw error;
         if (!data.session)
-          setMessage(
-            "Your account is created. Confirm the link in your email, then sign in.",
+          throw new Error(
+            "Your account could not be signed in automatically. Please try signing in.",
           );
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -94,7 +92,7 @@ export function Login({
             : reset
               ? "We’ll send a link to reset your password."
               : setup
-                ? "Set up the app owner’s private account."
+                ? "Create your account, then choose a starting point."
                 : "A quiet place to record what you did, and how the day felt."}
         </p>
         <form onSubmit={submit}>
@@ -133,7 +131,7 @@ export function Login({
                 : reset
                   ? "Send reset link"
                   : setup
-                    ? "Create private account"
+                    ? "Create account"
                     : "Sign in"}
             <ArrowRight size={17} />
           </button>
@@ -143,7 +141,7 @@ export function Login({
             </p>
           )}
         </form>
-        {!recovery && (
+        {!recovery && passwordRecoveryEnabled && (
           <button
             className="text-button login-switch"
             onClick={() => {

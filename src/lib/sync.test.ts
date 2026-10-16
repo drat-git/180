@@ -1,3 +1,8 @@
+import { beforeEach as registerLegacyBeforeEach } from "vitest";
+import { registerAccountProfile, legacyAccountProfile } from "./accountProfile";
+registerLegacyBeforeEach(() => {
+  registerAccountProfile(legacyAccountProfile("owner"));
+});
 import { beforeEach, afterEach, it, expect, vi } from "vitest";
 import { db } from "./db";
 import { applyAntiCommand, antiRecap } from "./antiRotting";

@@ -1,3 +1,11 @@
+import { beforeEach as registerLegacyBeforeEach } from "vitest";
+import {
+  registerAccountProfile,
+  legacyAccountProfile,
+} from "../lib/accountProfile";
+registerLegacyBeforeEach(() => {
+  registerAccountProfile(legacyAccountProfile("calendar-private-owner"));
+});
 import { afterEach, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Calendar } from "./Calendar";

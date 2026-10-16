@@ -61,7 +61,7 @@ Phone-sized Chromium verifies responsive browser behavior. Physical iPhone Safar
 
 ### Database integration
 
-The suites in [`supabase/tests`](../supabase/tests) cover daily records, tasks, options and deadlines, automatic daily work, customization, Anti-rot, food fields, push delivery, and Creatine. Each uses rollback-only fixtures to test validation, ownership, atomicity, and idempotent replay.
+The suites in [`supabase/tests`](../supabase/tests) cover public profiles, starter setup, per-account ownership, daily records, tasks, options and deadlines, automatic daily work, customization, Anti-rot, food fields, push delivery, and Creatine. Each uses rollback-only fixtures to test validation, ownership, atomicity, and idempotent replay.
 
 To run against a configured project, supply `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_REF` in the shell, then run:
 
@@ -82,13 +82,13 @@ This helper checks tasks, options, deadlines, automatic daily work, food, Creati
 
 ## Customization development
 
-Use **Your space → Customize checklist** or **Manage To-do lists** in either private or demo mode. Checklist saves apply today or the next logical day; list edits apply immediately. The preview uses the same evaluator as the daily page and calendar, and changing its sample answers does not save daily records.
+Use **Your space → Customize checklist** or **Manage To-do lists** in either account or demo mode. Checklist saves apply today or the next logical day; list edits apply immediately. The preview uses the same evaluator as the daily page and calendar, and changing its sample answers does not save daily records.
 
 Preserve stable IDs and original operation IDs when changing these workflows. Increment an item’s answer generation for an incompatible input or list-binding change; retain older answers. Test a scheduled tomorrow change followed by an unrelated today edit, stale editors on two clients, manual plus automatic task work with undo, transaction failure/retry, and demo reset. A configuration conflict must retain the draft and require explicit review before retrying against newer definitions.
 
 ## Private backend configuration
 
-The public demo is self-contained. Connecting a separate private deployment requires its own Supabase project, database migrations, account ownership configuration, and Auth settings.
+The public demo is self-contained. Connecting a separate deployment requires its own Supabase project, database migrations and Auth settings.
 
 Copy [`.env.example`](../.env.example) to `.env` and supply your project URL and browser-safe publishable key:
 
@@ -97,9 +97,18 @@ VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_KEY
 ```
 
-The registration gate in the migrations is intentionally limited to a designated owner. Review and adapt that configuration before provisioning an independent instance; this repository does not provide an unrestricted signup service. `setup:account` is an informational helper for the existing deployment, not a provisioning script.
+Apply migrations in order. The public-account migration backfills the original owner profile and creates an administrator-only registration switch, initially closed. It does not modify saved records, receipt IDs or earlier migrations. `setup:account` prints setup guidance without reading passwords or calling administrative endpoints.
 
-Configure the Auth Site URL and redirect allowlist for actual deployment and development origins. Recovery email delivery requires a working sender configuration. Migrations and generated types live in [`supabase/migrations`](../supabase/migrations) and [`src/lib/database.types.ts`](../src/lib/database.types.ts).
+For a new deployment or public-account rollout:
+
+1. Keep registration closed while applying migrations and deploying the compatible client and `push-settings` function.
+2. In Supabase **Authentication → Sign In / Providers**, enable email/password signup and disable **Confirm email**. Retain a minimum password length of eight.
+3. After verification, run `update private.registration_settings set enabled=true where singleton;` as an administrator. The trigger creates each account profile from the Auth creation timestamp and validated signup timezone. It cannot be initialized by client-supplied account IDs.
+4. Smoke-test signup, onboarding, sign-out and sign-in with disposable accounts, then remove only those fixtures. To pause new registrations, set the switch back to false; existing sign-in and sync continue.
+
+The starter catalog is [`src/lib/starterCatalog.json`](../src/lib/starterCatalog.json). A version is immutable once released; publish a new catalog version through an additive migration. Existing accounts retain frozen initial definitions. The SQL tests compare the client catalog to the server copy.
+
+Configure the Auth Site URL and redirect allowlist for actual deployment and development origins. Password recovery is deferred: leave `VITE_PASSWORD_RECOVERY_ENABLED=false`. The recovery route and link are disabled until a working email sender and recovery redirect URLs are configured. Do not enable the flag alone. Administrator password resets remain outside the public interface. Migrations and generated types live in [`supabase/migrations`](../supabase/migrations) and [`src/lib/database.types.ts`](../src/lib/database.types.ts).
 
 Private push reminders additionally require the Edge Functions in [`supabase/functions`](../supabase/functions), VAPID/scheduler secrets, and the Cron setup defined by the push migration. Server credentials, signing keys, and scheduler tokens must remain outside browser builds.
 
@@ -119,3 +128,16 @@ Local certificates and authority keys stay in ignored `.cert/` files. The downlo
 ## Screenshot conventions
 
 The README images are captures of the live public demo, using synthetic samples and the app’s actual Appearance controls. Four of six use Classic Dark; the others show Blue Slate Light and Monochrome Dark on a phone-sized viewport. Completion colors are Forest & Rust and Anti-rot colors are Classic throughout. Images live in [`docs/images`](images).
+
+## Public-account verification
+
+`tests/public-accounts.spec.ts` tests signup UI and onboarding through deterministic API fixtures on desktop and phone, including dependency deselection, draft reload, retry and offline reopening. It does not replace a real Auth signup smoke test. `supabase/tests/public_accounts.sql` verifies the real database profile trigger, catalog, initialization transaction, receipts, list-linked work and two-account isolation using rollback-only fixtures.
+
+An optional isolated PostgreSQL/WASM harness runs database suites without hosted credentials:
+
+```sh
+# Install @electric-sql/pglite in a temporary directory, not the app bundle.
+PGLITE_MODULE=file:///absolute/path/to/pglite/dist/index.js node scripts/test-public-accounts-local.mjs
+```
+
+Hosted push functions additionally need a real token check; installation identity collisions are covered by the handler tests. Real device subscription and delivery checks remain separate.

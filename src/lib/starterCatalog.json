@@ -1,0 +1,567 @@
+[
+  {
+    "id": "everyday",
+    "version": 1,
+    "title": "Everyday",
+    "description": "A little structure for your habits and everyday priorities.",
+    "configuration": {
+      "blocks": [
+        {
+          "id": "starter-habits",
+          "title": "Daily habits",
+          "icon": "sun",
+          "order": 0
+        },
+        {
+          "id": "starter-tasks",
+          "title": "Tasks",
+          "icon": "check",
+          "order": 1
+        }
+      ],
+      "items": [
+        {
+          "id": "starter-move",
+          "blockId": "starter-habits",
+          "label": "Moved my body",
+          "kind": "checkbox",
+          "generation": 1,
+          "order": 0,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": []
+        },
+        {
+          "id": "starter-learn",
+          "blockId": "starter-habits",
+          "label": "Read or learned",
+          "kind": "duration",
+          "generation": 1,
+          "order": 1,
+          "completion": {
+            "op": "compare",
+            "field": "value",
+            "operator": "gte",
+            "value": 10
+          },
+          "followups": [],
+          "min": 0
+        },
+        {
+          "id": "starter-scroll",
+          "blockId": "starter-habits",
+          "label": "Time spent scrolling",
+          "kind": "duration",
+          "generation": 1,
+          "order": 2,
+          "completion": {
+            "op": "compare",
+            "field": "value",
+            "operator": "lte",
+            "value": 60
+          },
+          "followups": [],
+          "min": 0
+        },
+        {
+          "id": "starter-offline",
+          "blockId": "starter-habits",
+          "label": "Enjoyed an offline activity",
+          "kind": "checkbox",
+          "generation": 1,
+          "order": 3,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": []
+        },
+        {
+          "id": "starter-personal-work",
+          "blockId": "starter-tasks",
+          "label": "Worked on Personal tasks?",
+          "kind": "tasks",
+          "generation": 1,
+          "order": 0,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": [],
+          "listId": "starter-personal",
+          "visibility": "relevant"
+        },
+        {
+          "id": "starter-life-work",
+          "blockId": "starter-tasks",
+          "label": "Worked on Life tasks?",
+          "kind": "tasks",
+          "generation": 1,
+          "order": 1,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": [],
+          "listId": "starter-life",
+          "visibility": "relevant"
+        }
+      ],
+      "lists": [
+        {
+          "id": "starter-personal",
+          "title": "Personal",
+          "icon": "star",
+          "order": 0
+        },
+        {
+          "id": "starter-life",
+          "title": "Life",
+          "icon": "home",
+          "order": 1
+        }
+      ]
+    },
+    "tasks": [
+      {
+        "id": "goal",
+        "listId": "starter-personal",
+        "title": "Choose a goal for this week"
+      },
+      {
+        "id": "tomorrow",
+        "listId": "starter-life",
+        "title": "Plan tomorrow"
+      },
+      {
+        "id": "tidy",
+        "listId": "starter-life",
+        "title": "Tidy a small area"
+      }
+    ],
+    "activities": [
+      {
+        "id": "walk",
+        "title": "Take a short walk",
+        "itemType": "reusable"
+      },
+      {
+        "id": "read",
+        "title": "Read a chapter",
+        "itemType": "reusable"
+      },
+      {
+        "id": "hobby",
+        "title": "Practice a hobby for ten minutes",
+        "itemType": "reusable"
+      },
+      {
+        "id": "tidy",
+        "title": "Tidy one small area",
+        "itemType": "reusable"
+      },
+      {
+        "id": "topic",
+        "title": "Explore a topic you’re curious about",
+        "itemType": "reusable"
+      },
+      {
+        "id": "visit",
+        "title": "Find a new place to visit",
+        "itemType": "one-time"
+      }
+    ]
+  },
+  {
+    "id": "student",
+    "version": 1,
+    "title": "Student",
+    "description": "Make room for study, classes and life outside school.",
+    "configuration": {
+      "blocks": [
+        {
+          "id": "starter-habits",
+          "title": "Daily habits",
+          "icon": "sun",
+          "order": 0
+        },
+        {
+          "id": "starter-school",
+          "title": "School",
+          "icon": "book",
+          "order": 1
+        },
+        {
+          "id": "starter-personal",
+          "title": "Personal",
+          "icon": "star",
+          "order": 2
+        }
+      ],
+      "items": [
+        {
+          "id": "starter-move",
+          "blockId": "starter-habits",
+          "label": "Moved my body",
+          "kind": "checkbox",
+          "generation": 1,
+          "order": 0,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": []
+        },
+        {
+          "id": "starter-scroll",
+          "blockId": "starter-habits",
+          "label": "Time spent scrolling",
+          "kind": "duration",
+          "generation": 1,
+          "order": 1,
+          "completion": {
+            "op": "compare",
+            "field": "value",
+            "operator": "lte",
+            "value": 60
+          },
+          "followups": [],
+          "min": 0
+        },
+        {
+          "id": "starter-study",
+          "blockId": "starter-school",
+          "label": "Studied",
+          "kind": "duration",
+          "generation": 1,
+          "order": 0,
+          "completion": {
+            "op": "compare",
+            "field": "value",
+            "operator": "gte",
+            "value": 25
+          },
+          "followups": [],
+          "min": 0
+        },
+        {
+          "id": "starter-class",
+          "blockId": "starter-school",
+          "label": "Attended class",
+          "kind": "boolean",
+          "generation": 1,
+          "order": 1,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": [],
+          "schedule": {
+            "weekdays": [1, 2, 3, 4, 5]
+          }
+        },
+        {
+          "id": "starter-school-work",
+          "blockId": "starter-school",
+          "label": "Worked on School tasks?",
+          "kind": "tasks",
+          "generation": 1,
+          "order": 2,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": [],
+          "listId": "starter-school",
+          "visibility": "relevant"
+        },
+        {
+          "id": "starter-personal-work",
+          "blockId": "starter-personal",
+          "label": "Worked on Personal tasks?",
+          "kind": "tasks",
+          "generation": 1,
+          "order": 0,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": [],
+          "listId": "starter-personal",
+          "visibility": "relevant"
+        }
+      ],
+      "lists": [
+        {
+          "id": "starter-school",
+          "title": "School",
+          "icon": "book",
+          "order": 0
+        },
+        {
+          "id": "starter-personal",
+          "title": "Personal",
+          "icon": "star",
+          "order": 1
+        }
+      ]
+    },
+    "tasks": [
+      {
+        "id": "assignment",
+        "listId": "starter-school",
+        "title": "Review your next assignment"
+      },
+      {
+        "id": "study",
+        "listId": "starter-school",
+        "title": "Plan a study session"
+      },
+      {
+        "id": "enjoy",
+        "listId": "starter-personal",
+        "title": "Plan something you enjoy"
+      }
+    ],
+    "activities": [
+      {
+        "id": "walk",
+        "title": "Take a short walk",
+        "itemType": "reusable"
+      },
+      {
+        "id": "read",
+        "title": "Read a chapter",
+        "itemType": "reusable"
+      },
+      {
+        "id": "hobby",
+        "title": "Practice a hobby for ten minutes",
+        "itemType": "reusable"
+      },
+      {
+        "id": "tidy",
+        "title": "Tidy one small area",
+        "itemType": "reusable"
+      },
+      {
+        "id": "topic",
+        "title": "Explore a topic you’re curious about",
+        "itemType": "reusable"
+      },
+      {
+        "id": "visit",
+        "title": "Find a new place to visit",
+        "itemType": "one-time"
+      }
+    ]
+  },
+  {
+    "id": "work",
+    "version": 1,
+    "title": "Work & projects",
+    "description": "Keep your priorities moving while making time for yourself.",
+    "configuration": {
+      "blocks": [
+        {
+          "id": "starter-habits",
+          "title": "Daily habits",
+          "icon": "sun",
+          "order": 0
+        },
+        {
+          "id": "starter-work",
+          "title": "Work",
+          "icon": "briefcase",
+          "order": 1
+        },
+        {
+          "id": "starter-personal",
+          "title": "Personal",
+          "icon": "star",
+          "order": 2
+        }
+      ],
+      "items": [
+        {
+          "id": "starter-move",
+          "blockId": "starter-habits",
+          "label": "Moved my body",
+          "kind": "checkbox",
+          "generation": 1,
+          "order": 0,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": []
+        },
+        {
+          "id": "starter-learn",
+          "blockId": "starter-habits",
+          "label": "Read or learned",
+          "kind": "duration",
+          "generation": 1,
+          "order": 1,
+          "completion": {
+            "op": "compare",
+            "field": "value",
+            "operator": "gte",
+            "value": 10
+          },
+          "followups": [],
+          "min": 0
+        },
+        {
+          "id": "starter-scroll",
+          "blockId": "starter-habits",
+          "label": "Time spent scrolling",
+          "kind": "duration",
+          "generation": 1,
+          "order": 2,
+          "completion": {
+            "op": "compare",
+            "field": "value",
+            "operator": "lte",
+            "value": 60
+          },
+          "followups": [],
+          "min": 0
+        },
+        {
+          "id": "starter-priorities",
+          "blockId": "starter-work",
+          "label": "Planned my priorities",
+          "kind": "checkbox",
+          "generation": 1,
+          "order": 0,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": []
+        },
+        {
+          "id": "starter-work-work",
+          "blockId": "starter-work",
+          "label": "Worked on Work tasks?",
+          "kind": "tasks",
+          "generation": 1,
+          "order": 1,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": [],
+          "listId": "starter-work",
+          "visibility": "relevant"
+        },
+        {
+          "id": "starter-personal-work",
+          "blockId": "starter-personal",
+          "label": "Worked on Personal tasks?",
+          "kind": "tasks",
+          "generation": 1,
+          "order": 0,
+          "completion": {
+            "op": "equals",
+            "field": "value",
+            "value": true
+          },
+          "followups": [],
+          "listId": "starter-personal",
+          "visibility": "relevant"
+        }
+      ],
+      "lists": [
+        {
+          "id": "starter-work",
+          "title": "Work",
+          "icon": "briefcase",
+          "order": 0
+        },
+        {
+          "id": "starter-personal",
+          "title": "Personal",
+          "icon": "star",
+          "order": 1
+        }
+      ]
+    },
+    "tasks": [
+      {
+        "id": "priority",
+        "listId": "starter-work",
+        "title": "Choose this week’s main priority"
+      },
+      {
+        "id": "next",
+        "listId": "starter-work",
+        "title": "Break a project into its next step"
+      },
+      {
+        "id": "outside",
+        "listId": "starter-personal",
+        "title": "Plan something outside work"
+      }
+    ],
+    "activities": [
+      {
+        "id": "walk",
+        "title": "Take a short walk",
+        "itemType": "reusable"
+      },
+      {
+        "id": "read",
+        "title": "Read a chapter",
+        "itemType": "reusable"
+      },
+      {
+        "id": "hobby",
+        "title": "Practice a hobby for ten minutes",
+        "itemType": "reusable"
+      },
+      {
+        "id": "tidy",
+        "title": "Tidy one small area",
+        "itemType": "reusable"
+      },
+      {
+        "id": "topic",
+        "title": "Explore a topic you’re curious about",
+        "itemType": "reusable"
+      },
+      {
+        "id": "visit",
+        "title": "Find a new place to visit",
+        "itemType": "one-time"
+      }
+    ]
+  },
+  {
+    "id": "blank",
+    "version": 1,
+    "title": "Start from scratch",
+    "description": "An empty space to build your own way.",
+    "configuration": {
+      "blocks": [],
+      "items": [],
+      "lists": []
+    },
+    "tasks": [],
+    "activities": []
+  }
+]

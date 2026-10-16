@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/drat-git/180/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/drat-git/180/actions/workflows/ci.yml)
 
-180 brings everyday habits, longer-running tasks, and reflection into one place. It saves changes locally as you make them, remains usable offline after loading, and synchronizes the private account when a connection returns.
+180 brings everyday habits, longer-running tasks, and reflection into one place. It saves changes locally as you make them, remains usable offline after loading, and synchronizes your account when a connection returns.
 
 ## Explore the demo
 
@@ -17,7 +17,7 @@ Open the [live app](https://180-vlfh.vercel.app) and choose **Try the demo mode*
 - Open **Your space → Customize checklist** to build a block or question, preview its rules, and choose when to apply it.
 - Change the appearance through the settings button, or try **Send demo notification** on a supported device—no account needed. Use **Reset demo** to restore the samples.
 
-The demo uses synthetic data and a fixed three-day timeline. Your edits stay in your browser and are separate from the private account; demo mode never uploads them. The cloud-backed app currently supports a single owner, rather than public account registration.
+The demo uses synthetic data and a fixed three-day timeline. Its edits stay in your browser and never enter an account. Email/password accounts have their own synced records and checklist, with Day 1 anchored to account creation.
 
 ## Features
 
@@ -27,7 +27,7 @@ The demo uses synthetic data and a fixed three-day timeline. Your edits stay in 
 | **To-do lists**          | Create, rename, order, and archive lists. Plan tasks with subtasks, priority, estimates, and due dates/times; connect a list to a daily “Worked on…” question.                                    |
 | **Interactive calendar** | Browse completion-colored dates, category totals, and **Things you did**; open daily records or preview future task deadlines. Historical definitions, titles, and relationships remain readable. |
 | **Anti-rot**             | Keep reusable ideas and one-time activities as alternatives to scrolling. Log what you did and revisit it in past-day recaps.                                                                     |
-| **Journal**              | Write a daily reflection and attach photos, with local persistence and retryable cloud uploads in the private app.                                                                                |
+| **Journal**              | Write a daily reflection and attach photos, with local persistence and retryable cloud uploads in the signed-in app.                                                                              |
 | **Appearance & PWA**     | Choose light/dark mode and independent app, completion, and Anti-rot palettes. Install the production app for offline access; the private app also supports opt-in daily push reminders.          |
 
 ## Make it your own
@@ -36,7 +36,13 @@ In **Your space → Customize checklist**, create, edit, reorder, duplicate, or 
 
 The editor previews the result before you save. Apply checklist changes **today** or **the next logical day**; earlier days retain their definitions and scores. Incompatible input changes start a new answer generation while preserving the old answers.
 
-**Manage To-do lists** applies list changes immediately. A list can have one linked daily question, shown when relevant work exists or always on its scheduled days. Completing a task records work automatically; manual selections remain independent. List management and dated checklist connections are available in both private and demo modes. Tasks stay in their original list, and public account registration is outside the current scope.
+**Manage To-do lists** applies list changes immediately. A list can have one linked daily question, shown when relevant work exists or always on its scheduled days. Completing a task records work automatically; manual selections remain independent. List management and dated checklist connections work in accounts and the isolated demo. Tasks stay in their original list.
+
+## Your own starting point
+
+Create an email/password account, choose **Everyday**, **Student**, **Work & projects**, or **Start from scratch**, then review what to keep. Each populated starter suggests six daily checks, two To-do lists, three unfinished tasks, and six Anti-rot activities. Everything is editable afterward; setup creates no completed work or sample history.
+
+Account creation establishes **Day 1**, even if you finish setup later. Days roll over at **2 AM in your device’s timezone**, including skipped days. The original account retains its October 9 timeline and personal history. Password recovery is currently unavailable while email delivery is deferred.
 
 ## Screenshots
 
@@ -75,7 +81,7 @@ The main engineering challenge is keeping local edits, cloud synchronization, an
 | **Versioned definitions**       | Effective-dated field changes and typed answer generations preserve historical scoring while letting the current checklist evolve. Configuration conflicts retain a draft for explicit review.             |
 | **Retained history**            | Task events and activity snapshots keep past accomplishments readable after items are renamed, reopened, deleted, or removed from the active list.                                                         |
 | **Explicit time semantics**     | Days roll over at 2 AM in the device’s timezone. Calendar-date arithmetic avoids treating daylight-saving days as fixed 24-hour intervals.                                                                 |
-| **Account isolation**           | Local records are partitioned by identity. The private backend uses ownership checks, row-level security, and a private journal bucket; demo records stay local.                                           |
+| **Account isolation**           | Local records are partitioned by identity. The backend uses account ownership checks, row-level security, and a private journal bucket; demo records stay local.                                           |
 
 See [the architecture notes](docs/architecture.md) for the data flow, failure handling, and tradeoffs.
 

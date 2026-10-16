@@ -249,7 +249,7 @@ it("reuses the server installation when device preferences were cleared", async 
   await act(async () => {
     await result.current.change("enable");
   });
-  expect(localStorage.getItem("180:push-installation")).toBe(canonicalId);
+  expect(localStorage.getItem("180:push-installation:owner")).toBe(canonicalId);
   expect(result.current.config?.enabled).toBe(true);
   expect(mock.unsubscribe).not.toHaveBeenCalled();
 });
@@ -265,4 +265,24 @@ it("failed settings loading can be retried without reloading the app", async () 
   });
   await waitFor(() => expect(result.current.config?.time).toBe("21:00"));
   expect(result.current.error).toBe("");
+});
+it("uses separate installation identities for different accounts and preserves the legacy owner's ID", async () => {
+  const { registerAccountProfile, legacyAccountProfile } =
+    await import("./accountProfile");
+  const legacyId = crypto.randomUUID();
+  localStorage.setItem("180:push-installation", legacyId);
+  registerAccountProfile(legacyAccountProfile("owner"));
+  const owner = renderHook(() => useNotifications("owner", false));
+  await waitFor(() => expect(owner.result.current.config).not.toBeNull());
+  expect(localStorage.getItem("180:push-installation:owner")).toBe(legacyId);
+  owner.unmount();
+  mock.session.mockResolvedValue({
+    data: { session: { user: { id: "new-account" } } },
+  });
+  const other = renderHook(() => useNotifications("new-account", false));
+  await waitFor(() => expect(other.result.current.config).not.toBeNull());
+  expect(localStorage.getItem("180:push-installation:new-account")).not.toBe(
+    legacyId,
+  );
+  expect(localStorage.getItem("180:push-installation:owner")).toBe(legacyId);
 });

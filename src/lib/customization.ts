@@ -1,5 +1,6 @@
 import { addDays, weekday } from "./dates";
 import { modeForUser, PRIVATE_MODE, type AppMode } from "./appMode";
+import { emptyConfiguration, getAccountProfile } from "./accountProfile";
 import {
   CREATINE_START_DATE,
   FOOD_UPDATE_DATE,
@@ -83,6 +84,11 @@ export function defaultConfiguration(
   date: string,
   mode: AppMode = modeForUser(userId),
 ): Configuration {
+  const profile = getAccountProfile(userId);
+  if (!mode.demo && !profile?.legacy)
+    return structuredClone(
+      profile?.initialConfiguration ?? emptyConfiguration(),
+    );
   const modern = mode.modernFood || date >= FOOD_UPDATE_DATE;
   const blocks: ChecklistBlockDefinition[] = [
     { id: "general", title: "General", icon: "compass", order: 0 },
